@@ -1,0 +1,76 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { toast } from "sonner";
+import { Target, Check, Coins, Zap } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { ensureDailyMissions } from "@/lib/studysphere";
+
+export const Route = createFileRoute("/_authenticated/app/missions")({
+  component: Missions,
+});
+
+function Missions() {
+  const qc = useQueryClient();
+  const { data: userId } = useQuery({
+    queryKey: ["uid"],
+    queryFn: async () => (await supabase.auth.getUser()).data.user?.id ?? null,
+  });
+
+  useEffect(() => { if (userId) ensureDailyMissions(userId); }, [userId]);
+
+  const { data: missions = [] } = useQuery({
+    queryKey: ["mission-list", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const { data } = await supabase.from("missions").select("*").eq("user_id", userId!).eq("day", today).order("id");
+      return data ?? [];
+    },
+  });
+
+  async function complete(m: any) {
+    if (m.completed || !userId) return;
+    await supabase.from("missions").update({ progress: m.target, completed: true }).eq("id", m.id);
+    const { data: p } = await supabase.from("profiles").select("xp,coins").eq("id", userId).maybeSingle();
+    await supabase.from("profiles").update({ xp: (p?.xp ?? 0) + m.reward_xp, coins: (p?.coins ?? 0) + m.reward_coins }).eq("id", userId);
+    await supabase.from("notifications").insert({ user_id: userId, kind: "mission_complete", title: `Mission complete: ${m.title}`, body: `+${m.reward_xp} XP · +${m.reward_coins} coins` });
+    toast.success(`+${m.reward_xp} XP · +${m.reward_coins} coins`);
+    qc.invalidateQueries();
+  }
+
+  return (
+    <div className="mx-auto max-w-md px-5 pt-8">
+      <h1 className="text-2xl font-black">Daily Missions</h1>
+      <p className="text-sm text-muted-foreground">Reset every 24 hours</p>
+
+      <ul className="mt-6 space-y-3">
+        {missions.map((m) => (
+          <li key={m.id} className={"rounded-3xl border p-4 card-shadow " + (m.completed ? "border-success/40 bg-success/10" : "border-border bg-card")}>
+            <div className="flex items-start gap-3">
+              <div className={"grid h-10 w-10 shrink-0 place-items-center rounded-2xl " + (m.completed ? "bg-success/20 text-success" : "gradient-brand text-primary-foreground")}>
+                {m.completed ? <Check className="h-5 w-5" /> : <Target className="h-5 w-5" />}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-bold">{m.title}</p>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                  <div className="h-full gradient-brand" style={{ width: `${Math.min(100, (m.progress / m.target) * 100)}%` }} />
+                </div>
+                <div className="mt-2 flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">{m.progress}/{m.target}</span>
+                  <div className="flex gap-2 font-semibold">
+                    <span className="flex items-center gap-1 text-primary"><Zap className="h-3 w-3" /> {m.reward_xp}</span>
+                    <span className="flex items-center gap-1 text-warning"><Coins className="h-3 w-3" /> {m.reward_coins}</span>
+                  </div>
+                </div>
+                {!m.completed && (
+                  <button onClick={() => complete(m)} className="mt-3 w-full rounded-xl border border-border py-2 text-xs font-semibold">Mark complete</button>
+                )}
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
