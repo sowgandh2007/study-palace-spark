@@ -22,7 +22,7 @@ function Analytics() {
     enabled: !!uid,
     queryFn: async () => {
       const from = new Date(); from.setDate(from.getDate() - 28);
-      return (await supabase.from("study_sessions").select("day,minutes,started_at").eq("user_id", uid!).gte("day", from.toISOString().slice(0,10))).data ?? [];
+      return (await supabase.from("study_sessions").select("day,minutes").eq("user_id", uid!).gte("day", from.toISOString().slice(0,10))).data ?? [];
     },
   });
   const { data: quizzes = [] } = useQuery({
