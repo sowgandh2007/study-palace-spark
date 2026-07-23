@@ -37,7 +37,7 @@ function Roadmap() {
     try {
       const prompt = `Create a study roadmap as JSON with shape {"tasks":[{"day":"YYYY-MM-DD","title":"...","kind":"study|revise|practice|milestone","subject":"...","minutes":30}]}. 14 days starting today (${new Date().toISOString().slice(0,10)}). Target exam: ${form.exam}. Target date: ${form.targetDate || "unspecified"}. Subjects: ${form.subjects}. Weak topics: ${form.weak}. Strong topics: ${form.strong}. Hours/day: ${form.hours}. Weight more time on weak topics. Include weekly milestone tasks and revision days. Return ONLY JSON.`;
       const res = await call({ data: { prompt, json: true, system: "You return only strict JSON." } });
-      const parsed = (res.json as { tasks: Task[] } | undefined) ?? { tasks: [] };
+      const parsed = parseAiJson<{ tasks: Task[] }>(res.text) ?? { tasks: [] };
       const { data: rm } = await supabase.from("ai_roadmaps").insert({
         user_id: uid,
         exam: form.exam,
