@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { Home, Users, Trophy, Target, User } from "lucide-react";
+import { Home, Users, Sparkles, Trophy, User } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app")({
   component: AppLayout,
@@ -8,8 +8,8 @@ export const Route = createFileRoute("/_authenticated/app")({
 const tabs = [
   { to: "/app", label: "Home", icon: Home, exact: true },
   { to: "/app/rooms", label: "Rooms", icon: Users, exact: false },
+  { to: "/app/ai", label: "AI", icon: Sparkles, exact: false },
   { to: "/app/leaderboard", label: "Ranks", icon: Trophy, exact: false },
-  { to: "/app/missions", label: "Missions", icon: Target, exact: false },
   { to: "/app/profile", label: "Profile", icon: User, exact: false },
 ] as const;
 

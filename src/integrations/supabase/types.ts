@@ -14,6 +14,345 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_battle_scores: {
+        Row: {
+          accuracy: number
+          battle_id: string
+          created_at: string
+          duration_sec: number
+          id: string
+          score: number
+          user_id: string
+        }
+        Insert: {
+          accuracy?: number
+          battle_id: string
+          created_at?: string
+          duration_sec?: number
+          id?: string
+          score?: number
+          user_id: string
+        }
+        Update: {
+          accuracy?: number
+          battle_id?: string
+          created_at?: string
+          duration_sec?: number
+          id?: string
+          score?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_battle_scores_battle_id_fkey"
+            columns: ["battle_id"]
+            isOneToOne: false
+            referencedRelation: "ai_battles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_battles: {
+        Row: {
+          created_at: string
+          difficulty: string
+          host_id: string
+          id: string
+          questions: Json
+          status: string
+          topic: string
+        }
+        Insert: {
+          created_at?: string
+          difficulty?: string
+          host_id: string
+          id?: string
+          questions: Json
+          status?: string
+          topic: string
+        }
+        Update: {
+          created_at?: string
+          difficulty?: string
+          host_id?: string
+          id?: string
+          questions?: Json
+          status?: string
+          topic?: string
+        }
+        Relationships: []
+      }
+      ai_cache: {
+        Row: {
+          cache_key: string
+          created_at: string
+          id: string
+          payload: Json
+        }
+        Insert: {
+          cache_key: string
+          created_at?: string
+          id?: string
+          payload: Json
+        }
+        Update: {
+          cache_key?: string
+          created_at?: string
+          id?: string
+          payload?: Json
+        }
+        Relationships: []
+      }
+      ai_career_roadmaps: {
+        Row: {
+          created_at: string
+          goal: string
+          id: string
+          milestones: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          goal: string
+          id?: string
+          milestones: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          goal?: string
+          id?: string
+          milestones?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_chats: {
+        Row: {
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_flashcards: {
+        Row: {
+          back: string
+          created_at: string
+          due_date: string
+          ease: number
+          front: string
+          id: string
+          interval_days: number
+          last_score: number | null
+          topic: string
+          user_id: string
+        }
+        Insert: {
+          back: string
+          created_at?: string
+          due_date?: string
+          ease?: number
+          front: string
+          id?: string
+          interval_days?: number
+          last_score?: number | null
+          topic: string
+          user_id: string
+        }
+        Update: {
+          back?: string
+          created_at?: string
+          due_date?: string
+          ease?: number
+          front?: string
+          id?: string
+          interval_days?: number
+          last_score?: number | null
+          topic?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_messages: {
+        Row: {
+          chat_id: string
+          content: string
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          chat_id: string
+          content: string
+          created_at?: string
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          chat_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_messages_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "ai_chats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_quizzes: {
+        Row: {
+          answers: Json | null
+          battle_id: string | null
+          created_at: string
+          difficulty: string
+          duration_sec: number | null
+          id: string
+          questions: Json
+          score: number | null
+          topic: string
+          user_id: string
+        }
+        Insert: {
+          answers?: Json | null
+          battle_id?: string | null
+          created_at?: string
+          difficulty?: string
+          duration_sec?: number | null
+          id?: string
+          questions: Json
+          score?: number | null
+          topic: string
+          user_id: string
+        }
+        Update: {
+          answers?: Json | null
+          battle_id?: string | null
+          created_at?: string
+          difficulty?: string
+          duration_sec?: number | null
+          id?: string
+          questions?: Json
+          score?: number | null
+          topic?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_roadmap_tasks: {
+        Row: {
+          completed: boolean
+          created_at: string
+          day: string
+          id: string
+          kind: string
+          minutes: number
+          roadmap_id: string
+          subject: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          day: string
+          id?: string
+          kind: string
+          minutes?: number
+          roadmap_id: string
+          subject?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          day?: string
+          id?: string
+          kind?: string
+          minutes?: number
+          roadmap_id?: string
+          subject?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_roadmap_tasks_roadmap_id_fkey"
+            columns: ["roadmap_id"]
+            isOneToOne: false
+            referencedRelation: "ai_roadmaps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_roadmaps: {
+        Row: {
+          created_at: string
+          exam: string
+          hours_per_day: number
+          id: string
+          plan: Json
+          strong_topics: string[]
+          subjects: string[]
+          target_date: string | null
+          updated_at: string
+          user_id: string
+          weak_topics: string[]
+        }
+        Insert: {
+          created_at?: string
+          exam: string
+          hours_per_day?: number
+          id?: string
+          plan?: Json
+          strong_topics?: string[]
+          subjects?: string[]
+          target_date?: string | null
+          updated_at?: string
+          user_id: string
+          weak_topics?: string[]
+        }
+        Update: {
+          created_at?: string
+          exam?: string
+          hours_per_day?: number
+          id?: string
+          plan?: Json
+          strong_topics?: string[]
+          subjects?: string[]
+          target_date?: string | null
+          updated_at?: string
+          user_id?: string
+          weak_topics?: string[]
+        }
+        Relationships: []
+      }
       badges: {
         Row: {
           description: string
