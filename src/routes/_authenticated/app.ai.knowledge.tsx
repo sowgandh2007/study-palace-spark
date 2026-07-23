@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowRight, Sparkles, AlertCircle } from "lucide-react";
-import { aiGenerate } from "@/lib/ai.functions";
+import { aiGenerate, parseAiJson } from "@/lib/ai.functions";
 
 export const Route = createFileRoute("/_authenticated/app/ai/knowledge")({
   component: Knowledge,
@@ -22,7 +22,7 @@ function Knowledge() {
     try {
       const prompt = `Build a knowledge graph for "${topic}" as JSON {"nodes":[{"name":"Arrays","requires":[]},{"name":"Sorting","requires":["Arrays"]}]}. Return 8-12 nodes ordered by dependency. Only JSON.`;
       const res = await call({ data: { prompt, json: true, cacheKey: `kg:${topic.toLowerCase()}`, system: "You return only strict JSON." } });
-      const nodes = ((res.json as { nodes?: Node[] })?.nodes) ?? [];
+      const nodes = (parseAiJson<{ nodes?: Node[] }>(res.text)?.nodes) ?? [];
       setGraph(nodes);
     } finally { setBusy(false); }
   }

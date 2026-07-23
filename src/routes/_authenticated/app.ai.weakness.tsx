@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Sparkles, TrendingDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { aiGenerate } from "@/lib/ai.functions";
+import { aiGenerate, parseAiJson } from "@/lib/ai.functions";
 
 export const Route = createFileRoute("/_authenticated/app/ai/weakness")({
   component: Weakness,
@@ -29,7 +29,7 @@ function Weakness() {
       const summary = quizzes.map(q => ({ topic: q.topic, difficulty: q.difficulty, score: q.score, total: Array.isArray(q.questions) ? q.questions.length : 0 }));
       const prompt = `Analyze this quiz history and return JSON {"weak":[...],"mistakes":[...],"low":[...],"next":[...]}: weak topics, frequent mistakes, low-confidence concepts, and exact next revision items. History: ${JSON.stringify(summary)}. Only JSON.`;
       const res = await call({ data: { prompt, json: true, system: "You return only strict JSON." } });
-      setAnalysis(res.json as never);
+      setAnalysis(parseAiJson(res.text) as never);
     } finally { setBusy(false); }
   }
 

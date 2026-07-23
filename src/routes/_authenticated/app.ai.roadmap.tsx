@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Sparkles, Plus, Check, RefreshCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { aiGenerate } from "@/lib/ai.functions";
+import { aiGenerate, parseAiJson } from "@/lib/ai.functions";
 
 export const Route = createFileRoute("/_authenticated/app/ai/roadmap")({
   component: Roadmap,
@@ -46,7 +46,7 @@ function Roadmap() {
         weak_topics: form.weak.split(",").map(s => s.trim()).filter(Boolean),
         strong_topics: form.strong.split(",").map(s => s.trim()).filter(Boolean),
         hours_per_day: form.hours,
-        plan: res.json ?? {},
+        plan: (parseAiJson(res.text) ?? {}),
       }).select("*").single();
       if (rm && parsed.tasks?.length) {
         await supabase.from("ai_roadmap_tasks").insert(parsed.tasks.map(t => ({
@@ -66,7 +66,7 @@ function Roadmap() {
       const remaining = tasks.filter(t => t.day >= today);
       const prompt = `Reschedule missed study tasks into upcoming days without restarting. Return JSON {"tasks":[{"id":"...","day":"YYYY-MM-DD"}]} only for tasks to update. Missed: ${JSON.stringify(missed.map(m => ({id:m.id,title:m.title,day:m.day})))}. Upcoming free capacity (${roadmap.hours_per_day}h/day) days: ${JSON.stringify(remaining.map(t=>t.day))}. Spread them starting tomorrow.`;
       const res = await call({ data: { prompt, json: true, system: "You return only strict JSON." } });
-      const updates = ((res.json as { tasks?: Array<{ id: string; day: string }> })?.tasks) ?? [];
+      const updates = (parseAiJson<{ tasks?: Array<{ id: string; day: string }> }>(res.text)?.tasks) ?? [];
       for (const u of updates) {
         await supabase.from("ai_roadmap_tasks").update({ day: u.day }).eq("id", u.id);
       }

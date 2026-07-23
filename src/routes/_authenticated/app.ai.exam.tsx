@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Sparkles, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { aiGenerate } from "@/lib/ai.functions";
+import { aiGenerate, parseAiJson } from "@/lib/ai.functions";
 
 export const Route = createFileRoute("/_authenticated/app/ai/exam")({
   component: Exam,
@@ -30,7 +30,7 @@ function Exam() {
     try {
       const prompt = `Create a ${difficulty} difficulty quiz with ${count} MCQs on "${topic}". Return JSON {"questions":[{"q":"...","options":["A","B","C","D"],"answer":0,"explanation":"..."}]}. Only JSON.`;
       const res = await call({ data: { prompt, json: true, cacheKey: `exam:${topic}:${difficulty}:${count}`, system: "You return only strict JSON." } });
-      const qs = ((res.json as { questions?: Q[] })?.questions) ?? [];
+      const qs = (parseAiJson<{ questions?: Q[] }>(res.text)?.questions) ?? [];
       setQuiz(qs);
       setAnswers(new Array(qs.length).fill(-1));
       setSubmitted(false);

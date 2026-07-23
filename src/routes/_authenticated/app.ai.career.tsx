@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Sparkles, Compass } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { aiGenerate } from "@/lib/ai.functions";
+import { aiGenerate, parseAiJson } from "@/lib/ai.functions";
 
 export const Route = createFileRoute("/_authenticated/app/ai/career")({
   component: Career,
@@ -33,7 +33,7 @@ function Career() {
     try {
       const prompt = `Create a career roadmap for goal "${goal}" as JSON {"milestones":[{"title":"...","duration":"1 month","skills":["..."],"projects":["..."]}]}. 6-8 milestones in order. Only JSON.`;
       const res = await call({ data: { prompt, json: true, cacheKey: `career:${goal}`, system: "You return only strict JSON." } });
-      const milestones = ((res.json as { milestones?: Milestone[] })?.milestones) ?? [];
+      const milestones = (parseAiJson<{ milestones?: Milestone[] }>(res.text)?.milestones) ?? [];
       await supabase.from("ai_career_roadmaps").insert({ user_id: uid, goal, milestones });
       qc.invalidateQueries({ queryKey: ["career", uid] });
     } finally { setBusy(false); }

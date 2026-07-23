@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Repeat, Plus, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { aiGenerate } from "@/lib/ai.functions";
+import { aiGenerate, parseAiJson } from "@/lib/ai.functions";
 
 export const Route = createFileRoute("/_authenticated/app/ai/revision")({
   component: Revision,
@@ -38,7 +38,7 @@ function Revision() {
     try {
       const prompt = `Create 6 concise flashcards for topic "${topic}" as JSON {"cards":[{"front":"...","back":"..."}]}. Only JSON.`;
       const res = await call({ data: { prompt, json: true, cacheKey: `cards:${topic.toLowerCase()}`, system: "You return only strict JSON." } });
-      const cards = ((res.json as { cards?: Array<{ front: string; back: string }> })?.cards) ?? [];
+      const cards = (parseAiJson<{ cards?: Array<{ front: string; back: string }> }>(res.text)?.cards) ?? [];
       if (cards.length) {
         await supabase.from("ai_flashcards").insert(cards.map(c => ({ user_id: uid, topic, front: c.front, back: c.back })));
         qc.invalidateQueries({ queryKey: ["due-cards", uid, today] });

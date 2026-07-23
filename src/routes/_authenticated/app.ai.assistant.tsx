@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Send, Lightbulb, BookOpen, ListChecks, HelpCircle } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
-import { aiGenerate } from "@/lib/ai.functions";
+import { aiGenerate, parseAiJson } from "@/lib/ai.functions";
 
 export const Route = createFileRoute("/_authenticated/app/ai/assistant")({
   component: Assistant,

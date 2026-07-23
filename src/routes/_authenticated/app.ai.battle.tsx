@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Sparkles, Swords, Trophy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { aiGenerate } from "@/lib/ai.functions";
+import { aiGenerate, parseAiJson } from "@/lib/ai.functions";
 
 export const Route = createFileRoute("/_authenticated/app/ai/battle")({
   component: Battle,
@@ -56,7 +56,7 @@ function Battle() {
     try {
       const prompt = `Create 5 medium MCQs on "${topic}". JSON {"questions":[{"q":"","options":["","","",""],"answer":0}]}. Only JSON.`;
       const res = await call({ data: { prompt, json: true, cacheKey: `battle:${topic}`, system: "You return only strict JSON." } });
-      const questions = ((res.json as { questions?: Q[] })?.questions) ?? [];
+      const questions = (parseAiJson<{ questions?: Q[] }>(res.text)?.questions) ?? [];
       const { data: b } = await supabase.from("ai_battles").insert({ host_id: uid, topic, questions, difficulty: "medium" }).select("*").single();
       if (b) { setActiveId(b.id); setAnswers(new Array(questions.length).fill(-1)); setStartTs(Date.now()); setDone(false); }
       qc.invalidateQueries({ queryKey: ["battles"] });
