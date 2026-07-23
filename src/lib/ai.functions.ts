@@ -12,21 +12,22 @@ type AiInput = {
 
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
+export type AiResult = { text: string; json: Record<string, unknown> | null };
+
 export const aiGenerate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => data as AiInput)
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data, context }): Promise<AiResult> => {
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("Missing LOVABLE_API_KEY");
 
-    // Cache lookup
     if (data.cacheKey) {
       const { data: hit } = await context.supabase
         .from("ai_cache")
         .select("payload")
         .eq("cache_key", data.cacheKey)
         .maybeSingle();
-      if (hit) return hit.payload as { text: string; json?: unknown };
+      if (hit) return hit.payload as unknown as AiResult;
     }
 
     const messages =
@@ -44,10 +45,7 @@ export const aiGenerate = createServerFn({ method: "POST" })
 
     const res = await fetch(GATEWAY_URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Lovable-API-Key": key,
-      },
+      headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
       body: JSON.stringify(body),
     });
 
@@ -58,18 +56,16 @@ export const aiGenerate = createServerFn({ method: "POST" })
       throw new Error(`AI error ${res.status}: ${err.slice(0, 200)}`);
     }
 
-    const payload = (await res.json()) as {
-      choices: Array<{ message: { content: string } }>;
-    };
+    const payload = (await res.json()) as { choices: Array<{ message: { content: string } }> };
     const text = payload.choices?.[0]?.message?.content ?? "";
-    let json: unknown = undefined;
+    let json: Record<string, unknown> | null = null;
     if (data.json) {
-      try { json = JSON.parse(text); } catch { /* keep undefined */ }
+      try { json = JSON.parse(text) as Record<string, unknown>; } catch { json = null; }
     }
-    const result = { text, json };
+    const result: AiResult = { text, json };
 
     if (data.cacheKey) {
-      await context.supabase.from("ai_cache").insert({ cache_key: data.cacheKey, payload: result });
+      await context.supabase.from("ai_cache").insert({ cache_key: data.cacheKey, payload: result as unknown as Record<string, unknown> });
     }
 
     return result;
