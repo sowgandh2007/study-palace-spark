@@ -12,7 +12,7 @@ type AiInput = {
 
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
-export type AiResult = { text: string; json: Record<string, unknown> | null };
+export type AiResult = { text: string };
 
 export const aiGenerate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -27,7 +27,10 @@ export const aiGenerate = createServerFn({ method: "POST" })
         .select("payload")
         .eq("cache_key", data.cacheKey)
         .maybeSingle();
-      if (hit) return hit.payload as unknown as AiResult;
+      if (hit) {
+        const p = hit.payload as { text?: string } | null;
+        if (p?.text) return { text: p.text };
+      }
     }
 
     const messages =
@@ -58,15 +61,17 @@ export const aiGenerate = createServerFn({ method: "POST" })
 
     const payload = (await res.json()) as { choices: Array<{ message: { content: string } }> };
     const text = payload.choices?.[0]?.message?.content ?? "";
-    let json: Record<string, unknown> | null = null;
-    if (data.json) {
-      try { json = JSON.parse(text) as Record<string, unknown>; } catch { json = null; }
-    }
-    const result: AiResult = { text, json };
 
     if (data.cacheKey) {
-      await context.supabase.from("ai_cache").insert({ cache_key: data.cacheKey, payload: result as unknown as Record<string, unknown> });
+      await context.supabase.from("ai_cache").insert({ cache_key: data.cacheKey, payload: { text } });
     }
 
-    return result;
+    return { text };
   });
+
+export function parseAiJson<T = Record<string, unknown>>(text: string): T | null {
+  try {
+    const cleaned = text.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "").trim();
+    return JSON.parse(cleaned) as T;
+  } catch { return null; }
+}
