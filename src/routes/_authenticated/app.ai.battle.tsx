@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { aiGenerate } from "@/lib/ai.functions";
 
 export const Route = createFileRoute("/_authenticated/app/ai/battle")({
-  component: Battle;
+  component: Battle,
 });
 
 type Q = { q: string; options: string[]; answer: number };

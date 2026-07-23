@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Sparkles, MessageSquare, Map, Network, Activity, Repeat, BarChart3, FileQuestion, Swords, Compass } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/app/ai")({
+export const Route = createFileRoute("/_authenticated/app/ai/")({
   component: AiHub,
 });
 
