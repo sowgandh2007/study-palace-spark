@@ -308,29 +308,37 @@ function LeaderPane({ userId }: { userId: string }) {
     queryKey: ["mastery-lb", metric, scope, friendIds.length],
     queryFn: async () => {
       const idsFilter = scope === "Friends" ? friendIds : null;
+      const attachProfiles = async (userIds: string[]) => {
+        if (!userIds.length) return new Map<string, { display_name: string; title: string | null }>();
+        const { data } = await supabase.from("profiles").select("id,display_name,title").in("id", userIds);
+        return new Map((data ?? []).map(p => [p.id, { display_name: p.display_name, title: p.title }]));
+      };
+
       if (metric === "mastery") {
-        let q = supabase.from("subject_mastery").select("user_id,subject,mastery,profiles:profiles!subject_mastery_user_id_fkey(display_name,title)").order("mastery", { ascending: false }).limit(50);
+        let q = supabase.from("subject_mastery").select("user_id,subject,mastery").order("mastery", { ascending: false }).limit(50);
         if (idsFilter) q = q.in("user_id", idsFilter);
         const { data } = await q;
-        return (data ?? []).map((r: any) => ({ user_id: r.user_id, name: r.profiles?.display_name ?? "—", title: r.subject, value: `${Math.round(Number(r.mastery))}%` }));
+        const profMap = await attachProfiles((data ?? []).map(r => r.user_id));
+        return (data ?? []).map(r => ({ user_id: r.user_id, name: profMap.get(r.user_id)?.display_name ?? "—", title: r.subject, value: `${Math.round(Number(r.mastery))}%` }));
       }
       if (metric === "accuracy") {
-        let q = supabase.from("subject_mastery").select("user_id,accuracy,quizzes_count,profiles:profiles!subject_mastery_user_id_fkey(display_name,title)").gt("quizzes_count", 2).order("accuracy", { ascending: false }).limit(50);
+        let q = supabase.from("subject_mastery").select("user_id,accuracy,quizzes_count").gt("quizzes_count", 2).order("accuracy", { ascending: false }).limit(50);
         if (idsFilter) q = q.in("user_id", idsFilter);
         const { data } = await q;
-        return (data ?? []).map((r: any) => ({ user_id: r.user_id, name: r.profiles?.display_name ?? "—", title: `${r.quizzes_count} quizzes`, value: `${Math.round(Number(r.accuracy))}%` }));
+        const profMap = await attachProfiles((data ?? []).map(r => r.user_id));
+        return (data ?? []).map(r => ({ user_id: r.user_id, name: profMap.get(r.user_id)?.display_name ?? "—", title: `${r.quizzes_count} quizzes`, value: `${Math.round(Number(r.accuracy))}%` }));
       }
       if (metric === "consistency") {
         let q = supabase.from("profiles").select("id,display_name,title,streak").order("streak", { ascending: false }).limit(50);
         if (idsFilter) q = q.in("id", idsFilter);
         const { data } = await q;
-        return (data ?? []).map((r: any) => ({ user_id: r.id, name: r.display_name, title: r.title, value: `${r.streak}d` }));
+        return (data ?? []).map(r => ({ user_id: r.id, name: r.display_name, title: r.title ?? "", value: `${r.streak}d` }));
       }
-      // improved: based on weekly challenge "improve_subject" progress
-      let q = supabase.from("weekly_challenges").select("user_id,progress,profiles:profiles!weekly_challenges_user_id_fkey(display_name,title)").eq("kind", "improve_subject").order("progress", { ascending: false }).limit(50);
+      let q = supabase.from("weekly_challenges").select("user_id,progress").eq("kind", "improve_subject").order("progress", { ascending: false }).limit(50);
       if (idsFilter) q = q.in("user_id", idsFilter);
       const { data } = await q;
-      return (data ?? []).map((r: any) => ({ user_id: r.user_id, name: r.profiles?.display_name ?? "—", title: "This week", value: `+${r.progress}%` }));
+      const profMap = await attachProfiles((data ?? []).map(r => r.user_id));
+      return (data ?? []).map(r => ({ user_id: r.user_id, name: profMap.get(r.user_id)?.display_name ?? "—", title: "This week", value: `+${r.progress}%` }));
     },
   });
 
