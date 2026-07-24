@@ -18,7 +18,11 @@ function Missions() {
     queryFn: async () => (await supabase.auth.getUser()).data.user?.id ?? null,
   });
 
-  useEffect(() => { if (userId) ensureDailyMissions(userId); }, [userId]);
+  useEffect(() => {
+    if (!userId) return;
+    ensureDailyMissions(userId);
+    ensureWeeklyChallenges(userId).then(() => refreshWeeklyChallengeProgress(userId)).then(() => qc.invalidateQueries({ queryKey: ["weekly_challenges", userId] }));
+  }, [userId, qc]);
 
   const { data: missions = [] } = useQuery({
     queryKey: ["mission-list", userId],
@@ -28,6 +32,12 @@ function Missions() {
       const { data } = await supabase.from("missions").select("*").eq("user_id", userId!).eq("day", today).order("id");
       return data ?? [];
     },
+  });
+
+  const { data: weekly = [] } = useQuery({
+    queryKey: ["weekly_challenges", userId],
+    enabled: !!userId,
+    queryFn: async () => (await supabase.from("weekly_challenges").select("*").eq("user_id", userId!).order("created_at")).data ?? [],
   });
 
   async function complete(m: any) {
