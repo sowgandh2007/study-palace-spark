@@ -246,7 +246,7 @@ export async function refreshWeeklyChallengeProgress(userId: string) {
       if (ch.reward_badge_id) {
         await supabase.from("user_badges").upsert({ user_id: userId, badge_id: ch.reward_badge_id }, { onConflict: "user_id,badge_id" });
       }
-      await supabase.from("notifications").insert({ user_id: userId, kind: "challenge_complete", title: `Weekly challenge complete: ${ch.title}`, body: `+${ch.reward_xp} XP · +${ch.reward_coins} coins` });
+      await supabase.from("notifications").insert({ user_id: userId, kind: "mission_complete", title: `Weekly challenge complete: ${ch.title}`, body: `+${ch.reward_xp} XP · +${ch.reward_coins} coins` });
     }
   }
 }
