@@ -139,11 +139,31 @@ function Profile() {
       </section>
 
       <section className="mt-5">
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="flex items-center gap-2 text-sm font-bold"><Award className="h-4 w-4" /> Mastery</h2>
+          <Link to="/app/mastery" className="text-[11px] font-semibold text-primary">View all</Link>
+        </div>
+        <div className="space-y-2">
+          {mastery.length === 0 && <p className="text-xs text-muted-foreground">Take a quiz to start earning mastery.</p>}
+          {mastery.map((s: any) => {
+            const m = Number(s.mastery);
+            const bg = m >= 85 ? "bg-success" : m >= 65 ? "bg-primary" : m >= 40 ? "bg-warning" : "bg-destructive";
+            return (
+              <div key={s.subject} className="rounded-2xl border border-border bg-card p-3">
+                <div className="mb-1.5 flex items-center justify-between text-xs"><span className="font-semibold">{s.subject}</span><span className="font-bold">{Math.round(m)}%</span></div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-muted"><div className={"h-full " + bg} style={{ width: `${m}%` }} /></div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="mt-5">
         <h2 className="mb-2 flex items-center gap-2 text-sm font-bold"><Award className="h-4 w-4" /> Badges</h2>
         <div className="flex flex-wrap gap-2">
           {badges.length === 0 && <p className="text-xs text-muted-foreground">Earn your first badge by completing missions.</p>}
           {badges.map((b: any) => (
-            <div key={b.id} className="rounded-2xl border border-border bg-card px-3 py-2 text-xs font-semibold">🏆 {b.badges?.name}</div>
+            <div key={b.id} className="rounded-2xl border border-border bg-card px-3 py-2 text-xs font-semibold">{b.badges?.icon ?? "🏆"} {b.badges?.name}</div>
           ))}
         </div>
       </section>
