@@ -161,9 +161,10 @@ function Profile() {
         </ul>
       </section>
 
-      <div className="mt-6 grid grid-cols-2 gap-2">
-        <Link to="/app/skills" className="rounded-2xl border border-border bg-card p-3 text-center text-sm font-semibold">Skill Tree</Link>
-        <Link to="/app/notifications" className="rounded-2xl border border-border bg-card p-3 text-center text-sm font-semibold">Notifications</Link>
+      <div className="mt-6 grid grid-cols-3 gap-2">
+        <Link to="/app/mastery" className="rounded-2xl gradient-brand p-3 text-center text-xs font-semibold text-primary-foreground glow">Mastery</Link>
+        <Link to="/app/skills" className="rounded-2xl border border-border bg-card p-3 text-center text-xs font-semibold">Skill Tree</Link>
+        <Link to="/app/notifications" className="rounded-2xl border border-border bg-card p-3 text-center text-xs font-semibold">Alerts</Link>
       </div>
     </div>
   );
