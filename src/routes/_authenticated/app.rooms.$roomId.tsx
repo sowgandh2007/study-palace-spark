@@ -94,7 +94,12 @@ function MembersTab({ roomId, meId }: { roomId: string; meId: string | null }) {
     queryKey: ["members", roomId],
     queryFn: async () => {
       const { data } = await supabase.from("room_members").select("*, profiles(*)").eq("room_id", roomId);
-      return data ?? [];
+      const ids = (data ?? []).map((m: any) => m.user_id);
+      if (!ids.length) return data ?? [];
+      const { data: sm } = await supabase.from("subject_mastery").select("user_id,subject,mastery").in("user_id", ids).order("mastery", { ascending: false });
+      const topBy: Record<string, { subject: string; mastery: number }> = {};
+      (sm ?? []).forEach((r: any) => { if (!topBy[r.user_id]) topBy[r.user_id] = { subject: r.subject, mastery: Number(r.mastery) }; });
+      return (data ?? []).map((m: any) => ({ ...m, topMastery: topBy[m.user_id] ?? null }));
     },
   });
 
