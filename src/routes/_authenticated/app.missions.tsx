@@ -1,10 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { toast } from "sonner";
-import { Target, Check, Coins, Zap } from "lucide-react";
+import { Target, Check, Coins, Zap, Trophy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureDailyMissions } from "@/lib/studysphere";
+import { ensureWeeklyChallenges, refreshWeeklyChallengeProgress } from "@/lib/mastery";
 
 export const Route = createFileRoute("/_authenticated/app/missions")({
   component: Missions,
