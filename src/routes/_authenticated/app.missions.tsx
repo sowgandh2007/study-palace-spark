@@ -82,6 +82,37 @@ function Missions() {
           </li>
         ))}
       </ul>
+
+      <div className="mt-8 mb-3 flex items-center justify-between">
+        <h2 className="flex items-center gap-2 text-lg font-black"><Trophy className="h-5 w-5 text-primary" /> Weekly Challenges</h2>
+        <Link to="/app/mastery" className="text-[11px] font-semibold text-primary">Mastery hub</Link>
+      </div>
+      <ul className="space-y-3">
+        {weekly.length === 0 && <p className="text-xs text-muted-foreground">Challenges refresh every Monday.</p>}
+        {weekly.map((c) => (
+          <li key={c.id} className={"rounded-3xl border p-4 " + (c.completed ? "border-success/40 bg-success/10" : "border-border bg-card")}>
+            <div className="flex items-start gap-3">
+              <div className={"grid h-10 w-10 shrink-0 place-items-center rounded-2xl " + (c.completed ? "bg-success/20 text-success" : "gradient-fire text-white")}>
+                <Trophy className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-bold">{c.title}</p>
+                {c.description && <p className="text-xs text-muted-foreground">{c.description}</p>}
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                  <div className="h-full gradient-brand" style={{ width: `${Math.min(100, (c.progress / c.target) * 100)}%` }} />
+                </div>
+                <div className="mt-2 flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">{c.progress}/{c.target}</span>
+                  <div className="flex gap-2 font-semibold">
+                    <span className="flex items-center gap-1 text-primary"><Zap className="h-3 w-3" /> {c.reward_xp}</span>
+                    <span className="flex items-center gap-1 text-warning"><Coins className="h-3 w-3" /> {c.reward_coins}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
