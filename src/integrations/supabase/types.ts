@@ -763,6 +763,75 @@ export type Database = {
         }
         Relationships: []
       }
+      subject_mastery: {
+        Row: {
+          accuracy: number
+          chapters_done: number
+          difficulty_bonus: number
+          id: string
+          mastery: number
+          quizzes_count: number
+          revision_score: number
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accuracy?: number
+          chapters_done?: number
+          difficulty_bonus?: number
+          id?: string
+          mastery?: number
+          quizzes_count?: number
+          revision_score?: number
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accuracy?: number
+          chapters_done?: number
+          difficulty_bonus?: number
+          id?: string
+          mastery?: number
+          quizzes_count?: number
+          revision_score?: number
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      topic_mastery: {
+        Row: {
+          attempts: number
+          id: string
+          mastery: number
+          subject: string
+          topic: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          id?: string
+          mastery?: number
+          subject: string
+          topic: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          id?: string
+          mastery?: number
+          subject?: string
+          topic?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_badges: {
         Row: {
           badge_id: string
@@ -807,6 +876,60 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      weekly_challenges: {
+        Row: {
+          completed: boolean
+          created_at: string
+          description: string | null
+          id: string
+          kind: string
+          meta: Json
+          progress: number
+          reward_badge_id: string | null
+          reward_coins: number
+          reward_xp: number
+          target: number
+          title: string
+          updated_at: string
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          kind: string
+          meta?: Json
+          progress?: number
+          reward_badge_id?: string | null
+          reward_coins?: number
+          reward_xp?: number
+          target?: number
+          title: string
+          updated_at?: string
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          kind?: string
+          meta?: Json
+          progress?: number
+          reward_badge_id?: string | null
+          reward_coins?: number
+          reward_xp?: number
+          target?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+          week_start?: string
         }
         Relationships: []
       }

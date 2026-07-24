@@ -18,6 +18,7 @@ import { Route as AuthenticatedAppSkillsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAppProfileRouteImport } from './routes/_authenticated/app.profile'
 import { Route as AuthenticatedAppNotificationsRouteImport } from './routes/_authenticated/app.notifications'
 import { Route as AuthenticatedAppMissionsRouteImport } from './routes/_authenticated/app.missions'
+import { Route as AuthenticatedAppMasteryRouteImport } from './routes/_authenticated/app.mastery'
 import { Route as AuthenticatedAppLeaderboardRouteImport } from './routes/_authenticated/app.leaderboard'
 import { Route as AuthenticatedAppRoomsIndexRouteImport } from './routes/_authenticated/app.rooms.index'
 import { Route as AuthenticatedAppAiIndexRouteImport } from './routes/_authenticated/app.ai.index'
@@ -78,6 +79,11 @@ const AuthenticatedAppMissionsRoute =
     path: '/missions',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppMasteryRoute = AuthenticatedAppMasteryRouteImport.update({
+  id: '/mastery',
+  path: '/mastery',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
 const AuthenticatedAppLeaderboardRoute =
   AuthenticatedAppLeaderboardRouteImport.update({
     id: '/leaderboard',
@@ -160,6 +166,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/app/leaderboard': typeof AuthenticatedAppLeaderboardRoute
+  '/app/mastery': typeof AuthenticatedAppMasteryRoute
   '/app/missions': typeof AuthenticatedAppMissionsRoute
   '/app/notifications': typeof AuthenticatedAppNotificationsRoute
   '/app/profile': typeof AuthenticatedAppProfileRoute
@@ -182,6 +189,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/app/leaderboard': typeof AuthenticatedAppLeaderboardRoute
+  '/app/mastery': typeof AuthenticatedAppMasteryRoute
   '/app/missions': typeof AuthenticatedAppMissionsRoute
   '/app/notifications': typeof AuthenticatedAppNotificationsRoute
   '/app/profile': typeof AuthenticatedAppProfileRoute
@@ -207,6 +215,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/_authenticated/app/leaderboard': typeof AuthenticatedAppLeaderboardRoute
+  '/_authenticated/app/mastery': typeof AuthenticatedAppMasteryRoute
   '/_authenticated/app/missions': typeof AuthenticatedAppMissionsRoute
   '/_authenticated/app/notifications': typeof AuthenticatedAppNotificationsRoute
   '/_authenticated/app/profile': typeof AuthenticatedAppProfileRoute
@@ -232,6 +241,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/app'
     | '/app/leaderboard'
+    | '/app/mastery'
     | '/app/missions'
     | '/app/notifications'
     | '/app/profile'
@@ -254,6 +264,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/app/leaderboard'
+    | '/app/mastery'
     | '/app/missions'
     | '/app/notifications'
     | '/app/profile'
@@ -278,6 +289,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/app'
     | '/_authenticated/app/leaderboard'
+    | '/_authenticated/app/mastery'
     | '/_authenticated/app/missions'
     | '/_authenticated/app/notifications'
     | '/_authenticated/app/profile'
@@ -366,6 +378,13 @@ declare module '@tanstack/react-router' {
       path: '/missions'
       fullPath: '/app/missions'
       preLoaderRoute: typeof AuthenticatedAppMissionsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/mastery': {
+      id: '/_authenticated/app/mastery'
+      path: '/mastery'
+      fullPath: '/app/mastery'
+      preLoaderRoute: typeof AuthenticatedAppMasteryRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/leaderboard': {
@@ -464,6 +483,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAppRouteChildren {
   AuthenticatedAppLeaderboardRoute: typeof AuthenticatedAppLeaderboardRoute
+  AuthenticatedAppMasteryRoute: typeof AuthenticatedAppMasteryRoute
   AuthenticatedAppMissionsRoute: typeof AuthenticatedAppMissionsRoute
   AuthenticatedAppNotificationsRoute: typeof AuthenticatedAppNotificationsRoute
   AuthenticatedAppProfileRoute: typeof AuthenticatedAppProfileRoute
@@ -485,6 +505,7 @@ interface AuthenticatedAppRouteChildren {
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppLeaderboardRoute: AuthenticatedAppLeaderboardRoute,
+  AuthenticatedAppMasteryRoute: AuthenticatedAppMasteryRoute,
   AuthenticatedAppMissionsRoute: AuthenticatedAppMissionsRoute,
   AuthenticatedAppNotificationsRoute: AuthenticatedAppNotificationsRoute,
   AuthenticatedAppProfileRoute: AuthenticatedAppProfileRoute,
