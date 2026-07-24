@@ -48,6 +48,12 @@ function Profile() {
     queryFn: async () => (await supabase.from("user_badges").select("*, badges(*)").eq("user_id", profile!.id)).data ?? [],
   });
 
+  const { data: mastery = [] } = useQuery({
+    queryKey: ["profile-mastery", profile?.id],
+    enabled: !!profile,
+    queryFn: async () => (await supabase.from("subject_mastery").select("subject,mastery").eq("user_id", profile!.id).order("mastery", { ascending: false }).limit(4)).data ?? [],
+  });
+
   const days = useMemo(() => {
     const arr: { day: string; minutes: number }[] = [];
     for (let i = 83; i >= 0; i--) {
