@@ -137,6 +137,11 @@ function MembersTab({ roomId, meId }: { roomId: string; meId: string | null }) {
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">
                   {m.subject || "Free study"} {m.topic ? "· " + m.topic : ""}
                 </p>
+                {m.topMastery && (
+                  <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                    🎯 {m.topMastery.subject} {Math.round(m.topMastery.mastery)}%
+                  </p>
+                )}
               </div>
             </div>
             <div className="mt-3 grid grid-cols-4 gap-2 text-center text-[10px] text-muted-foreground">
