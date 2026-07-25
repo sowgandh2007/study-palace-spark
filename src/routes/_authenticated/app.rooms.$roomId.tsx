@@ -524,8 +524,8 @@ function TasksTab({ roomId, meId }: { roomId: string; meId: string | null }) {
               {t.done && <Check className="h-3.5 w-3.5" />}
             </button>
             <div className="min-w-0 flex-1">
-              {editing?.id === t.id ? (
-                <input autoFocus value={editing.title} onChange={(e) => setEditing({ id: editing.id, title: e.target.value })}
+              {editing && editing.id === t.id ? (
+                <input autoFocus value={editing.title} onChange={(e) => setEditing({ id: editing!.id, title: e.target.value })}
                   onBlur={saveEdit} onKeyDown={(e) => e.key === "Enter" && saveEdit()}
                   className="w-full rounded-md border border-border bg-background px-2 py-1 text-sm outline-none" />
               ) : (
