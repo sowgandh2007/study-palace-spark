@@ -463,6 +463,13 @@ export type Database = {
             referencedRelation: "rooms"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "messages_user_profile_fk"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       missions: {
@@ -624,6 +631,112 @@ export type Database = {
             referencedRelation: "rooms"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "resources_user_profile_fk"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_events: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          message: string
+          meta: Json | null
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          message: string
+          meta?: Json | null
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          message?: string
+          meta?: Json | null
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_events_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_goals: {
+        Row: {
+          created_at: string
+          due_date: string | null
+          id: string
+          progress: number
+          room_id: string
+          target: number
+          title: string
+          unit: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          progress?: number
+          room_id: string
+          target?: number
+          title: string
+          unit?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          progress?: number
+          room_id?: string
+          target?: number
+          title?: string
+          unit?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_goals_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_goals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       room_members: {
@@ -680,34 +793,182 @@ export type Database = {
             referencedRelation: "rooms"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "room_members_user_profile_fk"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_poll_votes: {
+        Row: {
+          created_at: string
+          id: string
+          option_idx: number
+          poll_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          option_idx: number
+          poll_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          option_idx?: number
+          poll_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_poll_votes_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "room_polls"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_poll_votes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_polls: {
+        Row: {
+          closed: boolean
+          created_at: string
+          id: string
+          options: Json
+          question: string
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          closed?: boolean
+          created_at?: string
+          id?: string
+          options?: Json
+          question: string
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          closed?: boolean
+          created_at?: string
+          id?: string
+          options?: Json
+          question?: string
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_polls_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_polls_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_todos: {
+        Row: {
+          created_at: string
+          done: boolean
+          done_by: string | null
+          id: string
+          room_id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          done?: boolean
+          done_by?: string | null
+          id?: string
+          room_id: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          done?: boolean
+          done_by?: string | null
+          id?: string
+          room_id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_todos_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_todos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       rooms: {
         Row: {
+          break_ends_at: string | null
           code: string
           created_at: string
           id: string
           is_public: boolean
           name: string
           owner_id: string
+          playlist_kind: string | null
+          playlist_url: string | null
           subject: string | null
         }
         Insert: {
+          break_ends_at?: string | null
           code: string
           created_at?: string
           id?: string
           is_public?: boolean
           name: string
           owner_id: string
+          playlist_kind?: string | null
+          playlist_url?: string | null
           subject?: string | null
         }
         Update: {
+          break_ends_at?: string | null
           code?: string
           created_at?: string
           id?: string
           is_public?: boolean
           name?: string
           owner_id?: string
+          playlist_kind?: string | null
+          playlist_url?: string | null
           subject?: string | null
         }
         Relationships: []
