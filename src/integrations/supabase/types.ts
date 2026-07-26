@@ -268,38 +268,80 @@ export type Database = {
         Row: {
           completed: boolean
           created_at: string
-          day: string
+          day: string | null
+          description: string | null
+          difficulty: string | null
           id: string
           kind: string
           minutes: number
+          node_key: string | null
+          notes: string | null
+          order_index: number | null
+          position_x: number | null
+          position_y: number | null
+          practice_task: string | null
+          prereq_ids: string[] | null
           roadmap_id: string
           subject: string | null
           title: string
           user_id: string
+          youtube_channel: string | null
+          youtube_thumbnail: string | null
+          youtube_title: string | null
+          youtube_url: string | null
+          youtube_video_id: string | null
         }
         Insert: {
           completed?: boolean
           created_at?: string
-          day: string
+          day?: string | null
+          description?: string | null
+          difficulty?: string | null
           id?: string
           kind: string
           minutes?: number
+          node_key?: string | null
+          notes?: string | null
+          order_index?: number | null
+          position_x?: number | null
+          position_y?: number | null
+          practice_task?: string | null
+          prereq_ids?: string[] | null
           roadmap_id: string
           subject?: string | null
           title: string
           user_id: string
+          youtube_channel?: string | null
+          youtube_thumbnail?: string | null
+          youtube_title?: string | null
+          youtube_url?: string | null
+          youtube_video_id?: string | null
         }
         Update: {
           completed?: boolean
           created_at?: string
-          day?: string
+          day?: string | null
+          description?: string | null
+          difficulty?: string | null
           id?: string
           kind?: string
           minutes?: number
+          node_key?: string | null
+          notes?: string | null
+          order_index?: number | null
+          position_x?: number | null
+          position_y?: number | null
+          practice_task?: string | null
+          prereq_ids?: string[] | null
           roadmap_id?: string
           subject?: string | null
           title?: string
           user_id?: string
+          youtube_channel?: string | null
+          youtube_thumbnail?: string | null
+          youtube_title?: string | null
+          youtube_url?: string | null
+          youtube_video_id?: string | null
         }
         Relationships: [
           {
@@ -313,10 +355,16 @@ export type Database = {
       }
       ai_roadmaps: {
         Row: {
+          archived: boolean
+          color: string | null
           created_at: string
+          description: string | null
+          estimated_hours: number | null
           exam: string
           hours_per_day: number
           id: string
+          kind: string | null
+          name: string | null
           plan: Json
           strong_topics: string[]
           subjects: string[]
@@ -326,10 +374,16 @@ export type Database = {
           weak_topics: string[]
         }
         Insert: {
+          archived?: boolean
+          color?: string | null
           created_at?: string
+          description?: string | null
+          estimated_hours?: number | null
           exam: string
           hours_per_day?: number
           id?: string
+          kind?: string | null
+          name?: string | null
           plan?: Json
           strong_topics?: string[]
           subjects?: string[]
@@ -339,10 +393,16 @@ export type Database = {
           weak_topics?: string[]
         }
         Update: {
+          archived?: boolean
+          color?: string | null
           created_at?: string
+          description?: string | null
+          estimated_hours?: number | null
           exam?: string
           hours_per_day?: number
           id?: string
+          kind?: string | null
+          name?: string | null
           plan?: Json
           strong_topics?: string[]
           subjects?: string[]
