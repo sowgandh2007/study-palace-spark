@@ -33,7 +33,7 @@ function Landing() {
           <div className="mt-10 grid grid-cols-2 gap-3">
             <FeatureChip icon={<Users className="h-4 w-4" />} label="Multiplayer rooms" />
             <FeatureChip icon={<Flame className="h-4 w-4" />} label="Daily streaks" />
-            <FeatureChip icon={<Trophy className="h-4 w-4" />} label="Leaderboards" />
+            <FeatureChip icon={<Map className="h-4 w-4" />} label="AI Roadmaps" />
             <FeatureChip icon={<Sparkles className="h-4 w-4" />} label="AI missions" />
           </div>
         </div>
