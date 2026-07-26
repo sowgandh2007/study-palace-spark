@@ -128,7 +128,7 @@ Generate ${form.nodeCount} nodes forming a learning tree from fundamentals (top,
     const { data: orig } = await supabase.from("ai_roadmaps").select("*").eq("id", id).single();
     if (!orig) return;
     const { id: _o, created_at: _c, updated_at: _u, ...rest } = orig as Record<string, unknown> & { id: string; created_at: string; updated_at: string };
-    const { data: newRm } = await supabase.from("ai_roadmaps").insert({ ...(rest as never), name: `${name} (copy)`, archived: false } as never).select("*").single();
+    const { data: newRm } = await supabase.from("ai_roadmaps").insert({ ...(rest as Record<string, unknown>), name: `${name} (copy)`, archived: false } as never).select("*").single();
     if (!newRm) return;
     const { data: tasks } = await supabase.from("ai_roadmap_tasks").select("*").eq("roadmap_id", id);
     if (tasks?.length) {
