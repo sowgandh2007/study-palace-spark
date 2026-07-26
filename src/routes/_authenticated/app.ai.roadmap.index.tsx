@@ -89,7 +89,7 @@ Generate ${form.nodeCount} nodes forming a learning tree from fundamentals (top,
         hours_per_day: 2,
         estimated_hours: parsed.estimated_hours ?? parsed.nodes.reduce((s, n) => s + (n.minutes ?? 30), 0) / 60,
         kind: "skill_tree",
-        plan: parsed as unknown as Record<string, unknown>,
+        plan: parsed as never,
       }).select("*").single();
       if (!rm) throw new Error("Failed to save roadmap");
 
@@ -128,7 +128,7 @@ Generate ${form.nodeCount} nodes forming a learning tree from fundamentals (top,
     const { data: orig } = await supabase.from("ai_roadmaps").select("*").eq("id", id).single();
     if (!orig) return;
     const { id: _o, created_at: _c, updated_at: _u, ...rest } = orig as Record<string, unknown> & { id: string; created_at: string; updated_at: string };
-    const { data: newRm } = await supabase.from("ai_roadmaps").insert({ ...rest, name: `${name} (copy)`, archived: false }).select("*").single();
+    const { data: newRm } = await supabase.from("ai_roadmaps").insert({ ...(rest as never), name: `${name} (copy)`, archived: false } as never).select("*").single();
     if (!newRm) return;
     const { data: tasks } = await supabase.from("ai_roadmap_tasks").select("*").eq("roadmap_id", id);
     if (tasks?.length) {
@@ -136,7 +136,7 @@ Generate ${form.nodeCount} nodes forming a learning tree from fundamentals (top,
         const { id: _i, created_at: _c2, roadmap_id: _r, completed: _cp, ...rt } = t as Record<string, unknown> & { id: string; created_at: string; roadmap_id: string; completed: boolean };
         return { ...rt, roadmap_id: newRm.id, completed: false };
       });
-      await supabase.from("ai_roadmap_tasks").insert(rows);
+      await supabase.from("ai_roadmap_tasks").insert(rows as never);
     }
     qc.invalidateQueries({ queryKey: ["roadmaps", uid] });
   }

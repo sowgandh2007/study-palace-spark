@@ -17,6 +17,7 @@ import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAppSkillsRouteImport } from './routes/_authenticated/app.skills'
 import { Route as AuthenticatedAppProfileRouteImport } from './routes/_authenticated/app.profile'
 import { Route as AuthenticatedAppNotificationsRouteImport } from './routes/_authenticated/app.notifications'
+import { Route as AuthenticatedAppMusicRouteImport } from './routes/_authenticated/app.music'
 import { Route as AuthenticatedAppMissionsRouteImport } from './routes/_authenticated/app.missions'
 import { Route as AuthenticatedAppMasteryRouteImport } from './routes/_authenticated/app.mastery'
 import { Route as AuthenticatedAppRoomsIndexRouteImport } from './routes/_authenticated/app.rooms.index'
@@ -30,6 +31,8 @@ import { Route as AuthenticatedAppAiCareerRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAppAiBattleRouteImport } from './routes/_authenticated/app.ai.battle'
 import { Route as AuthenticatedAppAiAssistantRouteImport } from './routes/_authenticated/app.ai.assistant'
 import { Route as AuthenticatedAppAiAnalyticsRouteImport } from './routes/_authenticated/app.ai.analytics'
+import { Route as AuthenticatedAppAiRoadmapIndexRouteImport } from './routes/_authenticated/app.ai.roadmap.index'
+import { Route as AuthenticatedAppAiRoadmapRoadmapIdRouteImport } from './routes/_authenticated/app.ai.roadmap.$roadmapId'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -71,6 +74,11 @@ const AuthenticatedAppNotificationsRoute =
     path: '/notifications',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppMusicRoute = AuthenticatedAppMusicRouteImport.update({
+  id: '/music',
+  path: '/music',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
 const AuthenticatedAppMissionsRoute =
   AuthenticatedAppMissionsRouteImport.update({
     id: '/missions',
@@ -146,6 +154,18 @@ const AuthenticatedAppAiAnalyticsRoute =
     path: '/ai/analytics',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppAiRoadmapIndexRoute =
+  AuthenticatedAppAiRoadmapIndexRouteImport.update({
+    id: '/ai/roadmap/',
+    path: '/ai/roadmap/',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppAiRoadmapRoadmapIdRoute =
+  AuthenticatedAppAiRoadmapRoadmapIdRouteImport.update({
+    id: '/ai/roadmap/$roadmapId',
+    path: '/ai/roadmap/$roadmapId',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -153,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/app/mastery': typeof AuthenticatedAppMasteryRoute
   '/app/missions': typeof AuthenticatedAppMissionsRoute
+  '/app/music': typeof AuthenticatedAppMusicRoute
   '/app/notifications': typeof AuthenticatedAppNotificationsRoute
   '/app/profile': typeof AuthenticatedAppProfileRoute
   '/app/skills': typeof AuthenticatedAppSkillsRoute
@@ -168,12 +189,15 @@ export interface FileRoutesByFullPath {
   '/app/rooms/$roomId': typeof AuthenticatedAppRoomsRoomIdRoute
   '/app/ai/': typeof AuthenticatedAppAiIndexRoute
   '/app/rooms/': typeof AuthenticatedAppRoomsIndexRoute
+  '/app/ai/roadmap/$roadmapId': typeof AuthenticatedAppAiRoadmapRoadmapIdRoute
+  '/app/ai/roadmap/': typeof AuthenticatedAppAiRoadmapIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/app/mastery': typeof AuthenticatedAppMasteryRoute
   '/app/missions': typeof AuthenticatedAppMissionsRoute
+  '/app/music': typeof AuthenticatedAppMusicRoute
   '/app/notifications': typeof AuthenticatedAppNotificationsRoute
   '/app/profile': typeof AuthenticatedAppProfileRoute
   '/app/skills': typeof AuthenticatedAppSkillsRoute
@@ -189,6 +213,8 @@ export interface FileRoutesByTo {
   '/app/rooms/$roomId': typeof AuthenticatedAppRoomsRoomIdRoute
   '/app/ai': typeof AuthenticatedAppAiIndexRoute
   '/app/rooms': typeof AuthenticatedAppRoomsIndexRoute
+  '/app/ai/roadmap/$roadmapId': typeof AuthenticatedAppAiRoadmapRoadmapIdRoute
+  '/app/ai/roadmap': typeof AuthenticatedAppAiRoadmapIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -198,6 +224,7 @@ export interface FileRoutesById {
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/_authenticated/app/mastery': typeof AuthenticatedAppMasteryRoute
   '/_authenticated/app/missions': typeof AuthenticatedAppMissionsRoute
+  '/_authenticated/app/music': typeof AuthenticatedAppMusicRoute
   '/_authenticated/app/notifications': typeof AuthenticatedAppNotificationsRoute
   '/_authenticated/app/profile': typeof AuthenticatedAppProfileRoute
   '/_authenticated/app/skills': typeof AuthenticatedAppSkillsRoute
@@ -213,6 +240,8 @@ export interface FileRoutesById {
   '/_authenticated/app/rooms/$roomId': typeof AuthenticatedAppRoomsRoomIdRoute
   '/_authenticated/app/ai/': typeof AuthenticatedAppAiIndexRoute
   '/_authenticated/app/rooms/': typeof AuthenticatedAppRoomsIndexRoute
+  '/_authenticated/app/ai/roadmap/$roadmapId': typeof AuthenticatedAppAiRoadmapRoadmapIdRoute
+  '/_authenticated/app/ai/roadmap/': typeof AuthenticatedAppAiRoadmapIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -222,6 +251,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/app/mastery'
     | '/app/missions'
+    | '/app/music'
     | '/app/notifications'
     | '/app/profile'
     | '/app/skills'
@@ -237,12 +267,15 @@ export interface FileRouteTypes {
     | '/app/rooms/$roomId'
     | '/app/ai/'
     | '/app/rooms/'
+    | '/app/ai/roadmap/$roadmapId'
+    | '/app/ai/roadmap/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/app/mastery'
     | '/app/missions'
+    | '/app/music'
     | '/app/notifications'
     | '/app/profile'
     | '/app/skills'
@@ -258,6 +291,8 @@ export interface FileRouteTypes {
     | '/app/rooms/$roomId'
     | '/app/ai'
     | '/app/rooms'
+    | '/app/ai/roadmap/$roadmapId'
+    | '/app/ai/roadmap'
   id:
     | '__root__'
     | '/'
@@ -266,6 +301,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app'
     | '/_authenticated/app/mastery'
     | '/_authenticated/app/missions'
+    | '/_authenticated/app/music'
     | '/_authenticated/app/notifications'
     | '/_authenticated/app/profile'
     | '/_authenticated/app/skills'
@@ -281,6 +317,8 @@ export interface FileRouteTypes {
     | '/_authenticated/app/rooms/$roomId'
     | '/_authenticated/app/ai/'
     | '/_authenticated/app/rooms/'
+    | '/_authenticated/app/ai/roadmap/$roadmapId'
+    | '/_authenticated/app/ai/roadmap/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -345,6 +383,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/app/notifications'
       preLoaderRoute: typeof AuthenticatedAppNotificationsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/music': {
+      id: '/_authenticated/app/music'
+      path: '/music'
+      fullPath: '/app/music'
+      preLoaderRoute: typeof AuthenticatedAppMusicRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/missions': {
@@ -438,12 +483,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppAiAnalyticsRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/ai/roadmap/': {
+      id: '/_authenticated/app/ai/roadmap/'
+      path: '/ai/roadmap'
+      fullPath: '/app/ai/roadmap/'
+      preLoaderRoute: typeof AuthenticatedAppAiRoadmapIndexRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/ai/roadmap/$roadmapId': {
+      id: '/_authenticated/app/ai/roadmap/$roadmapId'
+      path: '/ai/roadmap/$roadmapId'
+      fullPath: '/app/ai/roadmap/$roadmapId'
+      preLoaderRoute: typeof AuthenticatedAppAiRoadmapRoadmapIdRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
   }
 }
 
 interface AuthenticatedAppRouteChildren {
   AuthenticatedAppMasteryRoute: typeof AuthenticatedAppMasteryRoute
   AuthenticatedAppMissionsRoute: typeof AuthenticatedAppMissionsRoute
+  AuthenticatedAppMusicRoute: typeof AuthenticatedAppMusicRoute
   AuthenticatedAppNotificationsRoute: typeof AuthenticatedAppNotificationsRoute
   AuthenticatedAppProfileRoute: typeof AuthenticatedAppProfileRoute
   AuthenticatedAppSkillsRoute: typeof AuthenticatedAppSkillsRoute
@@ -459,11 +519,14 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppRoomsRoomIdRoute: typeof AuthenticatedAppRoomsRoomIdRoute
   AuthenticatedAppAiIndexRoute: typeof AuthenticatedAppAiIndexRoute
   AuthenticatedAppRoomsIndexRoute: typeof AuthenticatedAppRoomsIndexRoute
+  AuthenticatedAppAiRoadmapRoadmapIdRoute: typeof AuthenticatedAppAiRoadmapRoadmapIdRoute
+  AuthenticatedAppAiRoadmapIndexRoute: typeof AuthenticatedAppAiRoadmapIndexRoute
 }
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppMasteryRoute: AuthenticatedAppMasteryRoute,
   AuthenticatedAppMissionsRoute: AuthenticatedAppMissionsRoute,
+  AuthenticatedAppMusicRoute: AuthenticatedAppMusicRoute,
   AuthenticatedAppNotificationsRoute: AuthenticatedAppNotificationsRoute,
   AuthenticatedAppProfileRoute: AuthenticatedAppProfileRoute,
   AuthenticatedAppSkillsRoute: AuthenticatedAppSkillsRoute,
@@ -479,6 +542,9 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppRoomsRoomIdRoute: AuthenticatedAppRoomsRoomIdRoute,
   AuthenticatedAppAiIndexRoute: AuthenticatedAppAiIndexRoute,
   AuthenticatedAppRoomsIndexRoute: AuthenticatedAppRoomsIndexRoute,
+  AuthenticatedAppAiRoadmapRoadmapIdRoute:
+    AuthenticatedAppAiRoadmapRoadmapIdRoute,
+  AuthenticatedAppAiRoadmapIndexRoute: AuthenticatedAppAiRoadmapIndexRoute,
 }
 
 const AuthenticatedAppRouteWithChildren =
