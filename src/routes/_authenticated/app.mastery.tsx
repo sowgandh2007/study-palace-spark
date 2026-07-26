@@ -370,9 +370,6 @@ function LeaderPane({ userId }: { userId: string }) {
         ))}
         {rows.length === 0 && <Empty icon={<TrendingUp className="h-8 w-8" />} text="No rankings yet" />}
       </ul>
-      <p className="mt-4 text-center text-[11px] text-muted-foreground">
-        Also see <Link to="/app/leaderboard" className="text-primary underline">classic ranks</Link>
-      </p>
     </div>
   );
 }
