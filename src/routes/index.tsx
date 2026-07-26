@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Sparkles, Users, Trophy, Flame, ArrowRight } from "lucide-react";
+import { Sparkles, Users, Map, Flame, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: Landing,
