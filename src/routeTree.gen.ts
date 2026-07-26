@@ -19,12 +19,10 @@ import { Route as AuthenticatedAppProfileRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAppNotificationsRouteImport } from './routes/_authenticated/app.notifications'
 import { Route as AuthenticatedAppMissionsRouteImport } from './routes/_authenticated/app.missions'
 import { Route as AuthenticatedAppMasteryRouteImport } from './routes/_authenticated/app.mastery'
-import { Route as AuthenticatedAppLeaderboardRouteImport } from './routes/_authenticated/app.leaderboard'
 import { Route as AuthenticatedAppRoomsIndexRouteImport } from './routes/_authenticated/app.rooms.index'
 import { Route as AuthenticatedAppAiIndexRouteImport } from './routes/_authenticated/app.ai.index'
 import { Route as AuthenticatedAppRoomsRoomIdRouteImport } from './routes/_authenticated/app.rooms.$roomId'
 import { Route as AuthenticatedAppAiWeaknessRouteImport } from './routes/_authenticated/app.ai.weakness'
-import { Route as AuthenticatedAppAiRoadmapRouteImport } from './routes/_authenticated/app.ai.roadmap'
 import { Route as AuthenticatedAppAiRevisionRouteImport } from './routes/_authenticated/app.ai.revision'
 import { Route as AuthenticatedAppAiKnowledgeRouteImport } from './routes/_authenticated/app.ai.knowledge'
 import { Route as AuthenticatedAppAiExamRouteImport } from './routes/_authenticated/app.ai.exam'
@@ -84,12 +82,6 @@ const AuthenticatedAppMasteryRoute = AuthenticatedAppMasteryRouteImport.update({
   path: '/mastery',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
-const AuthenticatedAppLeaderboardRoute =
-  AuthenticatedAppLeaderboardRouteImport.update({
-    id: '/leaderboard',
-    path: '/leaderboard',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
 const AuthenticatedAppRoomsIndexRoute =
   AuthenticatedAppRoomsIndexRouteImport.update({
     id: '/rooms/',
@@ -111,12 +103,6 @@ const AuthenticatedAppAiWeaknessRoute =
   AuthenticatedAppAiWeaknessRouteImport.update({
     id: '/ai/weakness',
     path: '/ai/weakness',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppAiRoadmapRoute =
-  AuthenticatedAppAiRoadmapRouteImport.update({
-    id: '/ai/roadmap',
-    path: '/ai/roadmap',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
 const AuthenticatedAppAiRevisionRoute =
@@ -165,7 +151,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/app': typeof AuthenticatedAppRouteWithChildren
-  '/app/leaderboard': typeof AuthenticatedAppLeaderboardRoute
   '/app/mastery': typeof AuthenticatedAppMasteryRoute
   '/app/missions': typeof AuthenticatedAppMissionsRoute
   '/app/notifications': typeof AuthenticatedAppNotificationsRoute
@@ -179,7 +164,6 @@ export interface FileRoutesByFullPath {
   '/app/ai/exam': typeof AuthenticatedAppAiExamRoute
   '/app/ai/knowledge': typeof AuthenticatedAppAiKnowledgeRoute
   '/app/ai/revision': typeof AuthenticatedAppAiRevisionRoute
-  '/app/ai/roadmap': typeof AuthenticatedAppAiRoadmapRoute
   '/app/ai/weakness': typeof AuthenticatedAppAiWeaknessRoute
   '/app/rooms/$roomId': typeof AuthenticatedAppRoomsRoomIdRoute
   '/app/ai/': typeof AuthenticatedAppAiIndexRoute
@@ -188,7 +172,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/app/leaderboard': typeof AuthenticatedAppLeaderboardRoute
   '/app/mastery': typeof AuthenticatedAppMasteryRoute
   '/app/missions': typeof AuthenticatedAppMissionsRoute
   '/app/notifications': typeof AuthenticatedAppNotificationsRoute
@@ -202,7 +185,6 @@ export interface FileRoutesByTo {
   '/app/ai/exam': typeof AuthenticatedAppAiExamRoute
   '/app/ai/knowledge': typeof AuthenticatedAppAiKnowledgeRoute
   '/app/ai/revision': typeof AuthenticatedAppAiRevisionRoute
-  '/app/ai/roadmap': typeof AuthenticatedAppAiRoadmapRoute
   '/app/ai/weakness': typeof AuthenticatedAppAiWeaknessRoute
   '/app/rooms/$roomId': typeof AuthenticatedAppRoomsRoomIdRoute
   '/app/ai': typeof AuthenticatedAppAiIndexRoute
@@ -214,7 +196,6 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
-  '/_authenticated/app/leaderboard': typeof AuthenticatedAppLeaderboardRoute
   '/_authenticated/app/mastery': typeof AuthenticatedAppMasteryRoute
   '/_authenticated/app/missions': typeof AuthenticatedAppMissionsRoute
   '/_authenticated/app/notifications': typeof AuthenticatedAppNotificationsRoute
@@ -228,7 +209,6 @@ export interface FileRoutesById {
   '/_authenticated/app/ai/exam': typeof AuthenticatedAppAiExamRoute
   '/_authenticated/app/ai/knowledge': typeof AuthenticatedAppAiKnowledgeRoute
   '/_authenticated/app/ai/revision': typeof AuthenticatedAppAiRevisionRoute
-  '/_authenticated/app/ai/roadmap': typeof AuthenticatedAppAiRoadmapRoute
   '/_authenticated/app/ai/weakness': typeof AuthenticatedAppAiWeaknessRoute
   '/_authenticated/app/rooms/$roomId': typeof AuthenticatedAppRoomsRoomIdRoute
   '/_authenticated/app/ai/': typeof AuthenticatedAppAiIndexRoute
@@ -240,7 +220,6 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/app'
-    | '/app/leaderboard'
     | '/app/mastery'
     | '/app/missions'
     | '/app/notifications'
@@ -254,7 +233,6 @@ export interface FileRouteTypes {
     | '/app/ai/exam'
     | '/app/ai/knowledge'
     | '/app/ai/revision'
-    | '/app/ai/roadmap'
     | '/app/ai/weakness'
     | '/app/rooms/$roomId'
     | '/app/ai/'
@@ -263,7 +241,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
-    | '/app/leaderboard'
     | '/app/mastery'
     | '/app/missions'
     | '/app/notifications'
@@ -277,7 +254,6 @@ export interface FileRouteTypes {
     | '/app/ai/exam'
     | '/app/ai/knowledge'
     | '/app/ai/revision'
-    | '/app/ai/roadmap'
     | '/app/ai/weakness'
     | '/app/rooms/$roomId'
     | '/app/ai'
@@ -288,7 +264,6 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/app'
-    | '/_authenticated/app/leaderboard'
     | '/_authenticated/app/mastery'
     | '/_authenticated/app/missions'
     | '/_authenticated/app/notifications'
@@ -302,7 +277,6 @@ export interface FileRouteTypes {
     | '/_authenticated/app/ai/exam'
     | '/_authenticated/app/ai/knowledge'
     | '/_authenticated/app/ai/revision'
-    | '/_authenticated/app/ai/roadmap'
     | '/_authenticated/app/ai/weakness'
     | '/_authenticated/app/rooms/$roomId'
     | '/_authenticated/app/ai/'
@@ -387,13 +361,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppMasteryRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
-    '/_authenticated/app/leaderboard': {
-      id: '/_authenticated/app/leaderboard'
-      path: '/leaderboard'
-      fullPath: '/app/leaderboard'
-      preLoaderRoute: typeof AuthenticatedAppLeaderboardRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
     '/_authenticated/app/rooms/': {
       id: '/_authenticated/app/rooms/'
       path: '/rooms'
@@ -420,13 +387,6 @@ declare module '@tanstack/react-router' {
       path: '/ai/weakness'
       fullPath: '/app/ai/weakness'
       preLoaderRoute: typeof AuthenticatedAppAiWeaknessRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/ai/roadmap': {
-      id: '/_authenticated/app/ai/roadmap'
-      path: '/ai/roadmap'
-      fullPath: '/app/ai/roadmap'
-      preLoaderRoute: typeof AuthenticatedAppAiRoadmapRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/ai/revision': {
@@ -482,7 +442,6 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedAppRouteChildren {
-  AuthenticatedAppLeaderboardRoute: typeof AuthenticatedAppLeaderboardRoute
   AuthenticatedAppMasteryRoute: typeof AuthenticatedAppMasteryRoute
   AuthenticatedAppMissionsRoute: typeof AuthenticatedAppMissionsRoute
   AuthenticatedAppNotificationsRoute: typeof AuthenticatedAppNotificationsRoute
@@ -496,7 +455,6 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppAiExamRoute: typeof AuthenticatedAppAiExamRoute
   AuthenticatedAppAiKnowledgeRoute: typeof AuthenticatedAppAiKnowledgeRoute
   AuthenticatedAppAiRevisionRoute: typeof AuthenticatedAppAiRevisionRoute
-  AuthenticatedAppAiRoadmapRoute: typeof AuthenticatedAppAiRoadmapRoute
   AuthenticatedAppAiWeaknessRoute: typeof AuthenticatedAppAiWeaknessRoute
   AuthenticatedAppRoomsRoomIdRoute: typeof AuthenticatedAppRoomsRoomIdRoute
   AuthenticatedAppAiIndexRoute: typeof AuthenticatedAppAiIndexRoute
@@ -504,7 +462,6 @@ interface AuthenticatedAppRouteChildren {
 }
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
-  AuthenticatedAppLeaderboardRoute: AuthenticatedAppLeaderboardRoute,
   AuthenticatedAppMasteryRoute: AuthenticatedAppMasteryRoute,
   AuthenticatedAppMissionsRoute: AuthenticatedAppMissionsRoute,
   AuthenticatedAppNotificationsRoute: AuthenticatedAppNotificationsRoute,
@@ -518,7 +475,6 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppAiExamRoute: AuthenticatedAppAiExamRoute,
   AuthenticatedAppAiKnowledgeRoute: AuthenticatedAppAiKnowledgeRoute,
   AuthenticatedAppAiRevisionRoute: AuthenticatedAppAiRevisionRoute,
-  AuthenticatedAppAiRoadmapRoute: AuthenticatedAppAiRoadmapRoute,
   AuthenticatedAppAiWeaknessRoute: AuthenticatedAppAiWeaknessRoute,
   AuthenticatedAppRoomsRoomIdRoute: AuthenticatedAppRoomsRoomIdRoute,
   AuthenticatedAppAiIndexRoute: AuthenticatedAppAiIndexRoute,
