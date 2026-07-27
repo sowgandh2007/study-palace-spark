@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Sparkles, TrendingDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { aiGenerate, parseAiJson } from "@/lib/ai.functions";
+import { motion, fadeUp, stagger, CountUp } from "@/lib/motion";
 
 export const Route = createFileRoute("/_authenticated/app/ai/weakness")({
   component: Weakness,
@@ -43,17 +44,27 @@ function Weakness() {
       </button>
 
       {analysis && (
-        <div className="mt-5 space-y-4">
-          <Section title="Weak topics" items={analysis.weak} tint="bg-rose-500/10 text-rose-500" />
-          <Section title="Frequent mistakes" items={analysis.mistakes} tint="bg-amber-500/10 text-amber-500" />
-          <Section title="Low-confidence concepts" items={analysis.low} tint="bg-orange-500/10 text-orange-500" />
-          <div className="rounded-2xl border border-border bg-card p-4">
+        <motion.div
+          className="mt-5 space-y-4"
+          variants={stagger(0.09)}
+          initial="hidden"
+          animate="show"
+        >
+          <motion.div variants={fadeUp} className="grid grid-cols-3 gap-2">
+            <StatBox label="Weak" value={analysis.weak?.length ?? 0} tint="text-rose-400" />
+            <StatBox label="Mistakes" value={analysis.mistakes?.length ?? 0} tint="text-amber-400" />
+            <StatBox label="To revise" value={analysis.next?.length ?? 0} tint="text-primary" />
+          </motion.div>
+          <motion.div variants={fadeUp}><Section title="Weak topics" items={analysis.weak} tint="bg-rose-500/10 text-rose-400" /></motion.div>
+          <motion.div variants={fadeUp}><Section title="Frequent mistakes" items={analysis.mistakes} tint="bg-amber-500/10 text-amber-400" /></motion.div>
+          <motion.div variants={fadeUp}><Section title="Low-confidence concepts" items={analysis.low} tint="bg-orange-500/10 text-orange-400" /></motion.div>
+          <motion.div variants={fadeUp} className="rounded-2xl border border-border bg-card p-4">
             <p className="mb-2 flex items-center gap-2 text-sm font-bold"><TrendingDown className="h-4 w-4 text-primary" /> Revise next</p>
             <ol className="space-y-1 text-sm">
               {(analysis.next ?? []).map((n, i) => <li key={i} className="rounded-lg bg-muted/50 px-3 py-2">{i + 1}. {n}</li>)}
             </ol>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
     </div>
   );
@@ -67,6 +78,15 @@ function Section({ title, items, tint }: { title: string; items: string[]; tint:
         {(items ?? []).map((i, k) => <span key={k} className={"rounded-full px-2.5 py-1 text-xs font-semibold " + tint}>{i}</span>)}
         {(!items || items.length === 0) && <span className="text-xs text-muted-foreground">None found</span>}
       </div>
+    </div>
+  );
+}
+
+function StatBox({ label, value, tint }: { label: string; value: number; tint: string }) {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-3 text-center card-shadow">
+      <p className={"text-2xl font-black " + tint}><CountUp to={value} /></p>
+      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p>
     </div>
   );
 }
