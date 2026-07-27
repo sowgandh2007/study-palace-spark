@@ -63,22 +63,39 @@ function RoadmapList() {
   });
 
   async function createRoadmap() {
-    if (!uid || !form.name.trim()) return;
+    if (!uid || !form.name.trim() || busy) return;
     setBusy(true);
     try {
       const prompt = `Design an interactive learning roadmap as JSON for "${form.name}". ${form.description ? "Focus: " + form.description : ""}
 Return strict JSON with shape:
 {"description":"1-2 sentence intro","estimated_hours":number,"nodes":[
 {"key":"unique-slug","title":"Topic","description":"1-2 line explanation","difficulty":"beginner|intermediate|advanced","minutes":30,
- "youtube_title":"Best video title","youtube_channel":"channel","youtube_video_id":"11-char youtube id",
  "practice_task":"one concrete exercise","prereq_keys":["other-slug"],"x":0.0-1.0,"y":0.0-1.0}
 ]}
-Generate ${form.nodeCount} nodes forming a learning tree from fundamentals (top, y small) to advanced (bottom, y large). x should spread 0.1-0.9. Each node lists its prerequisites via prereq_keys (usually 1-2). First 1-2 nodes have no prereqs. Recommend the MOST relevant real educational YouTube video for each topic (pick real known videos from popular channels like Freecodecamp, Striver, Aditya Verma, Neetcode, 3Blue1Brown, Khan Academy, MIT OCW, CS50, Fireship, Andrej Karpathy, etc.) with correct 11-char video id and channel. Return ONLY JSON.`;
-      const res = await call({ data: { prompt, json: true, system: "You return only strict JSON.", cacheKey: `rm:v2:${form.name.toLowerCase().trim()}:${form.nodeCount}` } });
+Generate exactly ${form.nodeCount} nodes.
+Rules:
+1. Maintain proper logical ordering of topics: nodes must form a strict progression from fundamentals/basic (top, y small, e.g. 0.0 to 0.2) to advanced/specialized (bottom, y large, e.g. 0.8 to 1.0).
+2. The nodes must be ordered in the JSON array by their progression/logical order (fundamental topics first, then intermediate, then advanced).
+3. x should spread 0.1-0.9 to create a nice-looking tree visualization.
+4. Each node lists its prerequisites via prereq_keys (slugs). The first 1-2 foundational nodes must have no prerequisites (empty prereq_keys).
+5. All prerequisite keys in prereq_keys must exist in the roadmap as a previous node's key. No forward references or orphan references.
+Return ONLY JSON.`;
+      const res = await call({ data: { prompt, json: true, system: "You return only strict JSON.", cacheKey: `rm:v3:${form.name.toLowerCase().trim()}:${form.nodeCount}` } });
       const parsed = parseAiJson<{ description?: string; estimated_hours?: number; nodes: NodeSpec[] }>(res.text);
-      if (!parsed?.nodes?.length) throw new Error("AI returned no nodes");
+      if (!parsed?.nodes || !Array.isArray(parsed.nodes) || parsed.nodes.length === 0) {
+        throw new Error("AI returned no roadmap topics or invalid JSON. Please try again.");
+      }
 
-      const { data: rm } = await supabase.from("ai_roadmaps").insert({
+      // Filter duplicate keys
+      const uniqueNodes: NodeSpec[] = [];
+      const seenKeys = new Set<string>();
+      for (const n of parsed.nodes) {
+        if (!n.key || seenKeys.has(n.key)) continue;
+        seenKeys.add(n.key);
+        uniqueNodes.push(n);
+      }
+
+      const { data: rm, error: rmErr } = await supabase.from("ai_roadmaps").insert({
         user_id: uid,
         name: form.name.trim(),
         description: parsed.description ?? form.description ?? "",
@@ -87,33 +104,40 @@ Generate ${form.nodeCount} nodes forming a learning tree from fundamentals (top,
         weak_topics: [],
         strong_topics: [],
         hours_per_day: 2,
-        estimated_hours: parsed.estimated_hours ?? parsed.nodes.reduce((s, n) => s + (n.minutes ?? 30), 0) / 60,
+        estimated_hours: parsed.estimated_hours ?? uniqueNodes.reduce((s, n) => s + (n.minutes ?? 30), 0) / 60,
         kind: "skill_tree",
         plan: parsed as never,
       }).select("*").single();
-      if (!rm) throw new Error("Failed to save roadmap");
+      if (rmErr || !rm) throw new Error(rmErr?.message || "Failed to save roadmap");
 
-      const rows = parsed.nodes.map((n, i) => ({
-        roadmap_id: rm.id,
-        user_id: uid,
-        node_key: n.key,
-        title: n.title,
-        description: n.description,
-        difficulty: n.difficulty ?? "beginner",
-        minutes: n.minutes ?? 30,
-        kind: "study",
-        youtube_video_id: n.youtube_video_id ?? null,
-        youtube_title: n.youtube_title ?? null,
-        youtube_channel: n.youtube_channel ?? null,
-        youtube_url: n.youtube_video_id ? `https://www.youtube.com/watch?v=${n.youtube_video_id}` : null,
-        youtube_thumbnail: n.youtube_video_id ? `https://i.ytimg.com/vi/${n.youtube_video_id}/hqdefault.jpg` : null,
-        practice_task: n.practice_task ?? null,
-        prereq_ids: n.prereq_keys ?? [],
-        position_x: typeof n.x === "number" ? n.x : (i % 3) / 3,
-        position_y: typeof n.y === "number" ? n.y : i / parsed.nodes.length,
-        order_index: i,
-      }));
-      await supabase.from("ai_roadmap_tasks").insert(rows);
+      const validKeys = new Set(uniqueNodes.map(n => n.key));
+      const rows = uniqueNodes.map((n, i) => {
+        const prereqs = (n.prereq_keys ?? []).filter(k => validKeys.has(k));
+        const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(n.title)}`;
+        return {
+          roadmap_id: rm.id,
+          user_id: uid,
+          node_key: n.key,
+          title: n.title,
+          description: n.description,
+          difficulty: n.difficulty ?? "beginner",
+          minutes: n.minutes ?? 30,
+          kind: "study",
+          youtube_video_id: null,
+          youtube_title: n.title,
+          youtube_channel: "YouTube Search",
+          youtube_url: searchUrl,
+          youtube_thumbnail: null,
+          practice_task: n.practice_task ?? null,
+          prereq_ids: prereqs,
+          position_x: typeof n.x === "number" ? n.x : (i % 3) / 3,
+          position_y: typeof n.y === "number" ? n.y : i / uniqueNodes.length,
+          order_index: i,
+        };
+      });
+
+      const { error: taskErr } = await supabase.from("ai_roadmap_tasks").insert(rows);
+      if (taskErr) throw new Error(taskErr.message);
       qc.invalidateQueries({ queryKey: ["roadmaps", uid] });
       setShowNew(false);
       setForm({ name: "", description: "", nodeCount: 12 });

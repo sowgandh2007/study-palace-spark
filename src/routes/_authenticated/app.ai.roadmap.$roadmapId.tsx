@@ -162,7 +162,7 @@ function RoadmapTree() {
                 <stop offset="100%" stopColor="oklch(0.78 0.18 210 / 0.6)" />
               </linearGradient>
             </defs>
-            {tasks.map(t => (t.prereq_ids ?? []).map(k => {
+            {tasks.flatMap(t => (t.prereq_ids ?? []).map(k => {
               const from = byKey[k]; if (!from) return null;
               const x1 = (from.position_x ?? 0.5) * CANVAS_W;
               const y1 = (from.position_y ?? 0.5) * CANVAS_H;
@@ -183,7 +183,7 @@ function RoadmapTree() {
                   className={unlockedEdge && !bothDone ? "animate-pulse" : ""}
                 />
               );
-            }))}
+            })).filter(Boolean)}
           </svg>
 
           {tasks.map((t, i) => {
@@ -240,58 +240,114 @@ function RoadmapTree() {
       </div>
 
       {/* Detail Panel */}
-      {sel && (
-        <div className="absolute inset-0 z-50 flex items-end bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setSelected(null)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full rounded-t-3xl border-t border-border bg-card p-5 shadow-2xl animate-slide-in-right max-h-[85vh] overflow-y-auto">
-            <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-muted" />
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className={"rounded-full px-2 py-0.5 text-[10px] font-bold uppercase " + (sel.difficulty === "advanced" ? "bg-destructive/10 text-destructive" : sel.difficulty === "intermediate" ? "bg-warning/10 text-warning" : "bg-success/10 text-success")}>{sel.difficulty ?? "beginner"}</span>
-                  <span className="text-[10px] text-muted-foreground">{sel.minutes} min</span>
-                  {sel.completed && <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-500">Completed</span>}
+      {sel && (() => {
+        const prereqs = (sel.prereq_ids ?? []).map(k => byKey[k]).filter(Boolean);
+        const youtubeUrl = sel.youtube_url && sel.youtube_url.startsWith("http")
+          ? sel.youtube_url
+          : `https://www.youtube.com/results?search_query=${encodeURIComponent(sel.title)}`;
+        const progressState = sel.completed ? "Completed" : unlocked.has(sel.id) ? "In Progress" : "Locked";
+        const progressColor = sel.completed
+          ? "bg-emerald-500/15 text-emerald-500 border-emerald-500/20"
+          : unlocked.has(sel.id)
+          ? "bg-violet-500/15 text-violet-500 border-violet-500/20"
+          : "bg-muted text-muted-foreground border-muted-foreground/20";
+        return (
+          <div className="absolute inset-0 z-50 flex items-end bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setSelected(null)}>
+            <div onClick={(e) => e.stopPropagation()} className="w-full rounded-t-3xl border-t border-border bg-card p-5 shadow-2xl animate-slide-in-right max-h-[85vh] overflow-y-auto">
+              <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-muted" />
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className={"rounded-full px-2 py-0.5 text-[10px] font-bold uppercase " + (sel.difficulty === "advanced" ? "bg-destructive/10 text-destructive" : sel.difficulty === "intermediate" ? "bg-warning/10 text-warning" : "bg-success/10 text-success")}>{sel.difficulty ?? "beginner"}</span>
+                    <span className="text-[10px] text-muted-foreground">⏱️ {sel.minutes} mins</span>
+                    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${progressColor}`}>
+                      {progressState}
+                    </span>
+                  </div>
+                  <h2 className="mt-2 text-xl font-black">{sel.title}</h2>
+                  {sel.description && <p className="mt-1 text-sm text-muted-foreground">{sel.description}</p>}
                 </div>
-                <h2 className="mt-2 text-xl font-black">{sel.title}</h2>
-                {sel.description && <p className="mt-1 text-sm text-muted-foreground">{sel.description}</p>}
+                <button onClick={() => setSelected(null)} className="grid h-9 w-9 place-items-center rounded-xl border border-border"><X className="h-4 w-4" /></button>
               </div>
-              <button onClick={() => setSelected(null)} className="grid h-9 w-9 place-items-center rounded-xl border border-border"><X className="h-4 w-4" /></button>
-            </div>
 
-            {sel.youtube_video_id && (
-              <a href={sel.youtube_url ?? `https://www.youtube.com/watch?v=${sel.youtube_video_id}`} target="_blank" rel="noreferrer" className="mt-4 block overflow-hidden rounded-2xl border border-border bg-background transition-transform hover:-translate-y-0.5">
-                <div className="relative">
-                  <img src={sel.youtube_thumbnail ?? `https://i.ytimg.com/vi/${sel.youtube_video_id}/hqdefault.jpg`} alt={sel.youtube_title ?? ""} className="aspect-video w-full object-cover" />
-                  <div className="absolute inset-0 grid place-items-center bg-black/30">
-                    <div className="grid h-14 w-14 place-items-center rounded-full bg-red-600 text-white shadow-xl"><Play className="h-6 w-6 translate-x-0.5 fill-white" /></div>
+              {/* Completion checkbox */}
+              <div className="mt-4 flex items-center gap-3 rounded-2xl border border-border bg-background p-3.5">
+                <input
+                  type="checkbox"
+                  id="completion-checkbox"
+                  checked={sel.completed}
+                  onChange={() => toggleComplete(sel.id, sel.completed)}
+                  className="h-5 w-5 rounded border-border text-primary focus:ring-primary accent-[color:var(--brand)] cursor-pointer"
+                />
+                <label htmlFor="completion-checkbox" className="flex-1 cursor-pointer">
+                  <p className="text-xs font-bold text-foreground">Mark as Completed</p>
+                  <p className="text-[11px] text-muted-foreground">Keep track of your study progress</p>
+                </label>
+              </div>
+
+              {/* YouTube Button / Embed */}
+              {sel.youtube_video_id ? (
+                <a href={youtubeUrl} target="_blank" rel="noreferrer" className="mt-4 block overflow-hidden rounded-2xl border border-border bg-background transition-transform hover:-translate-y-0.5">
+                  <div className="relative">
+                    <img src={sel.youtube_thumbnail ?? `https://i.ytimg.com/vi/${sel.youtube_video_id}/hqdefault.jpg`} alt={sel.youtube_title ?? ""} className="aspect-video w-full object-cover" />
+                    <div className="absolute inset-0 grid place-items-center bg-black/30">
+                      <div className="grid h-14 w-14 place-items-center rounded-full bg-red-600 text-white shadow-xl"><Play className="h-6 w-6 translate-x-0.5 fill-white" /></div>
+                    </div>
+                  </div>
+                  <div className="p-3 flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="line-clamp-2 text-sm font-bold">{sel.youtube_title ?? "Recommended video"}</p>
+                      <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground"><span>{sel.youtube_channel ?? "YouTube"}</span></p>
+                    </div>
+                    <span className="shrink-0 rounded-xl bg-red-600 px-3 py-1.5 text-xs font-bold text-white">▶ Watch on YouTube</span>
+                  </div>
+                </a>
+              ) : (
+                <a
+                  href={youtubeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 flex items-center justify-center gap-2 rounded-2xl bg-[#FF0000] hover:bg-[#CC0000] text-white py-3 px-4 text-sm font-bold shadow-md transition-all hover:scale-[1.01] active:scale-[0.99]"
+                >
+                  <span>▶ Watch on YouTube</span>
+                </a>
+              )}
+
+              {/* Prerequisite topic (if applicable) */}
+              {prereqs.length > 0 && (
+                <div className="mt-4 rounded-2xl border border-border bg-background p-3.5">
+                  <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Prerequisites</p>
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {prereqs.map(p => (
+                      <span key={p.id} className="rounded-xl border border-border bg-muted/50 px-2.5 py-1 text-xs font-semibold text-foreground">
+                        {p.title}
+                      </span>
+                    ))}
                   </div>
                 </div>
-                <div className="p-3">
-                  <p className="line-clamp-2 text-sm font-bold">{sel.youtube_title ?? "Recommended video"}</p>
-                  <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground"><span>{sel.youtube_channel ?? "YouTube"}</span> · <ExternalLink className="h-3 w-3" /> Watch on YouTube</p>
+              )}
+
+              {sel.practice_task && (
+                <div className="mt-4 rounded-2xl border border-border bg-background p-3">
+                  <p className="text-[10px] font-bold uppercase text-muted-foreground">Practice</p>
+                  <p className="mt-1 text-sm">{sel.practice_task}</p>
                 </div>
-              </a>
-            )}
+              )}
 
-            {sel.practice_task && (
-              <div className="mt-4 rounded-2xl border border-border bg-background p-3">
-                <p className="text-[10px] font-bold uppercase text-muted-foreground">Practice</p>
-                <p className="mt-1 text-sm">{sel.practice_task}</p>
+              <NotesEditor initial={sel.notes ?? ""} onSave={(v) => saveNotes(sel.id, v)} />
+
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <Link to="/app/ai/exam" className="flex items-center justify-center gap-1.5 rounded-2xl border border-border py-2.5 text-xs font-bold">
+                  <FileQuestion className="h-4 w-4" /> Quiz me
+                </Link>
+                <button onClick={() => toggleComplete(sel.id, sel.completed)} className={"flex items-center justify-center gap-1.5 rounded-2xl py-2.5 text-xs font-bold " + (sel.completed ? "border border-border" : "gradient-brand text-primary-foreground")}>
+                  <Check className="h-4 w-4" /> {sel.completed ? "Mark incomplete" : "Mark complete"}
+                </button>
               </div>
-            )}
-
-            <NotesEditor initial={sel.notes ?? ""} onSave={(v) => saveNotes(sel.id, v)} />
-
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              <Link to="/app/ai/exam" className="flex items-center justify-center gap-1.5 rounded-2xl border border-border py-2.5 text-xs font-bold">
-                <FileQuestion className="h-4 w-4" /> Quiz me
-              </Link>
-              <button onClick={() => toggleComplete(sel.id, sel.completed)} className={"flex items-center justify-center gap-1.5 rounded-2xl py-2.5 text-xs font-bold " + (sel.completed ? "border border-border" : "gradient-brand text-primary-foreground")}>
-                <Check className="h-4 w-4" /> {sel.completed ? "Mark incomplete" : "Mark complete"}
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

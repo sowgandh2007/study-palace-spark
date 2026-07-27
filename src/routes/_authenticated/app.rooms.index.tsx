@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Plus, Users, Lock, Globe, Hash } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,6 +30,18 @@ function Rooms() {
       return data ?? [];
     },
   });
+
+  useEffect(() => {
+    const ch = supabase.channel("rooms-list")
+      .on("postgres_changes", { event: "*", schema: "public", table: "rooms" }, () => {
+        qc.invalidateQueries({ queryKey: ["rooms"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "room_members" }, () => {
+        qc.invalidateQueries({ queryKey: ["rooms"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [qc]);
 
   async function createRoom(e: React.FormEvent) {
     e.preventDefault();

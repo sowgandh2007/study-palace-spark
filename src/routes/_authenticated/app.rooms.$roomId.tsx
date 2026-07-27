@@ -4,9 +4,25 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   ArrowLeft, Send, Pin, Trash2, LogOut, FileText, Copy, Smile,
-  Music2, Timer, Play, Pause, ListTodo, Vote, Target, Activity, Plus, Check, X,
+  Music2, Timer, Play, Pause, ListTodo, Vote, Target, Activity, Plus, Check, X, Settings,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/app/rooms/$roomId")({
   component: RoomPage,
@@ -23,6 +39,8 @@ function RoomPage() {
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>("members");
   const [meId, setMeId] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => { supabase.auth.getUser().then(({ data }) => setMeId(data.user?.id ?? null)); }, []);
 
@@ -30,6 +48,11 @@ function RoomPage() {
     queryKey: ["room", roomId],
     queryFn: async () => (await sb.from("rooms").select("*").eq("id", roomId).maybeSingle()).data,
   });
+
+  const roomRef = useRef(room);
+  roomRef.current = room;
+  const meIdRef = useRef(meId);
+  meIdRef.current = meId;
 
   useEffect(() => {
     if (!meId) return;
@@ -42,14 +65,23 @@ function RoomPage() {
       });
   }, [meId, roomId, qc]);
 
-  // Realtime for room row (playlist/break timer)
+  // Realtime for room row (playlist/break timer and deletion check)
   useEffect(() => {
     const ch = supabase.channel("room-" + roomId)
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "rooms", filter: `id=eq.${roomId}` }, () => {
-        qc.invalidateQueries({ queryKey: ["room", roomId] });
+      .on("postgres_changes", { event: "*", schema: "public", table: "rooms", filter: `id=eq.${roomId}` }, (payload) => {
+        if (payload.eventType === "DELETE") {
+          const currentRoom = roomRef.current;
+          const currentMeId = meIdRef.current;
+          if (currentRoom && currentRoom.owner_id !== currentMeId) {
+            toast.error("This room has been deleted by its owner.");
+          }
+          navigate({ to: "/app" });
+        } else {
+          qc.invalidateQueries({ queryKey: ["room", roomId] });
+        }
       }).subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [roomId, qc]);
+  }, [roomId, qc, navigate]);
 
   const isOwner = !!room && !!meId && room.owner_id === meId;
 
@@ -60,10 +92,22 @@ function RoomPage() {
     navigate({ to: "/app/rooms" });
   }
 
-  async function deleteRoom() {
-    if (!confirm("Delete this room? This cannot be undone.")) return;
-    await supabase.from("rooms").delete().eq("id", roomId);
-    navigate({ to: "/app/rooms" });
+  async function performDelete(retryCount = 0): Promise<void> {
+    setDeleting(true);
+    const { error } = await supabase.from("rooms").delete().eq("id", roomId);
+    if (error) {
+      toast.error("Failed to delete room: " + error.message, {
+        action: {
+          label: "Retry",
+          onClick: () => { performDelete(retryCount + 1); },
+        },
+      });
+      setDeleting(false);
+    } else {
+      toast.success("Room deleted successfully");
+      setIsDeleteDialogOpen(false);
+      navigate({ to: "/app/rooms" });
+    }
   }
 
   if (!room) return <div className="p-6 text-center text-sm text-muted-foreground">Loading...</div>;
@@ -88,7 +132,22 @@ function RoomPage() {
           </button>
         </div>
         {isOwner ? (
-          <button onClick={deleteRoom} className="grid h-10 w-10 place-items-center rounded-xl border border-destructive/40 text-destructive"><Trash2 className="h-4 w-4" /></button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="grid h-10 w-10 place-items-center rounded-xl border border-border bg-card hover:bg-muted text-foreground transition-colors">
+                <Settings className="h-4 w-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onSelect={() => setIsDeleteDialogOpen(true)}
+                className="text-destructive focus:bg-destructive/10 focus:text-destructive font-semibold cursor-pointer"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Room
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         ) : (
           <button onClick={leave} className="grid h-10 w-10 place-items-center rounded-xl border border-border"><LogOut className="h-4 w-4" /></button>
         )}
@@ -118,6 +177,30 @@ function RoomPage() {
         {tab === "files" && <ResourcesTab roomId={roomId} meId={meId} />}
         {tab === "board" && <WhiteboardTab roomId={roomId} meId={meId} />}
       </div>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Study Room</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to permanently delete this study room? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                performDelete();
+              }}
+              disabled={deleting}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold"
+            >
+              {deleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
