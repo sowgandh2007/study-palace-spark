@@ -190,7 +190,7 @@ function RoomPage() {
         {tab === "polls" && <PollsTab roomId={roomId} meId={meId} />}
         {tab === "goals" && <GoalsTab roomId={roomId} meId={meId} isOwner={isOwner} />}
         {tab === "feed" && <FeedTab roomId={roomId} />}
-        {tab === "files" && <ResourcesTab roomId={roomId} meId={meId} />}
+        {tab === "files" && <ResourcesTab roomId={roomId} meId={meId} isOwner={isOwner} />}
         {tab === "board" && <WhiteboardTab roomId={roomId} meId={meId} />}
       </div>
 
@@ -906,7 +906,7 @@ function FeedTab({ roomId }: { roomId: string }) {
 
 // ---------- Resources ----------
 
-function ResourcesTab({ roomId, meId }: { roomId: string; meId: string | null }) {
+function ResourcesTab({ roomId, meId, isOwner }: { roomId: string; meId: string | null; isOwner: boolean }) {
   const qc = useQueryClient();
   const { data: resources = [], error: loadError } = useQuery({
     queryKey: ["res", roomId],
@@ -972,6 +972,23 @@ function ResourcesTab({ roomId, meId }: { roomId: string; meId: string | null })
     window.open(data.signedUrl, "_blank");
   }
 
+  async function deleteResource(id: string, storagePath: string, title: string) {
+    if (!confirm(`Are you sure you want to delete "${title}"?`)) return;
+    try {
+      const { error: storageErr } = await supabase.storage.from("resources").remove([storagePath]);
+      if (storageErr) console.error("Error deleting from storage:", storageErr);
+
+      const { error: dbErr } = await sb.from("resources").delete().eq("id", id);
+      if (dbErr) throw dbErr;
+
+      toast.success("File deleted successfully");
+      qc.invalidateQueries({ queryKey: ["res", roomId] });
+      logEvent(roomId, meId || "", "resource_delete", `deleted "${title}"`).catch(() => {});
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Delete failed");
+    }
+  }
+
   return (
     <div>
       <label className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border bg-card px-4 py-6 text-sm font-semibold text-muted-foreground">
@@ -997,6 +1014,17 @@ function ResourcesTab({ roomId, meId }: { roomId: string; meId: string | null })
               <p className="truncate text-sm font-semibold">{r.title}</p>
               <p className="text-[11px] text-muted-foreground">{r.kind} · {r.profiles?.display_name ?? "member"} · {fmtDay(r.created_at)}</p>
             </button>
+            {(isOwner || r.user_id === meId) && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteResource(r.id, r.storage_path, r.title);
+                }}
+                className="grid h-8 w-8 place-items-center rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors shrink-0"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            )}
           </li>
         ))}
         {resources.length === 0 && <li className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">No resources yet.</li>}
