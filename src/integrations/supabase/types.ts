@@ -282,6 +282,7 @@ export type Database = {
           practice_task: string | null
           prereq_ids: string[] | null
           roadmap_id: string
+          study_guide: string | null
           subject: string | null
           title: string
           user_id: string
@@ -308,6 +309,7 @@ export type Database = {
           practice_task?: string | null
           prereq_ids?: string[] | null
           roadmap_id: string
+          study_guide?: string | null
           subject?: string | null
           title: string
           user_id: string
@@ -334,6 +336,7 @@ export type Database = {
           practice_task?: string | null
           prereq_ids?: string[] | null
           roadmap_id?: string
+          study_guide?: string | null
           subject?: string | null
           title?: string
           user_id?: string
