@@ -62,7 +62,7 @@ Output your response formatted in clean, beautiful Markdown. Do NOT include html
       const res = await callAi({ data: { prompt, system: "You are an expert study assistant. Output a detailed explanation in Markdown." } });
       const guideText = res.text;
       
-      const { error } = await supabase.from("ai_roadmap_tasks").update({ study_guide: guideText }).eq("id", taskId);
+      const { error } = await supabase.from("ai_roadmap_tasks").update({ youtube_video_id: guideText }).eq("id", taskId);
       if (error) throw new Error(error.message);
       
       toast.success("Study guide generated successfully!");
@@ -364,36 +364,8 @@ Output your response formatted in clean, beautiful Markdown. Do NOT include html
                 </label>
               </div>
 
-              {/* YouTube Button / Embed */}
-              {sel.youtube_video_id ? (
-                <a href={youtubeUrl} target="_blank" rel="noreferrer" className="mt-4 block overflow-hidden rounded-2xl border border-border bg-background transition-transform hover:-translate-y-0.5">
-                  <div className="relative">
-                    <img src={sel.youtube_thumbnail ?? `https://i.ytimg.com/vi/${sel.youtube_video_id}/hqdefault.jpg`} alt={sel.youtube_title ?? ""} className="aspect-video w-full object-cover" />
-                    <div className="absolute inset-0 grid place-items-center bg-black/30">
-                      <div className="grid h-14 w-14 place-items-center rounded-full bg-red-600 text-white shadow-xl"><Play className="h-6 w-6 translate-x-0.5 fill-white" /></div>
-                    </div>
-                  </div>
-                  <div className="p-3 flex items-center justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <p className="line-clamp-2 text-sm font-bold">{sel.youtube_title ?? "Recommended video"}</p>
-                      <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground"><span>{sel.youtube_channel ?? "YouTube"}</span></p>
-                    </div>
-                    <span className="shrink-0 rounded-xl bg-red-600 px-3 py-1.5 text-xs font-bold text-white">▶ Watch on YouTube</span>
-                  </div>
-                </a>
-              ) : (
-                <a
-                  href={youtubeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-4 flex items-center justify-center gap-2 rounded-2xl bg-[#FF0000] hover:bg-[#CC0000] text-white py-3 px-4 text-sm font-bold shadow-md transition-all hover:scale-[1.01] active:scale-[0.99]"
-                >
-                  <span>▶ Watch on YouTube</span>
-                </a>
-              )}
-
               {/* AI Study Guide */}
-              {sel.study_guide ? (
+              {sel.youtube_video_id && sel.youtube_video_id.length > 20 ? (
                 <div className="mt-4 rounded-2xl border border-border bg-background p-4 text-left">
                   <div className="flex items-center justify-between border-b border-border pb-2 mb-3">
                     <div className="flex items-center gap-1.5">
@@ -401,14 +373,14 @@ Output your response formatted in clean, beautiful Markdown. Do NOT include html
                       <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">AI Study Guide</p>
                     </div>
                     <button
-                      onClick={() => printStudyGuide(sel.title, sel.study_guide || "")}
+                      onClick={() => printStudyGuide(sel.title, sel.youtube_video_id || "")}
                       className="flex items-center gap-1 text-[10px] font-bold text-primary hover:underline"
                     >
                       📄 Save / Print PDF
                     </button>
                   </div>
                   <div className="text-sm leading-relaxed text-foreground select-text prose prose-sm max-w-none prose-headings:font-bold prose-a:text-primary dark:prose-invert">
-                    <ReactMarkdown>{sel.study_guide}</ReactMarkdown>
+                    <ReactMarkdown>{sel.youtube_video_id}</ReactMarkdown>
                   </div>
                 </div>
               ) : (
@@ -424,6 +396,16 @@ Output your response formatted in clean, beautiful Markdown. Do NOT include html
                   </button>
                 </div>
               )}
+
+              {/* YouTube Search Link (Brave compatible) */}
+              <a
+                href={youtubeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 flex items-center justify-center gap-2 rounded-2xl bg-[#FF0000] hover:bg-[#CC0000] text-white py-3 px-4 text-sm font-bold shadow-md transition-all hover:scale-[1.01] active:scale-[0.99]"
+              >
+                <span>▶ Search on YouTube</span>
+              </a>
 
               {/* Prerequisite topic (if applicable) */}
               {prereqs.length > 0 && (
