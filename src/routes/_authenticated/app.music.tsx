@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Music as MusicIcon, Search, Heart, Play, Pause, Volume2 } from "lucide-react";
 import { PLAYLISTS, useMusic, type Playlist } from "@/lib/music";
+import { motion, fadeUp, stagger, useReducedMotion } from "@/lib/motion";
 
 export const Route = createFileRoute("/_authenticated/app/music")({
   component: MusicPage,
@@ -13,6 +14,7 @@ function MusicPage() {
   const m = useMusic();
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<(typeof CATS)[number]>("All");
+  const reduced = useReducedMotion();
 
   const filtered = useMemo(
     () =>
@@ -27,8 +29,14 @@ function MusicPage() {
   const favs = PLAYLISTS.filter((p) => m.favorites.includes(p.id));
 
   return (
-    <div className="mx-auto max-w-md px-5 pt-8">
-      <div className="flex items-center gap-3">
+    <div className="relative mx-auto max-w-md px-5 pt-8">
+      {!reduced && <Equalizer active={m.playing} />}
+      <motion.div
+        className="relative flex items-center gap-3"
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
         <div className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-fuchsia-500 to-indigo-600 glow">
           <MusicIcon className="h-5 w-5 text-white" />
         </div>
@@ -36,7 +44,7 @@ function MusicPage() {
           <h1 className="text-2xl font-black">Focus Music</h1>
           <p className="text-xs text-muted-foreground">Keeps playing as you study</p>
         </div>
-      </div>
+      </motion.div>
 
       <div className="relative mt-5">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
