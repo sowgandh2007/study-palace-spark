@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Sparkles, Users, Map, Flame, ArrowRight } from "lucide-react";
 import { motion, fadeUp, stagger, useReducedMotion } from "@/lib/motion";
+import { ThemeSelect } from "@/lib/theme";
 
 export const Route = createFileRoute("/")({
   component: Landing,
@@ -43,15 +44,18 @@ function Landing() {
 
       <div className="relative mx-auto flex min-h-screen max-w-md flex-col px-6 pt-14 pb-10">
         <motion.div
-          className="flex items-center gap-2"
+          className="flex items-center justify-between gap-2"
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <div className="grid h-9 w-9 place-items-center rounded-xl gradient-brand glow">
-            <Sparkles className="h-5 w-5 text-primary-foreground" />
+          <div className="flex items-center gap-2">
+            <div className="grid h-9 w-9 place-items-center rounded-xl gradient-brand glow">
+              <Sparkles className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <span className="text-lg font-bold tracking-tight">StudySphere</span>
           </div>
-          <span className="text-lg font-bold tracking-tight">StudySphere</span>
+          <ThemeSelect />
         </motion.div>
 
         <div className="mt-16 flex-1">

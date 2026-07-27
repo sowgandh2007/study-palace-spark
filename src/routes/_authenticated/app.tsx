@@ -1,6 +1,7 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { Home, Users, Sparkles, Music as MusicIcon, User } from "lucide-react";
 import { MusicProvider, MiniPlayer } from "@/lib/music";
+import { ThemeSelect } from "@/lib/theme";
 
 export const Route = createFileRoute("/_authenticated/app")({
   component: AppLayout,
@@ -19,6 +20,9 @@ function AppLayout() {
   return (
     <MusicProvider>
       <div className="relative min-h-screen bg-background pb-32">
+      <div className="pointer-events-none fixed inset-x-0 top-0 z-30 flex justify-end px-4 pt-3">
+          <div className="pointer-events-auto"><ThemeSelect /></div>
+        </div>
         <Outlet />
         <MiniPlayer />
         <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/70 backdrop-blur-xl">
