@@ -73,7 +73,7 @@ function AuthPage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-background px-6 py-10">
       <div className="pointer-events-none absolute -top-32 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-primary/20 blur-3xl" />
-      <div className="relative mx-auto max-w-md">
+      <div className="relative mx-auto max-w-md md:max-w-xl md:pt-14">
         <div className="mb-8 flex items-center gap-2">
           <div className="grid h-9 w-9 place-items-center rounded-xl gradient-brand glow">
             <Sparkles className="h-5 w-5 text-primary-foreground" />

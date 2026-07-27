@@ -42,7 +42,7 @@ function Landing() {
         </div>
       )}
 
-      <div className="relative mx-auto flex min-h-screen max-w-md flex-col px-6 pt-14 pb-10">
+      <div className="relative mx-auto flex min-h-screen max-w-md md:max-w-4xl flex-col px-6 pt-14 pb-10 justify-center">
         <motion.div
           className="flex items-center justify-between gap-2"
           initial={{ opacity: 0, y: -8 }}

@@ -157,7 +157,7 @@ function RoomPage() {
   };
 
   return (
-    <div className="mx-auto max-w-md px-5 pt-6 pb-24">
+    <div className="mx-auto max-w-md md:max-w-6xl px-5 pt-6 pb-24">
       <header className="flex items-center justify-between">
         <button onClick={() => navigate({ to: "/app/rooms" })} className="grid h-10 w-10 place-items-center rounded-xl border border-border bg-card"><ArrowLeft className="h-4 w-4" /></button>
         <div className="mx-3 flex-1 text-center">
@@ -1035,7 +1035,7 @@ function ResourcesTab({ roomId, meId, isOwner }: { roomId: string; meId: string 
         </button>
       )}
       {loadError && <p className="mt-2 text-center text-xs text-destructive">Failed to load resources</p>}
-      <ul className="mt-3 space-y-2">
+      <ul className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 space-y-0">
         {resources.map((r: any) => (
           <li key={r.id} className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3">
             <div className="grid h-10 w-10 place-items-center rounded-xl bg-accent text-accent-foreground"><FileText className="h-5 w-5" /></div>

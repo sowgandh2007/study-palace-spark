@@ -29,7 +29,7 @@ function MusicPage() {
   const favs = PLAYLISTS.filter((p) => m.favorites.includes(p.id));
 
   return (
-    <div className="relative mx-auto max-w-md px-5 pt-8">
+    <div className="relative mx-auto max-w-md md:max-w-4xl px-5 pt-8">
       {!reduced && <Equalizer active={m.playing} />}
       <motion.div
         className="relative flex items-center gap-3"

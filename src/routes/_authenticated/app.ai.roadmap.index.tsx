@@ -180,7 +180,7 @@ Return ONLY JSON.`;
   }
 
   return (
-    <div className="mx-auto max-w-md px-5 pt-8">
+    <div className="mx-auto max-w-md md:max-w-5xl px-5 pt-8">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-fuchsia-500 to-pink-500 glow">
@@ -200,7 +200,7 @@ Return ONLY JSON.`;
         </button>
       </div>
 
-      <div className="mt-4 flex gap-2 text-xs">
+      <div className="mt-4 flex gap-1.5 overflow-x-auto pb-1 text-xs">
         <button
           onClick={() => setShowArchived(false)}
           className={"rounded-full border px-3 py-1.5 font-semibold " + (!showArchived ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground")}
@@ -211,7 +211,7 @@ Return ONLY JSON.`;
         >Archived</button>
       </div>
 
-      <div className="mt-5 space-y-3">
+      <div className="mt-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-20">
         {roadmaps.map((r) => {
           const c = taskCounts[r.id] ?? { total: 0, done: 0 };
           const pct = c.total ? Math.round((c.done / c.total) * 100) : 0;

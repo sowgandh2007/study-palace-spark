@@ -325,8 +325,8 @@ Rules:
           ? "bg-violet-500/15 text-violet-500 border-violet-500/20"
           : "bg-muted text-muted-foreground border-muted-foreground/20";
         return (
-          <div className="absolute inset-0 z-50 flex items-end bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setSelected(null)}>
-            <div onClick={(e) => e.stopPropagation()} className="w-full rounded-t-3xl border-t border-border bg-card p-5 shadow-2xl animate-slide-in-right max-h-[85vh] overflow-y-auto">
+          <div className="absolute inset-0 z-50 flex items-end md:items-stretch md:justify-end bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setSelected(null)}>
+            <div onClick={(e) => e.stopPropagation()} className="w-full md:w-96 md:max-w-md rounded-t-3xl md:rounded-t-none md:rounded-l-3xl border-t md:border-t-0 md:border-l border-border bg-card p-5 shadow-2xl animate-slide-in-right max-h-[85vh] md:max-h-full overflow-y-auto">
               <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-muted" />
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">

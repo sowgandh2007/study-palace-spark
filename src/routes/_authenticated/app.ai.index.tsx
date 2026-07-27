@@ -21,7 +21,7 @@ const tiles = [
 function AiHub() {
   const reduced = useReducedMotion();
   return (
-    <div className="mx-auto max-w-md px-5 pt-8">
+    <div className="mx-auto max-w-md md:max-w-5xl lg:max-w-6xl px-5 pt-8">
       <motion.div
         className="flex items-center gap-3"
         initial={{ opacity: 0, y: -8 }}
@@ -45,7 +45,7 @@ function AiHub() {
       </motion.div>
 
       <motion.div
-        className="mt-6 grid grid-cols-2 gap-3"
+        className="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-20"
         variants={stagger(0.06)}
         initial="hidden"
         whileInView="show"

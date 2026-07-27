@@ -168,7 +168,7 @@ Guidelines:
   }
 
   return (
-    <div className="mx-auto max-w-md px-5 pt-8 pb-16">
+    <div className="mx-auto max-w-md md:max-w-4xl px-5 pt-8 pb-16">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-black">Exam Generator</h1>
         {timeRemaining !== null && !submitted && (

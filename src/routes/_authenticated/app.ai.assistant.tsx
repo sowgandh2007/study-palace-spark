@@ -76,7 +76,7 @@ function Assistant() {
   }
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-96px)] max-w-md flex-col px-4 pt-6">
+    <div className="mx-auto flex h-[calc(100vh-96px)] max-w-md md:max-w-4xl flex-col px-4 pt-6">
       <h1 className="px-1 text-xl font-black">Study Assistant</h1>
       <p className="px-1 text-xs text-muted-foreground">Ask anything. I give hints first.</p>
 

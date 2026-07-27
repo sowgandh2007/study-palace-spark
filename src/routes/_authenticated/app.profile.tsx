@@ -95,7 +95,7 @@ function Profile() {
   const xp = xpProgress(profile.xp);
 
   return (
-    <div className="mx-auto max-w-md px-5 pt-8">
+    <div className="mx-auto max-w-md md:max-w-4xl px-5 pt-8">
       <header className="flex items-center gap-3">
         <div className="grid h-16 w-16 shrink-0 place-items-center rounded-full gradient-brand text-2xl font-black text-primary-foreground glow">
           {profile.display_name.charAt(0).toUpperCase()}

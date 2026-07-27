@@ -113,7 +113,7 @@ function Dashboard() {
   }
 
   return (
-    <div className="mx-auto max-w-md px-5 pt-8">
+    <div className="mx-auto max-w-md md:max-w-5xl px-5 pt-8">
       <header className="flex items-start justify-between">
         <div>
           <p className="text-sm text-muted-foreground">{greeting},</p>
@@ -134,98 +134,104 @@ function Dashboard() {
         <Stat icon={<Coins className="h-4 w-4" />} label="Coins" value={String(p.coins ?? 0)} />
       </div>
 
-      <section className="mt-5 rounded-3xl gradient-brand p-5 text-primary-foreground glow">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs opacity-80">Level {xp.level}</p>
-            <p className="text-lg font-bold">{p.xp - xp.cur}/{xp.next - xp.cur} XP</p>
-          </div>
-          <Sparkles className="h-8 w-8 opacity-90" />
-        </div>
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/25">
-          <div className="h-full rounded-full bg-white/90" style={{ width: `${xp.pct}%` }} />
-        </div>
-      </section>
-
-      <section className="mt-5 rounded-3xl border border-border bg-card p-5 card-shadow">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold">Today's goal</h2>
-          <span className="text-xs text-muted-foreground">{todayMinutes} / 120 min</span>
-        </div>
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
-          <div className="h-full rounded-full gradient-brand" style={{ width: `${Math.min(100, (todayMinutes / 120) * 100)}%` }} />
-        </div>
-        <div className="mt-4 flex gap-2">
-          <button onClick={quickLog} className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-foreground py-3 text-sm font-bold text-background">
-            <Play className="h-4 w-4" /> Log 25 min
-          </button>
-          <button
-            onClick={() => navigate({ to: lastRoom?.room_id ? "/app/rooms/$roomId" : "/app/rooms", params: { roomId: lastRoom?.room_id ?? "" } as never })}
-            className="rounded-2xl border border-border bg-background px-4 py-3 text-sm font-semibold"
-          >
-            Continue
-          </button>
-        </div>
-      </section>
-
-      <section className="mt-5 rounded-3xl border border-border bg-card p-5 card-shadow">
-        <h2 className="text-sm font-bold">This week</h2>
-        <div className="mt-4 flex items-end justify-between gap-1.5">
-          {days.map((d) => {
-            const h = Math.min(100, (d.minutes / 120) * 100);
-            return (
-              <div key={d.day} className="flex flex-1 flex-col items-center gap-1.5">
-                <div className="flex h-24 w-full items-end">
-                  <div className="w-full rounded-lg gradient-brand" style={{ height: `${Math.max(6, h)}%`, opacity: d.minutes ? 1 : 0.25 }} />
-                </div>
-                <span className="text-[10px] text-muted-foreground">{d.label}</span>
+      <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-5 items-start pb-24">
+        <div className="space-y-5">
+          <section className="rounded-3xl gradient-brand p-5 text-primary-foreground glow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs opacity-80">Level {xp.level}</p>
+                <p className="text-lg font-bold">{p.xp - xp.cur}/{xp.next - xp.cur} XP</p>
               </div>
-            );
-          })}
-        </div>
-      </section>
+              <Sparkles className="h-8 w-8 opacity-90" />
+            </div>
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/25">
+              <div className="h-full rounded-full bg-white/90" style={{ width: `${xp.pct}%` }} />
+            </div>
+          </section>
 
-      <section className="mt-5 grid grid-cols-2 gap-3">
-        <div className="rounded-3xl border border-border bg-card p-4 card-shadow">
-          <div className="flex items-center gap-2 text-muted-foreground"><Brain className="h-4 w-4" /><span className="text-xs">Focus score</span></div>
-          <p className="mt-2 text-3xl font-black">{p.focus_score ?? 70}</p>
-          <p className="text-xs text-success">+3 today</p>
-        </div>
-        <div className="rounded-3xl border border-border bg-card p-4 card-shadow">
-          <div className="flex items-center gap-2 text-muted-foreground"><Target className="h-4 w-4" /><span className="text-xs">Missions</span></div>
-          <p className="mt-2 text-3xl font-black">{completedMissions}/{missions.length}</p>
-          <Link to="/app/missions" className="text-xs text-primary">View →</Link>
-        </div>
-      </section>
+          <section className="rounded-3xl border border-border bg-card p-5 card-shadow">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-bold">Today's goal</h2>
+              <span className="text-xs text-muted-foreground">{todayMinutes} / 120 min</span>
+            </div>
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+              <div className="h-full rounded-full gradient-brand" style={{ width: `${Math.min(100, (todayMinutes / 120) * 100)}%` }} />
+            </div>
+            <div className="mt-4 flex gap-2">
+              <button onClick={quickLog} className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-foreground py-3 text-sm font-bold text-background">
+                <Play className="h-4 w-4" /> Log 25 min
+              </button>
+              <button
+                onClick={() => navigate({ to: lastRoom?.room_id ? "/app/rooms/$roomId" : "/app/rooms", params: { roomId: lastRoom?.room_id ?? "" } as never })}
+                className="rounded-2xl border border-border bg-background px-4 py-3 text-sm font-semibold"
+              >
+                Continue
+              </button>
+            </div>
+          </section>
 
-      <section className="mt-5 rounded-3xl border border-border bg-card p-5 card-shadow">
-        <div className="flex items-center gap-2">
-          <div className="grid h-8 w-8 place-items-center rounded-xl gradient-brand"><Sparkles className="h-4 w-4 text-primary-foreground" /></div>
-          <h2 className="text-sm font-bold">AI recommendations</h2>
+          <section className="grid grid-cols-2 gap-3">
+            <div className="rounded-3xl border border-border bg-card p-4 card-shadow">
+              <div className="flex items-center gap-2 text-muted-foreground"><Brain className="h-4 w-4" /><span className="text-xs">Focus score</span></div>
+              <p className="mt-2 text-3xl font-black">{p.focus_score ?? 70}</p>
+              <p className="text-xs text-success">+3 today</p>
+            </div>
+            <div className="rounded-3xl border border-border bg-card p-4 card-shadow">
+              <div className="flex items-center gap-2 text-muted-foreground"><Target className="h-4 w-4" /><span className="text-xs">Missions</span></div>
+              <p className="mt-2 text-3xl font-black">{completedMissions}/{missions.length}</p>
+              <Link to="/app/missions" className="text-xs text-primary">View →</Link>
+            </div>
+          </section>
         </div>
-        <ul className="mt-3 space-y-2">
-          {recs.map((r, i) => (
-            <li key={i} className="flex items-start gap-2 rounded-2xl bg-muted/50 px-3 py-2.5 text-sm">
-              <ArrowRight className="mt-0.5 h-4 w-4 text-primary" /> {r}
-            </li>
-          ))}
-        </ul>
-      </section>
 
-      <section className="mt-5 rounded-3xl border border-border bg-card p-5 card-shadow">
-        <h2 className="text-sm font-bold">Upcoming</h2>
-        <ul className="mt-3 space-y-2">
-          {missions.filter(m => !m.completed).slice(0, 3).map((m) => (
-            <li key={m.id} className="flex items-center justify-between rounded-2xl bg-muted/40 px-3 py-2.5 text-sm">
-              <span>{m.title}</span>
-              <span className="text-xs text-muted-foreground">{m.progress}/{m.target}</span>
-            </li>
-          ))}
-          {missions.filter(m => !m.completed).length === 0 && (
-            <li className="rounded-2xl bg-muted/40 px-3 py-3 text-center text-sm text-muted-foreground">All caught up! 🎉</li>
-          )}
-        </ul>
-      </section>
+        <div className="space-y-5">
+          <section className="rounded-3xl border border-border bg-card p-5 card-shadow">
+            <h2 className="text-sm font-bold">This week</h2>
+            <div className="mt-4 flex items-end justify-between gap-1.5">
+              {days.map((d) => {
+                const h = Math.min(100, (d.minutes / 120) * 100);
+                return (
+                  <div key={d.day} className="flex flex-1 flex-col items-center gap-1.5">
+                    <div className="flex h-24 w-full items-end">
+                      <div className="w-full rounded-lg gradient-brand" style={{ height: `${Math.max(6, h)}%`, opacity: d.minutes ? 1 : 0.25 }} />
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">{d.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="rounded-3xl border border-border bg-card p-5 card-shadow">
+            <div className="flex items-center gap-2">
+              <div className="grid h-8 w-8 place-items-center rounded-xl gradient-brand"><Sparkles className="h-4 w-4 text-primary-foreground" /></div>
+              <h2 className="text-sm font-bold">AI recommendations</h2>
+            </div>
+            <ul className="mt-3 space-y-2">
+              {recs.map((r, i) => (
+                <li key={i} className="flex items-start gap-2 rounded-2xl bg-muted/50 px-3 py-2.5 text-sm">
+                  <ArrowRight className="mt-0.5 h-4 w-4 text-primary" /> {r}
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="rounded-3xl border border-border bg-card p-5 card-shadow">
+            <h2 className="text-sm font-bold">Upcoming</h2>
+            <ul className="mt-3 space-y-2">
+              {missions.filter(m => !m.completed).slice(0, 3).map((m) => (
+                <li key={m.id} className="flex items-center justify-between rounded-2xl bg-muted/40 px-3 py-2.5 text-sm">
+                  <span>{m.title}</span>
+                  <span className="text-xs text-muted-foreground">{m.progress}/{m.target}</span>
+                </li>
+              ))}
+              {missions.filter(m => !m.completed).length === 0 && (
+                <li className="rounded-2xl bg-muted/40 px-3 py-3 text-center text-sm text-muted-foreground">All caught up! 🎉</li>
+              )}
+            </ul>
+          </section>
+        </div>
+      </div>
     </div>
   );
 }

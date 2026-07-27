@@ -26,7 +26,7 @@ function AppLayout() {
         <Outlet />
         <MiniPlayer />
         <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/70 backdrop-blur-xl">
-          <div className="mx-auto grid max-w-md grid-cols-5 px-2 py-2">
+          <div className="mx-auto grid max-w-md md:max-w-xl grid-cols-5 px-2 py-2">
             {tabs.map((t) => {
               const active = t.exact ? pathname === t.to : pathname.startsWith(t.to);
               const Icon = t.icon;

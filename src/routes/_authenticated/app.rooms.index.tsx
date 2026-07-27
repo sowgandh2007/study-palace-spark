@@ -77,7 +77,7 @@ function Rooms() {
   }
 
   return (
-    <div className="mx-auto max-w-md px-5 pt-8">
+    <div className="mx-auto max-w-md md:max-w-5xl px-5 pt-8">
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-black">Study Rooms</h1>
         <div className="flex gap-2">
@@ -86,9 +86,9 @@ function Rooms() {
         </div>
       </header>
 
-      <ul className="mt-6 space-y-3">
+      <ul className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-24">
         {rooms.length === 0 && (
-          <li className="rounded-3xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+          <li className="col-span-full rounded-3xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
             No rooms yet. Create your first one to study with friends.
           </li>
         )}
