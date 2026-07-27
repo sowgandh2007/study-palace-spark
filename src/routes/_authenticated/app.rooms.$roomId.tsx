@@ -5,8 +5,11 @@ import { toast } from "sonner";
 import {
   ArrowLeft, Send, Pin, Trash2, LogOut, FileText, Copy, Smile,
   Music2, Timer, Play, Pause, ListTodo, Vote, Target, Activity, Plus, Check, X, Settings,
+  Trophy, Sparkles, Clock,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { aiGenerate, parseAiJson } from "@/lib/ai.functions";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -31,7 +34,7 @@ export const Route = createFileRoute("/_authenticated/app/rooms/$roomId")({
 // New tables aren't in generated types yet — use a loose client for those.
 const sb = supabase as any;
 
-type Tab = "members" | "chat" | "tasks" | "polls" | "goals" | "feed" | "files" | "board";
+type Tab = "members" | "chat" | "tasks" | "polls" | "goals" | "feed" | "files" | "board" | "quiz";
 
 function RoomPage() {
   const { roomId } = Route.useParams();
@@ -85,6 +88,30 @@ function RoomPage() {
     return () => { supabase.removeChannel(ch); };
   }, [roomId, qc, navigate]);
 
+  // Realtime for group quiz invitations
+  useEffect(() => {
+    if (!meId) return;
+    const ch = supabase.channel("room-quiz-" + roomId)
+      .on("broadcast", { event: "start-exam" }, ({ payload }) => {
+        if (payload.hostId !== meId) {
+          toast.info(`${payload.hostName} started a Live Group Exam!`, {
+            description: `Topic: ${payload.topic} (${payload.duration} mins)`,
+            action: {
+              label: "Join Exam",
+              onClick: () => {
+                setTab("quiz");
+                localStorage.setItem(`active-group-quiz:${roomId}`, JSON.stringify(payload));
+                window.dispatchEvent(new Event("group-quiz-updated"));
+              }
+            },
+            duration: 10000,
+          });
+        }
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [roomId, meId]);
+
   const isOwner = !!room && !!meId && room.owner_id === meId;
 
   async function performLeave(): Promise<void> {
@@ -122,10 +149,11 @@ function RoomPage() {
 
   if (!room) return <div className="p-6 text-center text-sm text-muted-foreground">Loading...</div>;
 
-  const tabs: Tab[] = ["members", "chat", "tasks", "polls", "goals", "feed", "files", "board"];
+  const tabs: Tab[] = ["members", "chat", "tasks", "polls", "goals", "feed", "files", "board", "quiz"];
   const label: Record<Tab, string> = {
     members: "Members", chat: "Chat", tasks: "Tasks", polls: "Polls",
     goals: "Goals", feed: "Feed", files: "Files", board: "Board",
+    quiz: "Group Exam",
   };
 
   return (
@@ -192,6 +220,7 @@ function RoomPage() {
         {tab === "feed" && <FeedTab roomId={roomId} />}
         {tab === "files" && <ResourcesTab roomId={roomId} meId={meId} isOwner={isOwner} />}
         {tab === "board" && <WhiteboardTab roomId={roomId} meId={meId} />}
+        {tab === "quiz" && <GroupExamTab roomId={roomId} meId={meId} isOwner={isOwner} />}
       </div>
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
@@ -1115,6 +1144,562 @@ function WhiteboardTab({ roomId, meId }: { roomId: string; meId: string | null }
         onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerLeave={up}
         className="aspect-[3/4] w-full touch-none rounded-2xl border border-border bg-card"
       />
+    </div>
+  );
+}
+
+// ---------- Group Exam Tab (Multiplayer) ----------
+
+function GroupExamTab({ roomId, meId, isOwner }: { roomId: string; meId: string | null; isOwner: boolean }) {
+  const [gameState, setGameState] = useState<"setup" | "lobby" | "active" | "results">("setup");
+  const [topic, setTopic] = useState("");
+  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
+  const [count, setCount] = useState(5);
+  const [useTimer, setUseTimer] = useState(true);
+  const [timerDuration, setTimerDuration] = useState(10);
+  const [busy, setBusy] = useState(false);
+  const [extracting, setExtracting] = useState(false);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+
+  const [quiz, setQuiz] = useState<Q[] | null>(null);
+  const [answers, setAnswers] = useState<number[]>([]);
+  const [submitted, setSubmitted] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+  const [hostId, setHostId] = useState<string | null>(null);
+  const [hostName, setHostName] = useState("");
+  const [players, setPlayers] = useState<Array<{ id: string; name: string; score?: number; total?: number; finished: boolean }>>([]);
+
+  const callAi = useServerFn(aiGenerate);
+  const quizChRef = useRef<any>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const qc = useQueryClient();
+
+  const { data: profile } = useQuery({
+    queryKey: ["profile", meId],
+    queryFn: async () => {
+      if (!meId) return null;
+      const { data } = await supabase.from("profiles").select("display_name").eq("id", meId).maybeSingle();
+      return data;
+    },
+    enabled: !!meId
+  });
+  const myName = profile?.display_name || "Anonymous";
+
+  async function extractPdfText(file: File): Promise<string> {
+    const pdfjsLib = (window as any)['pdfjs-dist/build/pdf'];
+    if (!pdfjsLib) {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    }
+    const pdfjs = (window as any)['pdfjs-dist/build/pdf'];
+    pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+    let text = '';
+    const maxPages = Math.min(pdf.numPages, 10);
+    for (let i = 1; i <= maxPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      const strings = content.items.map((item: any) => item.str);
+      text += strings.join(' ') + '\n';
+    }
+    return text;
+  }
+
+  useEffect(() => {
+    if (!meId) return;
+    const channel = supabase.channel("room-quiz-" + roomId);
+    
+    channel
+      .on("broadcast", { event: "start-exam" }, ({ payload }) => {
+        setQuiz(payload.quiz);
+        setAnswers(new Array(payload.quiz.length).fill(-1));
+        setTopic(payload.topic);
+        setHostId(payload.hostId);
+        setHostName(payload.hostName);
+        setSubmitted(false);
+        setGameState("lobby");
+        if (payload.useTimer) {
+          setTimeRemaining(payload.duration * 60);
+        } else {
+          setTimeRemaining(null);
+        }
+        setPlayers([{ id: payload.hostId, name: payload.hostName, finished: false }]);
+        
+        if (payload.hostId !== meId) {
+          channel.send({
+            type: "broadcast",
+            event: "player-join",
+            payload: { id: meId, name: myName }
+          });
+        }
+      })
+      .on("broadcast", { event: "player-join" }, ({ payload }) => {
+        setPlayers(prev => {
+          if (prev.some(p => p.id === payload.id)) return prev;
+          return [...prev, { id: payload.id, name: payload.name, finished: false }];
+        });
+        channel.send({
+          type: "broadcast",
+          event: "presence-reply",
+          payload: { id: meId, name: myName, finished: false }
+        });
+      })
+      .on("broadcast", { event: "presence-reply" }, ({ payload }) => {
+        setPlayers(prev => {
+          if (prev.some(p => p.id === payload.id)) return prev;
+          return [...prev, { id: payload.id, name: payload.name, finished: payload.finished }];
+        });
+      })
+      .on("broadcast", { event: "player-submit" }, ({ payload }) => {
+        setPlayers(prev => prev.map(p => p.id === payload.id 
+          ? { ...p, finished: true, score: payload.score, total: payload.total }
+          : p
+        ));
+      })
+      .on("broadcast", { event: "cancel-exam" }, () => {
+        toast.info("The host cancelled the exam.");
+        resetQuiz();
+      })
+      .subscribe();
+
+    quizChRef.current = channel;
+
+    const handleUpdate = () => {
+      const savedQuiz = localStorage.getItem(`active-group-quiz:${roomId}`);
+      if (savedQuiz) {
+        const payload = JSON.parse(savedQuiz);
+        setQuiz(payload.quiz);
+        setAnswers(new Array(payload.quiz.length).fill(-1));
+        setTopic(payload.topic);
+        setHostId(payload.hostId);
+        setHostName(payload.hostName);
+        setSubmitted(false);
+        setGameState("lobby");
+        if (payload.useTimer) {
+          setTimeRemaining(payload.duration * 60);
+        } else {
+          setTimeRemaining(null);
+        }
+        localStorage.removeItem(`active-group-quiz:${roomId}`);
+      }
+    };
+    
+    window.addEventListener("group-quiz-updated", handleUpdate);
+
+    // Initial check
+    handleUpdate();
+
+    return () => {
+      supabase.removeChannel(channel);
+      window.removeEventListener("group-quiz-updated", handleUpdate);
+    };
+  }, [roomId, meId, myName]);
+
+  useEffect(() => {
+    if (timeRemaining === null || gameState !== "active" || submitted) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      return;
+    }
+
+    if (timeRemaining <= 0) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      toast.warning("Time is up! Submitting your answers.");
+      submitAnswers();
+      return;
+    }
+
+    timerRef.current = setTimeout(() => {
+      setTimeRemaining(timeRemaining - 1);
+    }, 1000);
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [timeRemaining, gameState, submitted]);
+
+  async function hostExam() {
+    setBusy(true);
+    let pdfText = "";
+    if (pdfFile) {
+      setExtracting(true);
+      try {
+        pdfText = await extractPdfText(pdfFile);
+        if (!pdfText.trim()) throw new Error("Could not extract readable text from PDF.");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "PDF extraction failed");
+        setBusy(false);
+        setExtracting(false);
+        return;
+      } finally {
+        setExtracting(false);
+      }
+    }
+
+    try {
+      const quizSource = pdfFile ? `the uploaded document text: "${pdfText.slice(0, 8000)}"` : `the topic "${topic}"`;
+      const prompt = `Create a ${difficulty} difficulty quiz with ${count} MCQs based on ${quizSource}.
+Return JSON format matching this shape:
+{"questions":[{"q":"...","options":["A","B","C","D"],"answer":0,"explanation":"..."}]}
+Generate strictly ${count} questions. Return ONLY JSON.`;
+
+      const res = await callAi({ data: { prompt, json: true, system: "You return only strict JSON." } });
+      const qs = (parseAiJson<{ questions?: Q[] }>(res.text)?.questions) ?? [];
+      if (qs.length === 0) throw new Error("Failed to generate questions. Please try again.");
+
+      setQuiz(qs);
+      setAnswers(new Array(qs.length).fill(-1));
+      setHostId(meId);
+      setHostName(myName);
+      setSubmitted(false);
+      setGameState("lobby");
+      setPlayers([{ id: meId!, name: myName, finished: false }]);
+      if (useTimer) {
+        setTimeRemaining(timerDuration * 60);
+      } else {
+        setTimeRemaining(null);
+      }
+
+      quizChRef.current?.send({
+        type: "broadcast",
+        event: "start-exam",
+        payload: {
+          quiz: qs,
+          topic: pdfFile ? `PDF: ${pdfFile.name}` : topic,
+          hostId: meId,
+          hostName: myName,
+          useTimer,
+          duration: timerDuration
+        }
+      });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to start quiz");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function startExam() {
+    setGameState("active");
+  }
+
+  async function submitAnswers() {
+    if (!quiz) return;
+    const finalScore = quiz.reduce((a, q, i) => a + (answers[i] === q.answer ? 1 : 0), 0);
+    setSubmitted(true);
+    setGameState("results");
+    
+    quizChRef.current?.send({
+      type: "broadcast",
+      event: "player-submit",
+      payload: {
+        id: meId,
+        name: myName,
+        score: finalScore,
+        total: quiz.length
+      }
+    });
+
+    setPlayers(prev => prev.map(p => p.id === meId 
+      ? { ...p, finished: true, score: finalScore, total: quiz.length }
+      : p
+    ));
+    
+    if (meId) {
+      await supabase.from("ai_quizzes").insert({
+        user_id: meId,
+        topic: topic,
+        difficulty,
+        questions: quiz,
+        answers,
+        score: finalScore
+      });
+      qc.invalidateQueries({ queryKey: ["quizzes-history", meId] });
+    }
+  }
+
+  function cancelExam() {
+    quizChRef.current?.send({
+      type: "broadcast",
+      event: "cancel-exam",
+      payload: {}
+    });
+    resetQuiz();
+  }
+
+  function resetQuiz() {
+    setQuiz(null);
+    setAnswers([]);
+    setSubmitted(false);
+    setTimeRemaining(null);
+    setPlayers([]);
+    setGameState("setup");
+    setPdfFile(null);
+  }
+
+  function formatTime(seconds: number): string {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  }
+
+  return (
+    <div className="space-y-4">
+      {gameState === "setup" && (
+        <div className="rounded-3xl border border-border bg-card p-5 shadow-sm space-y-4">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary animate-pulse" />
+            <h2 className="text-base font-bold">Host Live Group Exam</h2>
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Generate an interactive exam from a topic or PDF and challenge active study room members! Emojis and full styling included.
+          </p>
+
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setPdfFile(null)}
+              className={`rounded-xl border py-2 text-xs font-bold transition-all ${!pdfFile ? "border-primary bg-primary/10 text-primary" : "border-border bg-background hover:bg-muted"}`}
+            >
+              ✏️ Topic Name
+            </button>
+            <button
+              onClick={() => {
+                const input = document.createElement("input");
+                input.type = "file";
+                input.accept = ".pdf";
+                input.onchange = (e) => {
+                  const file = (e.target as HTMLInputElement).files?.[0];
+                  if (file) setPdfFile(file);
+                };
+                input.click();
+              }}
+              className={`rounded-xl border py-2 text-xs font-bold transition-all ${pdfFile ? "border-primary bg-primary/10 text-primary" : "border-border bg-background hover:bg-muted"}`}
+            >
+              📄 {pdfFile ? "PDF Selected" : "Upload PDF"}
+            </button>
+          </div>
+
+          {!pdfFile ? (
+            <label className="block">
+              <span className="text-xs font-semibold text-muted-foreground">Topic / chapters</span>
+              <input value={topic} onChange={e => setTopic(e.target.value)} placeholder="e.g. Operating Systems" className="mt-1.5 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none" />
+            </label>
+          ) : (
+            <div className="flex items-center gap-2 rounded-2xl border border-border bg-muted/30 p-2.5">
+              <FileText className="h-5 w-5 text-primary shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-bold">{pdfFile.name}</p>
+                <p className="text-[10px] text-muted-foreground">{(pdfFile.size / 1024 / 1024).toFixed(2)} MB</p>
+              </div>
+              <button onClick={() => setPdfFile(null)} className="text-xs font-bold text-destructive hover:underline">Remove</button>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground">Difficulty</p>
+              <select value={difficulty} onChange={e => setDifficulty(e.target.value as any)} className="mt-1.5 w-full rounded-xl border border-border bg-background px-3 py-2 text-xs outline-none">
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground">Questions</p>
+              <select value={count} onChange={e => setCount(+e.target.value)} className="mt-1.5 w-full rounded-xl border border-border bg-background px-3 py-2 text-xs outline-none">
+                {[3, 5, 8, 10, 15].map(c => (
+                  <option key={c} value={c}>{c} Questions</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="border-t border-border pt-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-foreground">Timer Limit</p>
+                <p className="text-[10px] text-muted-foreground">Synchronized countdown for all players</p>
+              </div>
+              <input 
+                type="checkbox" 
+                checked={useTimer} 
+                onChange={(e) => setUseTimer(e.target.checked)} 
+                className="h-4 w-4 accent-[color:var(--brand)] cursor-pointer"
+              />
+            </div>
+            {useTimer && (
+              <div className="mt-2.5 flex items-center justify-between rounded-xl bg-muted/40 p-2 text-xs">
+                <span className="font-semibold text-muted-foreground">Timer Duration:</span>
+                <select value={timerDuration} onChange={e => setTimerDuration(+e.target.value)} className="rounded-lg border border-border bg-background px-2 py-1 outline-none">
+                  {[1, 3, 5, 10, 15, 30].map(m => (
+                    <option key={m} value={m}>{m} mins</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          <button onClick={hostExam} disabled={busy || (!pdfFile && !topic.trim())} className="w-full rounded-2xl gradient-brand py-3 text-sm font-bold text-primary-foreground disabled:opacity-50 shadow transition-all hover:scale-[1.01]">
+            {busy ? (extracting ? "Extracting PDF..." : "Preparing Live Exam...") : "🚀 Start Group Exam"}
+          </button>
+        </div>
+      )}
+
+      {gameState === "lobby" && (
+        <div className="rounded-3xl border border-border bg-card p-5 shadow-sm space-y-4 text-center">
+          <div className="animate-bounce mx-auto grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary">
+            <Sparkles className="h-6 w-6" />
+          </div>
+          <div>
+            <h2 className="text-base font-bold">Group Exam Lobby</h2>
+            <p className="text-xs text-muted-foreground">Topic: <span className="font-bold text-foreground">{topic}</span></p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Host: <span className="font-bold text-primary">{hostName}</span></p>
+          </div>
+
+          <div className="border-t border-b border-border py-3">
+            <p className="text-xs font-bold text-left text-muted-foreground uppercase tracking-wider mb-2">Players Joined ({players.length}):</p>
+            <div className="flex flex-wrap gap-1.5 justify-start">
+              {players.map(p => (
+                <span key={p.id} className="rounded-full bg-primary/10 text-primary border border-primary/10 px-3 py-1 text-xs font-bold flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                  {p.name} {p.id === hostId && "(Host)"}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {hostId === meId ? (
+            <div className="flex gap-2">
+              <button onClick={cancelExam} className="flex-1 rounded-xl border border-border bg-background py-2.5 text-xs font-bold text-destructive hover:bg-muted">Cancel</button>
+              <button onClick={startExam} className="flex-1 rounded-xl gradient-brand py-2.5 text-xs font-bold text-primary-foreground shadow">Start Exam Now</button>
+            </div>
+          ) : (
+            <div className="rounded-2xl bg-muted/30 p-3">
+              <p className="text-xs font-bold text-muted-foreground animate-pulse">Waiting for host to start the exam...</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {gameState === "active" && quiz && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between rounded-2xl bg-card border border-border p-3.5 shadow-sm">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Group Exam</p>
+              <p className="text-sm font-bold truncate">{topic}</p>
+            </div>
+            {timeRemaining !== null && (
+              <div className="flex items-center gap-1.5 rounded-full bg-destructive/15 border border-destructive/20 px-3.5 py-1 text-xs font-bold text-destructive animate-pulse">
+                <Clock className="h-3.5 w-3.5" />
+                <span>{formatTime(timeRemaining)}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-border bg-card/60 p-3 text-xs flex justify-between items-center">
+            <span className="font-semibold text-muted-foreground">Study Buddies:</span>
+            <div className="flex items-center gap-1">
+              {players.map(p => (
+                <div key={p.id} title={`${p.name} - ${p.finished ? 'Finished' : 'Answering...'}`} className={`h-2.5 w-2.5 rounded-full ${p.finished ? 'bg-success' : 'bg-muted-foreground animate-pulse'}`} />
+              ))}
+            </div>
+          </div>
+
+          {quiz.map((q, i) => (
+            <div key={i} className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+              <p className="text-sm font-bold">{i + 1}. {q.q}</p>
+              <div className="mt-3 space-y-1.5">
+                {q.options.map((o, k) => {
+                  const isPicked = answers[i] === k;
+                  return (
+                    <button key={k} disabled={submitted}
+                      onClick={() => { const a = [...answers]; a[i] = k; setAnswers(a); }}
+                      className={"flex w-full items-center gap-2.5 rounded-xl border px-3.5 py-2.5 text-left text-sm transition-all " + (isPicked ? "border-primary bg-primary/10 font-semibold" : "border-border bg-background hover:bg-muted")}>
+                      <span className={`grid h-5 w-5 place-items-center rounded-lg border text-[10px] font-bold uppercase transition-colors shrink-0 ${isPicked ? "border-primary bg-primary text-primary-foreground" : "border-border bg-muted/30"}`}>
+                        {String.fromCharCode(65 + k)}
+                      </span>
+                      <span>{o}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+
+          <button onClick={submitAnswers} className="w-full rounded-2xl gradient-brand py-3 text-sm font-bold text-primary-foreground shadow">Submit Answers</button>
+        </div>
+      )}
+
+      {gameState === "results" && quiz && (
+        <div className="space-y-4 animate-fade-in">
+          <div className="rounded-3xl border border-border bg-card p-5 shadow-sm space-y-3.5">
+            <div className="flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-warning" />
+              <h2 className="text-base font-bold">🏆 Multiplayer Leaderboard</h2>
+            </div>
+            
+            <div className="divide-y divide-border">
+              {players
+                .sort((a, b) => (b.score ?? -1) - (a.score ?? -1))
+                .map((p, idx) => (
+                  <div key={p.id} className="flex items-center justify-between py-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className="text-xs font-bold text-muted-foreground w-4">{idx + 1}.</span>
+                      <p className="truncate text-xs font-bold text-foreground">
+                        {p.name} {p.id === meId && "(You)"}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {p.finished ? (
+                        <span className="rounded-full bg-success/15 border border-success/20 px-2.5 py-0.5 text-[10px] font-bold text-success">
+                          {p.score ?? 0} / {p.total ?? quiz.length}
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-muted border border-border px-2.5 py-0.5 text-[10px] font-bold text-muted-foreground animate-pulse">
+                          Answering...
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+
+          <div className="text-center font-bold text-xs text-muted-foreground py-2 border-t border-b border-dashed border-border">
+            Review answers and explanations below!
+          </div>
+
+          {quiz.map((q, i) => (
+            <div key={i} className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+              <p className="text-sm font-bold">{i + 1}. {q.q}</p>
+              <div className="mt-3 space-y-1.5">
+                {q.options.map((o, k) => {
+                  const isPicked = answers[i] === k;
+                  const isCorrect = k === q.answer;
+                  const isWrong = isPicked && k !== q.answer;
+                  return (
+                    <button key={k} disabled
+                      className={"flex w-full items-center gap-2.5 rounded-xl border px-3.5 py-2.5 text-left text-sm transition-all " + (isCorrect ? "border-success bg-success/10 font-semibold text-success" : isWrong ? "border-destructive bg-destructive/10 font-semibold text-destructive" : "border-border bg-background opacity-60")}>
+                      {isCorrect && <Check className="h-4 w-4 text-success shrink-0" />}
+                      {isWrong && <X className="h-4 w-4 text-destructive shrink-0" />}
+                      <span>{o}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-3 rounded-xl border border-border/40 bg-muted/30 p-3 text-xs leading-relaxed text-muted-foreground">💡 {q.explanation}</p>
+            </div>
+          ))}
+
+          <button onClick={resetQuiz} className="w-full rounded-2xl border border-border bg-background py-3 text-sm font-bold hover:bg-muted transition-all">Back to Lobby</button>
+        </div>
+      )}
     </div>
   );
 }
