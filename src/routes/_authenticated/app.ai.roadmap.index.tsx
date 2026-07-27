@@ -24,6 +24,7 @@ type NodeSpec = {
   prereq_keys: string[];
   x: number; // 0..1
   y: number; // 0..1
+  recommended_channel?: string;
 };
 
 function RoadmapList() {
@@ -70,7 +71,7 @@ function RoadmapList() {
 Return strict JSON with shape:
 {"description":"1-2 sentence intro","estimated_hours":number,"nodes":[
 {"key":"unique-slug","title":"Topic","description":"1-2 line explanation","difficulty":"beginner|intermediate|advanced","minutes":30,
- "practice_task":"one concrete exercise","prereq_keys":["other-slug"],"x":0.0-1.0,"y":0.0-1.0}
+ "recommended_channel":"channel name","practice_task":"one concrete exercise","prereq_keys":["other-slug"],"x":0.0-1.0,"y":0.0-1.0}
 ]}
 Generate exactly ${form.nodeCount} nodes.
 Rules:
@@ -79,8 +80,9 @@ Rules:
 3. x should spread 0.1-0.9 to create a nice-looking tree visualization.
 4. Each node lists its prerequisites via prereq_keys (slugs). The first 1-2 foundational nodes must have no prerequisites (empty prereq_keys).
 5. All prerequisite keys in prereq_keys must exist in the roadmap as a previous node's key. No forward references or orphan references.
+6. For "recommended_channel", pick the most appropriate student-friendly educational YouTube channel for the topic, prioritizing "Bro Code" (especially with timestamps), "Gate Smashers", "Apna College", "CodeWithHarry", "Neetcode", "Striver", or "FreeCodeCamp". Strictly do NOT choose "NPTEL" or other dry, overly academic lecture channels.
 Return ONLY JSON.`;
-      const res = await call({ data: { prompt, json: true, system: "You return only strict JSON.", cacheKey: `rm:v3:${form.name.toLowerCase().trim()}:${form.nodeCount}` } });
+      const res = await call({ data: { prompt, json: true, system: "You return only strict JSON.", cacheKey: `rm:v4:${form.name.toLowerCase().trim()}:${form.nodeCount}` } });
       const parsed = parseAiJson<{ description?: string; estimated_hours?: number; nodes: NodeSpec[] }>(res.text);
       if (!parsed?.nodes || !Array.isArray(parsed.nodes) || parsed.nodes.length === 0) {
         throw new Error("AI returned no roadmap topics or invalid JSON. Please try again.");
@@ -113,7 +115,8 @@ Return ONLY JSON.`;
       const validKeys = new Set(uniqueNodes.map(n => n.key));
       const rows = uniqueNodes.map((n, i) => {
         const prereqs = (n.prereq_keys ?? []).filter(k => validKeys.has(k));
-        const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(n.title)}`;
+        const channelSuffix = n.recommended_channel ? ` ${n.recommended_channel}` : "";
+        const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(n.title + channelSuffix)}`;
         return {
           roadmap_id: rm.id,
           user_id: uid,
@@ -125,7 +128,7 @@ Return ONLY JSON.`;
           kind: "study",
           youtube_video_id: null,
           youtube_title: n.title,
-          youtube_channel: "YouTube Search",
+          youtube_channel: n.recommended_channel || "YouTube Search",
           youtube_url: searchUrl,
           youtube_thumbnail: null,
           practice_task: n.practice_task ?? null,
