@@ -41,6 +41,8 @@ function RoomPage() {
   const [meId, setMeId] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [isLeaveDialogOpen, setIsLeaveDialogOpen] = useState(false);
+  const [leaving, setLeaving] = useState(false);
 
   useEffect(() => { supabase.auth.getUser().then(({ data }) => setMeId(data.user?.id ?? null)); }, []);
 
@@ -85,11 +87,19 @@ function RoomPage() {
 
   const isOwner = !!room && !!meId && room.owner_id === meId;
 
-  async function leave() {
+  async function performLeave(): Promise<void> {
     if (!meId) return;
+    setLeaving(true);
     await logEvent(roomId, meId, "left", "left the room");
-    await supabase.from("room_members").delete().eq("room_id", roomId).eq("user_id", meId);
-    navigate({ to: "/app/rooms" });
+    const { error } = await supabase.from("room_members").delete().eq("room_id", roomId).eq("user_id", meId);
+    if (error) {
+      toast.error("Failed to leave room: " + error.message);
+      setLeaving(false);
+    } else {
+      toast.success("Left room successfully");
+      setIsLeaveDialogOpen(false);
+      navigate({ to: "/app/rooms" });
+    }
   }
 
   async function performDelete(retryCount = 0): Promise<void> {
@@ -131,14 +141,14 @@ function RoomPage() {
             {room.code} <Copy className="h-3 w-3" />
           </button>
         </div>
-        {isOwner ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="grid h-10 w-10 place-items-center rounded-xl border border-border bg-card hover:bg-muted text-foreground transition-colors">
-                <Settings className="h-4 w-4" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="grid h-10 w-10 place-items-center rounded-xl border border-border bg-card hover:bg-muted text-foreground transition-colors">
+              <Settings className="h-4 w-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {isOwner ? (
               <DropdownMenuItem
                 onSelect={() => setIsDeleteDialogOpen(true)}
                 className="text-destructive focus:bg-destructive/10 focus:text-destructive font-semibold cursor-pointer"
@@ -146,11 +156,17 @@ function RoomPage() {
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete Room
               </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : (
-          <button onClick={leave} className="grid h-10 w-10 place-items-center rounded-xl border border-border"><LogOut className="h-4 w-4" /></button>
-        )}
+            ) : (
+              <DropdownMenuItem
+                onSelect={() => setIsLeaveDialogOpen(true)}
+                className="text-destructive focus:bg-destructive/10 focus:text-destructive font-semibold cursor-pointer"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Leave Room
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </header>
 
       <PlaylistBar room={room} isOwner={isOwner} />
@@ -197,6 +213,30 @@ function RoomPage() {
               className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold"
             >
               {deleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={isLeaveDialogOpen} onOpenChange={setIsLeaveDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave Study Room</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to leave this study room? You will need the room code to join again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={leaving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                performLeave();
+              }}
+              disabled={leaving}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold"
+            >
+              {leaving ? "Leaving..." : "Leave"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

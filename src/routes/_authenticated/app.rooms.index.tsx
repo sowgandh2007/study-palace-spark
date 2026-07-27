@@ -23,11 +23,18 @@ function Rooms() {
   const { data: rooms = [] } = useQuery({
     queryKey: ["rooms"],
     queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return [];
+
       const { data } = await supabase
-        .from("rooms")
-        .select("*, room_members(count)")
-        .order("created_at", { ascending: false });
-      return data ?? [];
+        .from("room_members")
+        .select("room_id, rooms(*, room_members(count))")
+        .eq("user_id", u.user.id);
+
+      return (data ?? [])
+        .map((m: any) => m.rooms)
+        .filter(Boolean)
+        .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     },
   });
 
