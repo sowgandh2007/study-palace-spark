@@ -95,21 +95,55 @@ function MusicPage() {
       {favs.length > 0 && (
         <>
           <h2 className="mt-6 text-xs font-bold uppercase tracking-wide text-muted-foreground">Favorites</h2>
-          <div className="mt-2 grid grid-cols-2 gap-3">
-            {favs.map((p) => <Card key={p.id} p={p} />)}
-          </div>
+          <motion.div
+            className="mt-2 grid grid-cols-2 gap-3"
+            variants={stagger(0.06)}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.15 }}
+          >
+            {favs.map((p) => (
+              <motion.div key={p.id} variants={fadeUp}><Card p={p} /></motion.div>
+            ))}
+          </motion.div>
         </>
       )}
 
       <h2 className="mt-6 text-xs font-bold uppercase tracking-wide text-muted-foreground">
         {cat === "All" ? "All playlists" : cat}
       </h2>
-      <div className="mt-2 grid grid-cols-2 gap-3">
-        {filtered.map((p) => <Card key={p.id} p={p} />)}
-      </div>
+      <motion.div
+        key={cat + q}
+        className="mt-2 grid grid-cols-2 gap-3"
+        variants={stagger(0.05)}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.1 }}
+      >
+        {filtered.map((p) => (
+          <motion.div key={p.id} variants={fadeUp}><Card p={p} /></motion.div>
+        ))}
+      </motion.div>
       {filtered.length === 0 && (
         <p className="mt-8 text-center text-sm text-muted-foreground">No playlists match "{q}"</p>
       )}
+    </div>
+  );
+}
+
+function Equalizer({ active }: { active: boolean }) {
+  const bars = Array.from({ length: 28 });
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 flex h-64 items-end justify-between gap-1 px-3 opacity-[0.14]">
+      {bars.map((_, i) => (
+        <motion.span
+          key={i}
+          className="w-full rounded-t-full bg-gradient-to-t from-fuchsia-500 to-indigo-400"
+          initial={{ height: 6 }}
+          animate={{ height: active ? [8, 40 + ((i * 13) % 60), 12, 28, 8] : [8, 14, 10, 18, 8] }}
+          transition={{ duration: active ? 1.6 + (i % 5) * 0.15 : 3 + (i % 4) * 0.4, repeat: Infinity, ease: "easeInOut", delay: (i % 7) * 0.08 }}
+        />
+      ))}
     </div>
   );
 }
