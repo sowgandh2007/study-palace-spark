@@ -171,7 +171,7 @@ function Card({ p }: { p: Playlist }) {
         <p className="text-[10px] opacity-80">{p.category}</p>
         <button
           onClick={() => (active ? m.toggle() : m.play(p))}
-          className="mt-3 flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-[11px] font-bold text-black"
+          className={"mt-3 flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-[11px] font-bold text-black transition-all hover:scale-105 hover:shadow-[0_0_20px_rgba(255,255,255,0.5)] " + (active && m.playing ? "animate-pulse shadow-[0_0_18px_rgba(255,255,255,0.55)]" : "")}
         >
           {active && m.playing ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
           {active && m.playing ? "Pause" : "Play"}
