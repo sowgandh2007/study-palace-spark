@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Sparkles, Users, Map, Flame, ArrowRight } from "lucide-react";
 import { motion, fadeUp, stagger, useReducedMotion } from "@/lib/motion";
+import { ThemeSelect } from "@/lib/theme";
 
 export const Route = createFileRoute("/")({
   component: Landing,
