@@ -46,6 +46,10 @@ StudySphere AI combines AI personalization with collaborative learning to create
 git clone https://github.com/sowgandh2007/study-palace-spark.git
 npm install
 npm run dev
+
+## 🎥 Demo Video
+
+▶ **[Watch StudySphere AI Demo](https://vimeo.com/1213964530?share=copy&fl=sv&fe=ci)**
 ```
 
 **Learn together. Learn smarter. Master anything.**
