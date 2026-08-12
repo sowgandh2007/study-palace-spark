@@ -87,12 +87,19 @@ export type RepairActivity = {
   afterScore?: number;
 };
 
+export type ApiProviderId = "gemini" | "openai" | "anthropic" | "custom";
+
 export type ApiConfig = {
-  activeProvider: "gemini" | "openai" | "anthropic" | "custom";
+  activeProvider: ApiProviderId;
   geminiApiKey: string;
+  geminiModel: string;
   openaiApiKey: string;
+  openaiModel: string;
   anthropicApiKey: string;
+  anthropicModel: string;
   customEndpoint: string;
+  customModel: string;
+  timeoutMs: number;
 };
 
 export type Band = {

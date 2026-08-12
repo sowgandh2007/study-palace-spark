@@ -1,195 +1,290 @@
-import type { ApiConfig, DiagnosedGap, ProbeDimension, ProbeQuestion } from "./types";
+import type { ApiConfig, DiagnosedGap, ProbeQuestion, ProbeEvaluation } from "./types";
 
-export type ProbeScore = {
-  score: number;
-  reasoning: string;
+export const DEFAULT_API_CONFIG: ApiConfig = {
+  activeProvider: "gemini",
+  geminiApiKey: "",
+  geminiModel: "gemini-1.5-flash",
+  openaiApiKey: "",
+  openaiModel: "gpt-4o-mini",
+  anthropicApiKey: "",
+  anthropicModel: "claude-3-5-sonnet-20240620",
+  customEndpoint: "https://api.openai.com/v1/chat/completions",
+  customModel: "gpt-4o-mini",
+  timeoutMs: 30000,
 };
 
-/**
- * Robust JSON parser that strips markdown code fences (```json ... ``` or ``` ... ```)
- * before parsing JSON string responses from LLMs.
- */
-export function cleanAndParseJSON<T>(rawText: string): T {
-  let cleaned = rawText.trim();
-  cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+const LOCAL_STORAGE_KEY = "echo-api-keys";
 
-  const firstBrace = cleaned.search(/[\{\[]/);
-  const lastBrace = cleaned.search(/[\}\]][^View]*$/);
+export function getApiConfig(): ApiConfig {
+  if (typeof window === "undefined") return DEFAULT_API_CONFIG;
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return { ...DEFAULT_API_CONFIG, ...parsed };
+    }
+  } catch (e) {
+    console.error("[ECHO AI] Failed to load API config from localStorage:", e);
+  }
+  return DEFAULT_API_CONFIG;
+}
+
+export function saveApiConfig(config: Partial<ApiConfig>): ApiConfig {
+  const current = getApiConfig();
+  const updated = { ...current, ...config };
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+    } catch (e) {
+      console.error("[ECHO AI] Failed to save API config to localStorage:", e);
+    }
+  }
+  return updated;
+}
+
+export class ECHOAIError extends Error {
+  code: "INVALID_KEY" | "RATE_LIMIT" | "TIMEOUT" | "NETWORK_ERROR" | "SERVER_ERROR" | "INVALID_RESPONSE";
+  status?: number;
+
+  constructor(
+    message: string,
+    code: "INVALID_KEY" | "RATE_LIMIT" | "TIMEOUT" | "NETWORK_ERROR" | "SERVER_ERROR" | "INVALID_RESPONSE",
+    status?: number
+  ) {
+    super(message);
+    this.name = "ECHOAIError";
+    this.code = code;
+    this.status = status;
+  }
+}
+
+function logDev(message: string, ...data: unknown[]) {
+  if (import.meta.env.DEV) {
+    console.log(`%c[ECHO AI] ${message}`, "color: #38bdf8; font-weight: bold;", ...data);
+  }
+}
+
+export function cleanAndParseJSON<T>(rawText: string): T {
+  let text = rawText.trim();
+
+  // Strip markdown code fences
+  if (text.includes("```")) {
+    text = text.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
+  }
+
+  // Find first { or [ and last } or ]
+  const firstBrace = text.search(/[\{\[]/);
+  const lastBrace = text.search(/[\}\]][^]*$/);
 
   if (firstBrace !== -1 && lastBrace !== -1 && lastBrace >= firstBrace) {
-    cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+    text = text.substring(firstBrace, lastBrace + 1).trim();
   }
 
-  return JSON.parse(cleaned) as T;
-}
-
-/**
- * Get active API configuration from localStorage or environment variables.
- */
-export function getApiConfig(): ApiConfig {
-  const defaultConfig: ApiConfig = {
-    activeProvider: "gemini",
-    geminiApiKey: "",
-    openaiApiKey: "",
-    anthropicApiKey: "",
-    customEndpoint: "",
-  };
-
   try {
-    if (typeof window !== "undefined") {
-      const stored = window.localStorage.getItem("echo-api-keys");
-      if (stored) return { ...defaultConfig, ...JSON.parse(stored) };
-    }
-  } catch {
-    /* ignore localStorage error */
-  }
-
-  return defaultConfig;
-}
-
-/**
- * Save user API configuration to localStorage.
- */
-export function saveApiConfig(config: ApiConfig): void {
-  try {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem("echo-api-keys", JSON.stringify(config));
-    }
-  } catch {
-    /* ignore localStorage error */
+    return JSON.parse(text) as T;
+  } catch (e) {
+    logDev("JSON parse failed on output:", text);
+    throw new ECHOAIError(
+      "ECHO received an invalid JSON response structure from the AI provider.",
+      "INVALID_RESPONSE"
+    );
   }
 }
 
-/**
- * Call connected LLM API using user-configured API Key or environment variable.
- */
-async function callLLM(prompt: string): Promise<string> {
-  const cfg = getApiConfig();
+async function callProviderAPI(prompt: string, overrideConfig?: ApiConfig): Promise<string> {
+  const cfg = overrideConfig || getApiConfig();
+  const provider = cfg.activeProvider;
+  const timeoutMs = cfg.timeoutMs || 30000;
 
-  const geminiKey =
-    cfg.geminiApiKey ||
-    (typeof process !== "undefined" && process.env?.GEMINI_API_KEY) ||
-    (typeof import.meta !== "undefined" && import.meta.env?.VITE_GEMINI_API_KEY);
+  logDev(`Request starting. Provider: ${provider}, Model: ${cfg[`${provider}Model` as keyof ApiConfig] || "default"}`);
 
-  const openaiKey =
-    cfg.openaiApiKey ||
-    (typeof process !== "undefined" && process.env?.OPENAI_API_KEY) ||
-    (typeof import.meta !== "undefined" && import.meta.env?.VITE_OPENAI_API_KEY);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    if (cfg.activeProvider === "custom" && cfg.customEndpoint) {
-      const res = await fetch(cfg.customEndpoint, {
+    if (provider === "gemini") {
+      const apiKey = cfg.geminiApiKey.trim() || (import.meta.env.VITE_GEMINI_API_KEY as string) || "";
+      if (!apiKey) {
+        throw new ECHOAIError(
+          "Your Gemini API key is missing. Please enter a valid Gemini API key in API Settings.",
+          "INVALID_KEY"
+        );
+      }
+      const model = cfg.geminiModel || "gemini-1.5-flash";
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+        }),
+        signal: controller.signal,
       });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.text || data.content) return data.text || data.content;
+
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          throw new ECHOAIError("Your Gemini API key appears to be invalid or unauthorized.", "INVALID_KEY", res.status);
+        }
+        if (res.status === 429) {
+          throw new ECHOAIError("The Gemini API is temporarily rate-limiting requests. Please try again shortly.", "RATE_LIMIT", res.status);
+        }
+        throw new ECHOAIError(`Gemini API returned a server error (Status: ${res.status}).`, "SERVER_ERROR", res.status);
       }
+
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) {
+        throw new ECHOAIError("Gemini API returned an empty or unreadable content payload.", "INVALID_RESPONSE");
+      }
+      logDev("Request succeeded from Gemini");
+      return text;
     }
 
-    if (cfg.activeProvider === "openai" && openaiKey) {
+    if (provider === "openai") {
+      const apiKey = cfg.openaiApiKey.trim() || (import.meta.env.VITE_OPENAI_API_KEY as string) || "";
+      if (!apiKey) {
+        throw new ECHOAIError("Your OpenAI API key is missing. Please enter a valid OpenAI API key in API Settings.", "INVALID_KEY");
+      }
+      const model = cfg.openaiModel || "gpt-4o-mini";
+
       const res = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${openaiKey}`,
+          Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
+          model,
           messages: [{ role: "user", content: prompt }],
-          response_format: { type: "json_object" },
+          temperature: 0.2,
         }),
+        signal: controller.signal,
       });
-      if (res.ok) {
-        const data = await res.json();
-        const text = data?.choices?.[0]?.message?.content;
-        if (text) return text;
-      }
-    }
 
-    if ((cfg.activeProvider === "gemini" || !openaiKey) && geminiKey) {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { responseMimeType: "application/json" },
-          }),
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          throw new ECHOAIError("Your OpenAI API key appears to be invalid or unauthorized.", "INVALID_KEY", res.status);
         }
-      );
-      if (res.ok) {
-        const data = await res.json();
-        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text) return text;
+        if (res.status === 429) {
+          throw new ECHOAIError("OpenAI rate limit or quota exceeded. Please check your OpenAI usage.", "RATE_LIMIT", res.status);
+        }
+        throw new ECHOAIError(`OpenAI API returned a server error (Status: ${res.status}).`, "SERVER_ERROR", res.status);
       }
-    }
-  } catch (err) {
-    console.warn("LLM API call failed, using intelligent fallback generator:", err);
-  }
 
-  return generateFallbackResponse(prompt);
+      const data = await res.json();
+      const text = data?.choices?.[0]?.message?.content;
+      if (!text) {
+        throw new ECHOAIError("OpenAI API returned an empty content payload.", "INVALID_RESPONSE");
+      }
+      logDev("Request succeeded from OpenAI");
+      return text;
+    }
+
+    if (provider === "anthropic") {
+      const apiKey = cfg.anthropicApiKey.trim() || (import.meta.env.VITE_ANTHROPIC_API_KEY as string) || "";
+      if (!apiKey) {
+        throw new ECHOAIError("Your Anthropic API key is missing. Please enter a valid Anthropic API key in API Settings.", "INVALID_KEY");
+      }
+      const model = cfg.anthropicModel || "claude-3-5-sonnet-20240620";
+
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "dangerously-allow-browser": "true",
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: 1024,
+          messages: [{ role: "user", content: prompt }],
+        }),
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          throw new ECHOAIError("Your Anthropic API key appears to be invalid or unauthorized.", "INVALID_KEY", res.status);
+        }
+        if (res.status === 429) {
+          throw new ECHOAIError("Anthropic API rate limit exceeded.", "RATE_LIMIT", res.status);
+        }
+        throw new ECHOAIError(`Anthropic API returned a server error (Status: ${res.status}).`, "SERVER_ERROR", res.status);
+      }
+
+      const data = await res.json();
+      const text = data?.content?.[0]?.text;
+      if (!text) {
+        throw new ECHOAIError("Anthropic API returned an empty content payload.", "INVALID_RESPONSE");
+      }
+      logDev("Request succeeded from Anthropic");
+      return text;
+    }
+
+    if (provider === "custom") {
+      const endpoint = cfg.customEndpoint.trim() || "https://api.openai.com/v1/chat/completions";
+      const model = cfg.customModel.trim() || "default";
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(cfg.openaiApiKey ? { Authorization: `Bearer ${cfg.openaiApiKey}` } : {}),
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: "user", content: prompt }],
+        }),
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        throw new ECHOAIError(`Custom LLM Endpoint returned error status: ${res.status}.`, "SERVER_ERROR", res.status);
+      }
+
+      const data = await res.json();
+      const text = data?.choices?.[0]?.message?.content || data?.response || JSON.stringify(data);
+      logDev("Request succeeded from Custom Endpoint");
+      return text;
+    }
+
+    throw new ECHOAIError(`Unsupported AI Provider: ${provider}`, "SERVER_ERROR");
+  } catch (err: unknown) {
+    if (err instanceof ECHOAIError) {
+      throw err;
+    }
+    if ((err as Error).name === "AbortError") {
+      throw new ECHOAIError("The AI request took too long and timed out (30s limit).", "TIMEOUT");
+    }
+    throw new ECHOAIError(
+      "ECHO couldn't connect to the AI service. Please check your internet connection.",
+      "NETWORK_ERROR"
+    );
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
-function generateFallbackResponse(prompt: string): string {
-  if (prompt.includes("Diagnose the exact conceptual gap")) {
-    const conceptMatch = prompt.match(/Concept:\s*"([^"]+)"/i);
-    const concept = conceptMatch ? conceptMatch[1] : "this concept";
-    return JSON.stringify({
-      gapText: `Understanding why the structural property of ${concept} allows spatial space reduction.`,
-      severity: "high",
-      relevantAssumption: "Assumes preconditions hold automatically in non-standard inputs.",
-      recommendedProbe: `Why does ${concept} fail when input properties are inverted?`,
-    });
-  }
-
-  if (prompt.includes("Generate exactly 3 short probe questions")) {
-    const conceptMatch = prompt.match(/concept:\s*"([^"]+)"/i);
-    const concept = conceptMatch ? conceptMatch[1] : "this concept";
-    return JSON.stringify({
-      probes: [
-        {
-          dimension: "direct",
-          question: `What is the core definition and primary output of ${concept}?`,
-        },
-        {
-          dimension: "explain",
-          question: `Why does ${concept} operate this way? Walk through the step-by-step mechanism rather than reciting rules.`,
-        },
-        {
-          dimension: "transfer",
-          question: `How would you apply ${concept} to solve an unannounced problem in a new, unfamiliar domain?`,
-        },
-      ],
-    });
-  }
-
-  if (prompt.includes("Score a student's answer")) {
-    const answerMatch = prompt.match(/Student's answer:\s*(.*)/i);
-    const answer = answerMatch ? answerMatch[1].trim() : "";
-    const words = answer.split(/\s+/).filter(Boolean).length;
-
-    let score = 75;
-    let reasoning = "Solid explanation covering the essential mechanics.";
-
-    if (words < 5) {
-      score = 30;
-      reasoning = "Answer is too brief to demonstrate full conceptual understanding.";
-    } else if (words < 12) {
-      score = 55;
-      reasoning = "States the basic outcome but misses key steps in the underlying reasoning.";
-    } else if (words > 25) {
-      score = 90;
-      reasoning = "Comprehensive reasoning with clear mechanism and accurate details.";
+export async function testAiConnection(overrideConfig?: ApiConfig): Promise<{ ok: boolean; message: string; durationMs: number }> {
+  const start = Date.now();
+  try {
+    const response = await callProviderAPI(
+      'Respond with valid JSON: {"status": "ok", "message": "connection successful"}',
+      overrideConfig
+    );
+    const durationMs = Date.now() - start;
+    const parsed = cleanAndParseJSON<{ status: string }>(response);
+    if (parsed.status === "ok" || typeof response === "string") {
+      return { ok: true, message: `Connected in ${durationMs}ms`, durationMs };
     }
-
-    return JSON.stringify({ score, reasoning });
+    return { ok: true, message: `Response received in ${durationMs}ms`, durationMs };
+  } catch (err: unknown) {
+    const durationMs = Date.now() - start;
+    const msg = err instanceof Error ? err.message : "Unknown connection failure";
+    return { ok: false, message: msg, durationMs };
   }
-
-  return JSON.stringify({ status: "ok" });
 }
 
 export async function analyzeReflectionAndDiagnoseGap(
@@ -198,139 +293,139 @@ export async function analyzeReflectionAndDiagnoseGap(
   understoodText: string,
   notUnderstoodText: string
 ): Promise<DiagnosedGap> {
-  const prompt = `You are ECHO's AI Diagnostic Engine. A student just completed a post-class reflection on "${concept}".
+  const prompt = `You are ECHO, an Evidence-Based Conceptual Honesty Engine.
+A student reflected on learning "${concept}".
+- Self-reported Confidence: ${confidence}%
+- What they ALREADY understand: "${understoodText || "Not specified"}"
+- What they STRUGGLE with: "${notUnderstoodText || "Not specified"}"
 
-Student's self-reported confidence: ${confidence}%
-What they understand: "${understoodText || "Not specified"}"
-What they don't understand: "${notUnderstoodText || "Not specified"}"
-
-Diagnose the exact conceptual gap. Do NOT generate generic quiz questions. Produce structured diagnosis.
-
-Return ONLY valid JSON:
+Analyze their self-assessment and diagnose their exact conceptual gap.
+Return strictly valid JSON with this format:
 {
-  "gapText": "<one concise sentence stating the exact conceptual gap>",
+  "gapText": "One precise sentence stating their exact conceptual gap or structural flaw in reasoning.",
   "severity": "high" | "medium" | "low",
-  "relevantAssumption": "<one sentence stating the hidden assumption or precondition they missed>",
-  "recommendedProbe": "<one specific targeted probe question testing this exact gap>"
+  "relevantAssumption": "One sentence describing the underlying assumption or precondition they may be missing.",
+  "recommendedProbe": "Direct, Explain, or Transfer recommendation"
 }`;
 
-  const rawText = await callLLM(prompt);
   try {
-    const parsed = cleanAndParseJSON<DiagnosedGap>(rawText);
-    if (parsed.gapText && parsed.recommendedProbe) {
-      return parsed;
+    const raw = await callProviderAPI(prompt);
+    const parsed = cleanAndParseJSON<DiagnosedGap>(raw);
+    if (!parsed.gapText) {
+      throw new ECHOAIError("Diagnostic output missing gapText", "INVALID_RESPONSE");
     }
-    throw new Error("Invalid gap diagnosis structure");
-  } catch (err) {
-    console.error("Failed to parse gap diagnosis JSON:", rawText, err);
     return {
-      gapText: `Understanding why the core invariant of ${concept} holds under variation.`,
-      severity: "high",
-      relevantAssumption: "Assumes standard preconditions apply without checking boundary constraints.",
-      recommendedProbe: `Why does ${concept} fail when applied to non-standard or inverted input structures?`,
+      gapText: parsed.gapText,
+      severity: parsed.severity || "medium",
+      relevantAssumption: parsed.relevantAssumption || "Missing structural invariant.",
+      recommendedProbe: parsed.recommendedProbe || "Explain dimension probe",
+    };
+  } catch (e) {
+    logDev("analyzeReflectionAndDiagnoseGap fallback due to:", e);
+    return {
+      gapText: `Understanding why ${concept} elimination or structural logic operates under boundary constraints.`,
+      severity: "medium",
+      relevantAssumption: "Assumes correctness without verifying spatial/invariant preconditions.",
+      recommendedProbe: "Explain dimension probe",
     };
   }
 }
 
 export async function generateProbes(
   concept: string,
-  notes: string = "",
-  confidence: number = 80
+  gapContext?: string,
+  confidence?: number
 ): Promise<ProbeQuestion[]> {
-  const prompt = `You are ECHO, an academic understanding-verification engine. A student just studied the concept: "${concept}" (context/notes: ${notes || "None"}).
+  const prompt = `You are ECHO, an Evidence-Based Conceptual Honesty Engine.
+Generate a targeted 3-dimension verification probe for the concept: "${concept}".
+Context:
+- Diagnosed Conceptual Gap: "${gapContext || "General conceptual verification"}"
+- Learner Confidence: ${confidence ?? 75}%
 
-The student self-reported their confidence in this concept as ${confidence}%.
+Generate EXACTLY 3 targeted probe questions corresponding to 3 distinct dimensions:
+1. "direct": Tests if the learner can produce the correct baseline definition/answer directly.
+2. "explain": Tests "why it works" — depth of reasoning and underlying mechanism, not recall.
+3. "transfer": Tests applying the concept to a new, unfamiliar scenario or boundary condition.
 
-Generate exactly 3 short probe questions, one for each of these dimensions:
-1. DIRECT — a standard question testing if they can produce the correct answer
-2. EXPLAIN — a "why does this work" question testing reasoning, not recall
-3. TRANSFER — a question applying the concept to a new/unfamiliar scenario
-
-Return ONLY valid JSON in this exact format:
+Return strictly valid JSON in this format:
 {
+  "concept": "${concept}",
   "probes": [
-    {"dimension": "direct", "question": "..."},
-    {"dimension": "explain", "question": "..."},
-    {"dimension": "transfer", "question": "..."}
+    { "dimension": "direct", "question": "..." },
+    { "dimension": "explain", "question": "..." },
+    { "dimension": "transfer", "question": "..." }
   ]
 }`;
 
-  const rawText = await callLLM(prompt);
-  try {
-    const parsed = cleanAndParseJSON<{ probes: ProbeQuestion[] }>(rawText);
-    if (Array.isArray(parsed.probes) && parsed.probes.length === 3) {
-      return parsed.probes;
-    }
-    throw new Error("Invalid probe structure returned from LLM");
-  } catch (err) {
-    console.error("Failed to parse probe generation JSON:", rawText, err);
-    throw new Error("ECHO could not parse the generated probe questions. Please try again.");
+  const raw = await callProviderAPI(prompt);
+  const parsed = cleanAndParseJSON<{ concept: string; probes: ProbeQuestion[] }>(raw);
+
+  if (!parsed.probes || !Array.isArray(parsed.probes) || parsed.probes.length < 3) {
+    throw new ECHOAIError("AI output did not return 3 valid probe dimensions.", "INVALID_RESPONSE");
   }
+
+  // Validate required dimensions
+  const validProbes = parsed.probes.filter(
+    (p) => (p.dimension === "direct" || p.dimension === "explain" || p.dimension === "transfer") && p.question?.trim()
+  );
+
+  if (validProbes.length < 3) {
+    throw new ECHOAIError("AI output contained incomplete probe questions.", "INVALID_RESPONSE");
+  }
+
+  logDev("Probes generated successfully:", validProbes);
+  return validProbes;
 }
 
 export async function scoreAnswer(
   concept: string,
-  dimension: ProbeDimension,
   question: string,
-  studentAnswer: string
-): Promise<ProbeScore> {
-  const prompt = `You are ECHO's evaluation engine. Score a student's answer to a probe question on a specific understanding dimension.
+  dimension: string,
+  userAnswer: string
+): Promise<{ score: number; reasoning: string }> {
+  const prompt = `You are ECHO, evaluating a learner's answer on concept "${concept}".
+Dimension being tested: ${dimension}
+Question asked: "${question}"
+Learner's answer: "${userAnswer}"
 
-Concept: ${concept}
-Dimension: ${dimension}
-Question: ${question}
-Student's answer: ${studentAnswer}
-
-Score the answer from 0-100 based on correctness and depth of reasoning.
-
-Return ONLY valid JSON:
+Evaluate evidence of real understanding vs shallow memorization.
+Return strictly valid JSON:
 {
-  "score": <0-100 integer>,
-  "reasoning": "<one sentence on why this score, written for the student>"
+  "score": integer between 0 and 100,
+  "reasoning": "1-2 sentence concise explanation of why this score was awarded."
 }`;
 
-  const rawText = await callLLM(prompt);
-  try {
-    const parsed = cleanAndParseJSON<ProbeScore>(rawText);
-    if (typeof parsed.score === "number" && typeof parsed.reasoning === "string") {
-      return {
-        score: Math.max(0, Math.min(100, Math.round(parsed.score))),
-        reasoning: parsed.reasoning,
-      };
-    }
-    throw new Error("Invalid score structure returned from LLM");
-  } catch (err) {
-    console.error("Failed to parse scoring JSON:", rawText, err);
-    throw new Error("ECHO could not parse the evaluation response.");
+  const raw = await callProviderAPI(prompt);
+  const parsed = cleanAndParseJSON<{ score: number; reasoning: string }>(raw);
+
+  if (typeof parsed.score !== "number" || !parsed.reasoning) {
+    throw new ECHOAIError("AI evaluation failed to return score or reasoning.", "INVALID_RESPONSE");
   }
+
+  const score = Math.max(0, Math.min(100, Math.round(parsed.score)));
+  return { score, reasoning: parsed.reasoning };
 }
 
 export async function generateRecommendation(
   concept: string,
   stabilityScore: number,
-  band: string,
-  weakestDimension: string
+  confidenceGap: number,
+  evaluations: ProbeEvaluation[]
 ): Promise<string> {
-  const prompt = `You are ECHO. A student just completed an understanding probe on "${concept}".
-Their Understanding Stability Score is ${stabilityScore} (${band}).
-Their weakest dimension was: ${weakestDimension}.
+  const prompt = `You are ECHO.
+Concept: "${concept}"
+Stability Score: ${stabilityScore}%
+Confidence Gap: ${confidenceGap > 0 ? `+${confidenceGap}% (Overconfident)` : `${confidenceGap}%`}
 
-Write ONE specific, actionable study recommendation (max 20 words) targeting that weakest dimension.
+Evaluations:
+${evaluations.map((e) => `- ${e.dimension}: Score ${e.score}/100 (${e.reasoning})`).join("\n")}
 
-Return ONLY valid JSON:
-{
-  "recommendation": "<string>"
-}`;
+Provide a 1-sentence actionable study recommendation addressing their weakest dimension.`;
 
-  const rawText = await callLLM(prompt);
   try {
-    const parsed = cleanAndParseJSON<{ recommendation: string }>(rawText);
-    if (typeof parsed.recommendation === "string") {
-      return parsed.recommendation;
-    }
-    throw new Error("Invalid recommendation structure");
-  } catch (err) {
-    console.error("Failed to parse recommendation JSON:", rawText, err);
-    return `Focus your study on the ${weakestDimension} dimension by working through step-by-step examples.`;
+    const raw = await callProviderAPI(prompt);
+    return raw.trim().replace(/^"|"$/g, "");
+  } catch {
+    return "Focus on explaining the underlying mechanism in your own words before attempting boundary variations.";
   }
 }

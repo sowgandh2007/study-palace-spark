@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -13,8 +13,11 @@ import {
   ShieldQuestion,
   Sparkles,
   Zap,
+  Settings,
+  AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
-import { EchoLogo } from "@/routes/index";
+import { EchoLogo, HeaderNav } from "@/routes/index";
 import { ThemeSelect } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,6 +28,7 @@ import {
   generateProbes,
   generateRecommendation,
   scoreAnswer,
+  getApiConfig,
 } from "@/lib/echo/llm";
 import { calculateStabilityScore, calculateConfidenceGap, bandFor } from "@/lib/echo/scoring";
 import { DEMO_BINARY_SEARCH_DATA } from "@/lib/echo/data";
@@ -80,6 +84,7 @@ function AssessmentPage() {
   const { concept: searchConcept, gap: searchGap, confidence: searchConf, demo } = Route.useSearch();
   const isDemo = Boolean(demo);
   const { setLatestResult } = useEcho();
+  const apiConfig = getApiConfig();
 
   const [step, setStep] = useState<"input" | "generating" | "answering" | "results">("input");
 
@@ -103,6 +108,16 @@ function AssessmentPage() {
   const [recommendation, setRecommendation] = useState<string>("");
   const [loadingRec, setLoadingRec] = useState(false);
 
+  const hasAutoStarted = useRef(false);
+
+  // Auto-start probe generation if concept passed in URL search params
+  useEffect(() => {
+    if (searchConcept && !hasAutoStarted.current && step === "input" && !isDemo) {
+      hasAutoStarted.current = true;
+      handleStartProbe();
+    }
+  }, [searchConcept]);
+
   useEffect(() => {
     if (isDemo && !conceptInput) {
       setConceptInput("Binary Search");
@@ -112,7 +127,7 @@ function AssessmentPage() {
 
   async function handleStartProbe(e?: React.FormEvent) {
     if (e) e.preventDefault();
-    const concept = conceptInput.trim();
+    const concept = (conceptInput || searchConcept || "").trim();
     if (!concept) return;
 
     setError(null);
@@ -145,11 +160,12 @@ function AssessmentPage() {
       setIndex(0);
       setAnswersMap({});
       setEvaluations([]);
-      setGenerating(false);
       setStep("answering");
     } catch (err: unknown) {
+      setError((err as Error).message || "Failed to generate AI probes. Please check your API Settings.");
+      setStep("input");
+    } finally {
       setGenerating(false);
-      setError((err as Error).message || "Failed to generate probes. Please try again.");
     }
   }
 
@@ -159,23 +175,22 @@ function AssessmentPage() {
     if (!q || !currentAnswerText.trim()) return;
 
     setEvaluating(true);
+    setError(null);
 
     let scoreRes: { score: number; reasoning: string };
 
     if (isDemo) {
-      // Hardcoded evaluation with ~800ms simulated delay, 0 network requests
-      await new Promise((r) => setTimeout(r, 800));
       const demoItem = DEMO_BINARY_SEARCH_DATA.probes[index];
       scoreRes = {
-        score: demoItem?.demoScore ?? 50,
-        reasoning: demoItem?.demoReasoning ?? "Pre-evaluated answer for demo.",
+        score: demoItem ? demoItem.demoScore : 70,
+        reasoning: demoItem ? demoItem.demoReasoning : "Baseline demo reasoning.",
       };
     } else {
       try {
-        scoreRes = await scoreAnswer(conceptInput, q.dimension, q.question, currentAnswerText);
+        scoreRes = await scoreAnswer(conceptInput.trim(), q.question, q.dimension, currentAnswerText);
       } catch (err: unknown) {
+        setError((err as Error).message || "Answer evaluation timed out or failed.");
         setEvaluating(false);
-        setError((err as Error).message || "Failed to evaluate answer.");
         return;
       }
     }
@@ -188,150 +203,168 @@ function AssessmentPage() {
       answer: currentAnswerText,
     };
 
-    const updatedEvals = [...evaluations.filter((e) => e.dimension !== q.dimension), newEval];
-    setEvaluations(updatedEvals);
+    const nextEvals = [...evaluations, newEval];
+    setEvaluations(nextEvals);
     setEvaluating(false);
 
     if (index < probes.length - 1) {
-      setIndex(index + 1);
+      setIndex((i) => i + 1);
     } else {
-      finalizeResults(updatedEvals);
+      // Finished all probes -> compute stability score
+      setStep("results");
+      finalizeResults(nextEvals);
     }
   }
 
-  async function finalizeResults(finalEvals: ProbeEvaluation[]) {
-    setStep("results");
+  async function finalizeResults(evals: ProbeEvaluation[]) {
+    const directEval = evals.find((e) => e.dimension === "direct");
+    const explainEval = evals.find((e) => e.dimension === "explain");
+    const transferEval = evals.find((e) => e.dimension === "transfer");
 
-    const directScore = finalEvals.find((s) => s.dimension === "direct")?.score ?? 0;
-    const explainScore = finalEvals.find((s) => s.dimension === "explain")?.score ?? 0;
-    const transferScore = finalEvals.find((s) => s.dimension === "transfer")?.score ?? 0;
+    const directScore = directEval ? directEval.score : 0;
+    const explainScore = explainEval ? explainEval.score : 0;
+    const transferScore = transferEval ? transferEval.score : 0;
 
-    // Use single centralized scoring formula: round(direct*0.2 + explain*0.4 + transfer*0.4)
     const stabilityScore = calculateStabilityScore(directScore, explainScore, transferScore);
     const confidenceGap = calculateConfidenceGap(confidenceInput, stabilityScore);
-    const band = bandFor(stabilityScore);
 
     const isConfidentButFragile = confidenceInput >= 70 && stabilityScore < 60;
+    const band = bandFor(stabilityScore);
 
-    const lowestEval = [...finalEvals].sort((a, b) => a.score - b.score)[0];
-    const weakestDim = lowestEval ? lowestEval.dimension : "transfer";
-
-    let recText = "";
-    if (isDemo) {
-      recText = DEMO_BINARY_SEARCH_DATA.recommendation;
-      setRecommendation(recText);
-    } else {
-      setLoadingRec(true);
-      try {
-        recText = await generateRecommendation(
-          conceptInput,
-          stabilityScore,
-          band.label,
-          weakestDim
-        );
-        setRecommendation(recText);
-      } catch {
-        recText = "Review your weakest dimension with step-by-step practice problems.";
-        setRecommendation(recText);
-      } finally {
-        setLoadingRec(false);
-      }
-    }
-
-    const resObj: StabilityResult = {
-      conceptName: conceptInput,
+    const resultObj: StabilityResult = {
+      conceptName: conceptInput.trim() || "Concept",
       confidenceInput,
       stabilityScore,
       confidenceGap,
       isConfidentButFragile,
       bandLabel: band.label,
-      evaluations: finalEvals,
-      recommendation: recText || DEMO_BINARY_SEARCH_DATA.recommendation,
+      evaluations: evals,
+      recommendation: "",
     };
 
-    setLatestResult(resObj);
+    setLatestResult(resultObj);
+
+    if (isDemo) {
+      setRecommendation(DEMO_BINARY_SEARCH_DATA.recommendation);
+      return;
+    }
+
+    setLoadingRec(true);
+    try {
+      const rec = await generateRecommendation(
+        conceptInput.trim(),
+        stabilityScore,
+        confidenceGap,
+        evals
+      );
+      setRecommendation(rec);
+    } catch {
+      setRecommendation("Focus on explaining the core elimination mechanism in your own words.");
+    } finally {
+      setLoadingRec(false);
+    }
   }
 
   function handleReset() {
     setStep("input");
-    setConceptInput("");
-    setNotesInput("");
-    setConfidenceInput(80);
     setProbes([]);
     setIndex(0);
     setAnswersMap({});
     setEvaluations([]);
     setError(null);
-    setRecommendation("");
+    setGenerating(false);
+    setEvaluating(false);
+    hasAutoStarted.current = false;
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20 text-foreground">
-      <header className="border-b border-border bg-card/50 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
+    <div className="min-h-screen bg-background pb-20 text-foreground selection:bg-primary/20">
+      <header className="sticky top-0 z-40 border-b border-border bg-card/60 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <EchoLogo />
+          <HeaderNav />
           <div className="flex items-center gap-3">
             <ThemeSelect />
-            {isDemo ? (
-              <Badge variant="outline" className="border-warning/50 bg-warning/10 text-warning px-3 py-1 font-medium text-xs">
-                <Zap className="mr-1.5 size-3.5" /> Guided Example (Hardcoded Demo)
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="border-primary/50 bg-primary/10 text-primary px-3 py-1 font-medium text-xs">
-                <Sparkles className="mr-1.5 size-3.5 text-primary" /> Live AI Probe Engine
-              </Badge>
-            )}
+            <Link to="/settings" className="p-2 text-muted-foreground hover:text-foreground transition-colors" title="API Settings">
+              <Settings className="size-4" />
+            </Link>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-6 pt-8">
-        {/* STEP 1: CONCEPT INPUT */}
+      {/* Dev Debug Bar */}
+      {import.meta.env.DEV && (
+        <div className="bg-secondary/80 border-b border-border px-6 py-1.5 text-[11px] font-mono text-muted-foreground flex items-center justify-between">
+          <span>
+            [DEV DEBUG] Active Provider: <strong className="text-primary">{apiConfig.activeProvider}</strong> ({apiConfig[`${apiConfig.activeProvider}Model` as keyof typeof apiConfig] || "default"})
+          </span>
+          <span>State: <strong className="text-foreground">{step}</strong> (generating: {String(generating)})</span>
+        </div>
+      )}
+
+      <main className="mx-auto max-w-3xl px-6 pt-8">
+        {/* Banner for Demo Mode */}
+        {isDemo && (
+          <div className="mb-6 flex items-center justify-between rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-xs text-warning">
+            <div className="flex items-center gap-2">
+              <Zap className="size-4 shrink-0" />
+              <span>
+                <strong>Guided Example (Hardcoded Demo)</strong> — Binary Search (0 network calls).
+              </span>
+            </div>
+            <Badge variant="outline" className="border-warning/50 text-warning text-[10px]">
+              Offline Demo
+            </Badge>
+          </div>
+        )}
+
+        {/* Error Banner / Retry UI */}
+        {error && (
+          <div className="mb-6 rounded-2xl border border-destructive/40 bg-destructive/10 p-5 space-y-3 text-xs">
+            <div className="flex items-center gap-2 text-destructive font-bold">
+              <AlertTriangle className="size-4 shrink-0" />
+              <span>AI Service Error</span>
+            </div>
+            <p className="text-foreground leading-relaxed font-mono">{error}</p>
+
+            <div className="pt-2 flex items-center gap-3">
+              <Button size="sm" onClick={() => handleStartProbe()} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                <RefreshCw className="mr-1.5 size-3.5" /> Retry Probe Generation
+              </Button>
+              <Button size="sm" variant="outline" asChild>
+                <Link to="/settings">Check API Settings</Link>
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 1: INPUT STEP */}
         {step === "input" && (
           <div className="rounded-2xl border border-border bg-card p-6 card-shadow sm:p-8 space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 border border-primary/30 text-primary">
-                <ShieldQuestion className="size-5" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Targeted Verification Probe</h1>
-                <p className="text-xs text-muted-foreground">Define what you studied to generate your 3-dimension probe.</p>
-              </div>
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-primary">Targeted Verification</span>
+              <h1 className="text-2xl font-bold tracking-tight mt-1">ECHO Probe Engine</h1>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Generate a 3-dimension probe (Direct, Explain, Transfer) to verify real understanding.
+              </p>
             </div>
 
             <form onSubmit={handleStartProbe} className="space-y-5">
               <div>
-                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  What concept did you just study? <span className="text-destructive">*</span>
-                </label>
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Concept Name</label>
                 <Input
                   required
-                  className="mt-1.5 bg-background/60"
-                  placeholder="e.g. Recursion, Binary Search, Database Normalization"
                   value={conceptInput}
                   onChange={(e) => setConceptInput(e.target.value)}
+                  placeholder="e.g. SQL, Binary Search, Normalization"
+                  className="mt-1 bg-background/60"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Paste notes or diagnosed gap (optional)
-                </label>
-                <Textarea
-                  rows={3}
-                  className="mt-1.5 bg-background/60"
-                  placeholder="Paste key formulas, notes, or diagnosed gap from reflection..."
-                  value={notesInput}
-                  onChange={(e) => setNotesInput(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    How confident are you that you understood this? (0–100%)
-                  </label>
-                  <span className="font-mono text-sm font-bold text-primary">{confidenceInput}%</span>
+                <div className="flex justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <span>Self-Reported Confidence</span>
+                  <span className="font-mono text-primary font-bold">{confidenceInput}%</span>
                 </div>
                 <input
                   type="range"
@@ -341,322 +374,220 @@ function AssessmentPage() {
                   onChange={(e) => setConfidenceInput(Number(e.target.value))}
                   className="mt-2 h-2 w-full cursor-pointer appearance-none rounded-lg bg-secondary accent-primary"
                 />
-                <div className="mt-1 flex justify-between font-mono text-[11px] text-muted-foreground">
-                  <span>0% — Totally Lost</span>
-                  <span>50% — Somewhat Clear</span>
-                  <span>100% — Absolute Mastery</span>
-                </div>
               </div>
 
-              {error && (
-                <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
-                  {error}
-                </div>
-              )}
-
-              <div className="pt-2">
-                <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={!conceptInput.trim()}>
-                  Generate Targeted Probe <ArrowRight className="ml-2 size-4" />
-                </Button>
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Diagnosed Gap / Context (Optional)
+                </label>
+                <Textarea
+                  rows={2}
+                  value={notesInput}
+                  onChange={(e) => setNotesInput(e.target.value)}
+                  placeholder="e.g. Diagnosed gap: struggle with JOINs or spatial elimination..."
+                  className="mt-1 bg-background/60 text-xs"
+                />
               </div>
+
+              <Button type="submit" size="lg" disabled={generating} className="w-full">
+                {generating ? (
+                  <>
+                    <Loader2 className="mr-2 size-4 animate-spin" /> Generating Targeted Probe...
+                  </>
+                ) : (
+                  <>
+                    Generate 3-Dimension Probe <Sparkles className="ml-2 size-4" />
+                  </>
+                )}
+              </Button>
             </form>
           </div>
         )}
 
-        {/* STEP 2: PROBE GENERATION LOADING */}
+        {/* STEP 2: GENERATING LOADING STEP */}
         {step === "generating" && (
-          <div className="rounded-2xl border border-border bg-card p-8 card-shadow text-center space-y-4 sm:p-12">
-            <Loader2 className="mx-auto size-8 animate-spin text-primary" />
-            <h2 className="text-lg font-bold sm:text-xl">Generating 3-Dimension Probe for "{conceptInput}"</h2>
-            <p className="mx-auto max-w-md text-xs text-muted-foreground">
-              ECHO is designing 3 specific questions across Direct, Explain, and Transfer dimensions to verify whether your understanding survives under pressure.
-            </p>
-            <div className="mx-auto max-w-md space-y-2 pt-4">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-5/6 mx-auto" />
-              <Skeleton className="h-4 w-4/6 mx-auto" />
+          <div className="rounded-2xl border border-border bg-card p-10 text-center card-shadow space-y-6">
+            <div className="inline-grid h-16 w-16 place-items-center rounded-2xl bg-primary/10 border border-primary/30 text-primary mx-auto">
+              <Loader2 className="size-8 animate-spin" />
+            </div>
+
+            <div className="space-y-2">
+              <span className="text-xs font-bold uppercase tracking-widest text-primary">Targeted Verification</span>
+              <h2 className="text-xl font-bold tracking-tight">Generating 3-Dimension Probe for "{conceptInput}"</h2>
+              <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                ECHO is querying <strong className="text-foreground">{apiConfig.activeProvider}</strong> to synthesize targeted probes testing Direct, Explain, and Transfer dimensions.
+              </p>
+            </div>
+
+            <div className="pt-2 flex justify-center">
+              <Button variant="ghost" size="sm" onClick={handleReset} className="text-xs text-muted-foreground">
+                Cancel
+              </Button>
             </div>
           </div>
         )}
 
-        {/* STEP 3: PROBE ANSWERING + SCORING */}
-        {step === "answering" && (
+        {/* STEP 3: ANSWERING STEP */}
+        {step === "answering" && probes.length > 0 && (
           <div className="space-y-6">
-            {/* Progress Header */}
-            <div>
+            {/* Progress */}
+            <div className="flex items-center justify-between text-xs font-mono text-muted-foreground">
+              <span>Question {index + 1} of {probes.length}</span>
+              <span className="uppercase text-primary font-bold">{probes[index]?.dimension} Dimension</span>
+            </div>
+
+            <div className="h-2 overflow-hidden rounded-full bg-secondary">
+              <div
+                className="h-full bg-primary transition-all duration-300"
+                style={{ width: `${((index + 1) / probes.length) * 100}%` }}
+              />
+            </div>
+
+            <div className="rounded-2xl border border-border bg-card p-6 card-shadow space-y-5 sm:p-8">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <BrainCircuit className="size-5 text-primary" />
-                  <span className="font-bold sm:text-lg">{conceptInput}</span>
-                </div>
-                <span className="font-mono text-xs font-bold text-muted-foreground">
-                  {index + 1} / {probes.length}
+                <span className="text-xs font-bold uppercase tracking-wider text-primary">
+                  {DIMENSION_CONFIG[probes[index]!.dimension].label} Probe ({DIMENSION_CONFIG[probes[index]!.dimension].percentLabel} Weight)
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {DIMENSION_CONFIG[probes[index]!.dimension].blurb}
                 </span>
               </div>
 
-              {/* Progress Bar */}
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-secondary">
-                <div
-                  className="bg-primary h-full transition-all duration-500"
-                  style={{ width: `${((index + 1) / probes.length) * 100}%` }}
-                />
-              </div>
+              <h2 className="text-base font-bold sm:text-lg leading-relaxed">{probes[index]!.question}</h2>
 
-              {/* Dimension Pills */}
-              <div className="mt-3 flex gap-2">
-                {(["direct", "explain", "transfer"] as ProbeDimension[]).map((dim, i) => (
-                  <span
-                    key={dim}
-                    className={cn(
-                      "rounded-full border px-3 py-0.5 text-[11px] font-semibold uppercase tracking-wider transition-colors",
-                      i < index
-                        ? "border-success/50 bg-success/10 text-success"
-                        : i === index
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border text-muted-foreground"
-                    )}
-                  >
-                    {DIMENSION_CONFIG[dim].label} ({DIMENSION_CONFIG[dim].percentLabel})
-                  </span>
-                ))}
+              <Textarea
+                rows={5}
+                value={answersMap[index] ?? ""}
+                onChange={(e) => setAnswersMap({ ...answersMap, [index]: e.target.value })}
+                placeholder="Write your detailed reasoning here..."
+                className="bg-background/60 text-xs"
+              />
+
+              <div className="pt-2 flex justify-end">
+                <Button
+                  size="lg"
+                  disabled={evaluating || !(answersMap[index] ?? "").trim()}
+                  onClick={handleSubmitAnswer}
+                >
+                  {evaluating ? (
+                    <>
+                      <Loader2 className="mr-2 size-4 animate-spin" /> Evaluating Answer...
+                    </>
+                  ) : index < probes.length - 1 ? (
+                    <>
+                      Submit & Next Dimension <ArrowRight className="ml-1.5 size-4" />
+                    </>
+                  ) : (
+                    <>
+                      Finalize Assessment <CheckCircle2 className="ml-1.5 size-4" />
+                    </>
+                  )}
+                </Button>
               </div>
             </div>
-
-            {/* Probe Card */}
-            {probes[index] && (
-              <div key={index} className="rounded-2xl border border-border bg-card p-6 card-shadow sm:p-8">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold tracking-widest text-primary uppercase">
-                    Probe {index + 1} of 3: {DIMENSION_CONFIG[probes[index]!.dimension].label}
-                  </p>
-                  <span className="font-mono text-[11px] text-muted-foreground">
-                    Weight: {DIMENSION_CONFIG[probes[index]!.dimension].percentLabel}
-                  </span>
-                </div>
-
-                <h2 className="mt-3 text-lg font-bold leading-relaxed sm:text-xl">
-                  {probes[index]!.question}
-                </h2>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {DIMENSION_CONFIG[probes[index]!.dimension].blurb}
-                </p>
-
-                <div className="mt-6">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Your Answer
-                  </label>
-                  <Textarea
-                    rows={5}
-                    disabled={evaluating}
-                    className="mt-1.5 bg-background/50 font-sans"
-                    placeholder="Explain in 1-3 sentences. ECHO scores depth of reasoning, not vocabulary."
-                    value={answersMap[index] ?? ""}
-                    onChange={(e) => setAnswersMap({ ...answersMap, [index]: e.target.value })}
-                  />
-                </div>
-
-                {error && (
-                  <div className="mt-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
-                    {error}
-                  </div>
-                )}
-
-                <div className="mt-6 flex items-center justify-between">
-                  <Button
-                    variant="ghost"
-                    disabled={index === 0 || evaluating}
-                    onClick={() => {
-                      setIndex(Math.max(0, index - 1));
-                    }}
-                  >
-                    <ArrowLeft className="mr-1.5 size-4" /> Previous
-                  </Button>
-
-                  <Button
-                    disabled={!(answersMap[index] ?? "").trim() || evaluating}
-                    onClick={handleSubmitAnswer}
-                  >
-                    {evaluating ? (
-                      <>
-                        <Loader2 className="mr-2 size-4 animate-spin" /> ECHO is evaluating...
-                      </>
-                    ) : index < probes.length - 1 ? (
-                      <>
-                        Next probe <ArrowRight className="ml-1.5 size-4" />
-                      </>
-                    ) : (
-                      <>
-                        Calculate Stability Score <Sparkles className="ml-1.5 size-4" />
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
-        {/* STEP 4: RESULTS SCREEN */}
+        {/* STEP 4: RESULTS STEP */}
         {step === "results" && (
           <div className="space-y-6">
-            {(() => {
-              const directScore = evaluations.find((s) => s.dimension === "direct")?.score ?? 0;
-              const explainScore = evaluations.find((s) => s.dimension === "explain")?.score ?? 0;
-              const transferScore = evaluations.find((s) => s.dimension === "transfer")?.score ?? 0;
+            <div className="rounded-2xl border border-border bg-card p-6 card-shadow sm:p-8 space-y-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-border pb-5">
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-primary">Targeted Verification Telemetry</span>
+                  <h1 className="text-2xl font-bold tracking-tight mt-1">{conceptInput} Result</h1>
+                </div>
+                <Button size="sm" variant="outline" onClick={handleReset}>
+                  <RotateCcw className="mr-1.5 size-3.5" /> Start New Assessment
+                </Button>
+              </div>
 
-              // Use single centralized scoring formula: round(direct*0.2 + explain*0.4 + transfer*0.4)
-              const stabilityScore = calculateStabilityScore(directScore, explainScore, transferScore);
-              const confidenceGap = calculateConfidenceGap(confidenceInput, stabilityScore);
-              const band = bandFor(stabilityScore);
+              {/* Centralized Score Output */}
+              {(() => {
+                const directEval = evaluations.find((e) => e.dimension === "direct");
+                const explainEval = evaluations.find((e) => e.dimension === "explain");
+                const transferEval = evaluations.find((e) => e.dimension === "transfer");
 
-              const isConfidentButFragile = confidenceInput >= 70 && stabilityScore < 60;
+                const dScore = directEval ? directEval.score : 0;
+                const eScore = explainEval ? explainEval.score : 0;
+                const tScore = transferEval ? transferEval.score : 0;
 
-              let bandColorClass = "text-destructive border-destructive/40 bg-destructive/10";
-              let bandIcon = ShieldAlert;
+                const stScore = calculateStabilityScore(dScore, eScore, tScore);
+                const gap = calculateConfidenceGap(confidenceInput, stScore);
+                const isTrap = confidenceInput >= 70 && stScore < 60;
+                const band = bandFor(stScore);
 
-              if (band.id === "stable") {
-                bandColorClass = "text-success border-success/40 bg-success/10";
-                bandIcon = ShieldCheck;
-              } else if (band.id === "developing") {
-                bandColorClass = "text-primary border-primary/40 bg-primary/10";
-                bandIcon = CheckCircle2;
-              } else if (band.id === "fragile") {
-                bandColorClass = "text-warning border-warning/40 bg-warning/10";
-                bandIcon = ShieldAlert;
-              }
+                return (
+                  <div className="space-y-6">
+                    {/* Score Cards */}
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <div className="rounded-xl border border-border bg-background/60 p-4 text-center space-y-1">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Self-Reported Confidence</span>
+                        <p className="font-mono text-3xl font-bold text-foreground">{confidenceInput}%</p>
+                      </div>
 
-              const BandIcon = bandIcon;
+                      <div className="rounded-xl border border-border bg-background/60 p-4 text-center space-y-1">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">ECHO Stability Score</span>
+                        <p className="font-mono text-3xl font-extrabold text-primary">{stScore}%</p>
+                        <span className="text-[11px] font-semibold text-primary block">{band.label}</span>
+                      </div>
 
-              return (
-                <div className="rounded-2xl border border-border bg-card p-6 card-shadow sm:p-8 space-y-6">
-                  <div className="flex flex-col items-center text-center">
-                    <span className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
-                      Understanding Stability Score · {conceptInput}
-                    </span>
-
-                    <div className="mt-4 flex items-baseline justify-center gap-1 font-mono">
-                      <span className="text-6xl font-extrabold sm:text-7xl">{stabilityScore}%</span>
+                      <div className="rounded-xl border border-border bg-background/60 p-4 text-center space-y-1">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Confidence Gap</span>
+                        <p className={`font-mono text-3xl font-extrabold ${gap > 0 ? "text-destructive" : "text-success"}`}>
+                          {gap > 0 ? `+${gap}%` : `${gap}%`}
+                        </p>
+                        <span className="text-[11px] text-muted-foreground block">{gap > 0 ? "Overconfident" : "Calibrated"}</span>
+                      </div>
                     </div>
 
-                    <div className={cn("mt-3 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-semibold", bandColorClass)}>
-                      <BandIcon className="size-4" />
-                      {band.label}
-                    </div>
-
-                    {/* Confident But Fragile Warning Badge */}
-                    {isConfidentButFragile && (
-                      <div className="mt-4 rounded-xl border border-warning/50 bg-warning/10 p-3 text-xs text-warning flex items-center gap-2 font-semibold">
-                        <ShieldAlert className="size-4 shrink-0" />
-                        <span>Confident but Fragile: Self-reported confidence ({confidenceInput}%) significantly exceeds verified evidence ({stabilityScore}%).</span>
+                    {/* Confident But Fragile Warning Callout */}
+                    {isTrap && (
+                      <div className="rounded-2xl border border-warning/50 bg-warning/10 p-5 space-y-2">
+                        <div className="flex items-center gap-2 text-warning font-bold text-sm uppercase tracking-wider">
+                          <ShieldAlert className="size-5 shrink-0" />
+                          <span>Confident but Fragile Warning</span>
+                        </div>
+                        <p className="text-xs leading-relaxed text-foreground">
+                          You felt <strong>{confidenceInput}% confident</strong> in {conceptInput}, but verified evidence stability is <strong>{stScore}% ({band.label})</strong>. ECHO recommends immediate targeted repair.
+                        </p>
                       </div>
                     )}
 
-                    {/* Confidence vs Evidence Callout */}
-                    <div className="mt-6 w-full rounded-2xl border border-border bg-background/60 p-4 text-center sm:text-left">
-                      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-                        <div>
-                          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                            Self-reported vs Verified Evidence
-                          </p>
-                          <p className="mt-1 text-sm font-medium">
-                            You said <span className="font-mono font-bold text-primary">{confidenceInput}% confident</span>. Evidence shows{" "}
-                            <span className={cn("font-mono font-bold", stabilityScore < 60 ? "text-warning" : "text-success")}>
-                              {stabilityScore}%
-                            </span>.
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <span className="font-mono text-xs text-muted-foreground">
-                            Confidence Gap: {confidenceGap > 0 ? `+${confidenceGap}%` : `${confidenceGap}%`}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Dimension Score Breakdown Cards */}
-                  <div>
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
-                      Dimension Score Breakdown
-                    </h3>
-                    <div className="grid gap-4 md:grid-cols-3">
-                      {(["direct", "explain", "transfer"] as ProbeDimension[]).map((dim) => {
-                        const item = evaluations.find((s) => s.dimension === dim);
-                        const scoreVal = item ? item.score : 0;
-                        const cfg = DIMENSION_CONFIG[dim];
-
-                        return (
-                          <div key={dim} className="rounded-xl border border-border bg-background/40 p-4 flex flex-col justify-between">
-                            <div>
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs font-bold uppercase tracking-wider text-primary">
-                                  {cfg.label}
-                                </span>
-                                <span className="font-mono text-[11px] text-muted-foreground">Weight: {cfg.percentLabel}</span>
-                              </div>
-
-                              <div className="mt-3 flex items-baseline gap-1 font-mono">
-                                <span className="text-2xl font-bold">{scoreVal}</span>
-                                <span className="text-xs text-muted-foreground">/ 100</span>
-                              </div>
-
-                              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-                                <div
-                                  className={cn(
-                                    "h-full rounded-full transition-all",
-                                    scoreVal >= 80
-                                      ? "bg-success"
-                                      : scoreVal >= 50
-                                      ? "bg-warning"
-                                      : "bg-destructive"
-                                  )}
-                                  style={{ width: `${scoreVal}%` }}
-                                />
-                              </div>
-
-                              <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-                                {item?.reasoning || "Evaluated dimension."}
-                              </p>
+                    {/* Dimension Breakdown */}
+                    <div className="space-y-3">
+                      <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">3-Dimension Score Breakdown</h2>
+                      <div className="grid gap-3 sm:grid-cols-3">
+                        {evaluations.map((ev) => (
+                          <div key={ev.dimension} className="rounded-xl border border-border bg-background/50 p-4 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold uppercase text-primary">{ev.dimension}</span>
+                              <span className="font-mono text-base font-bold">{ev.score}/100</span>
                             </div>
+                            <p className="text-xs text-muted-foreground leading-relaxed">{ev.reasoning}</p>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* AI Recommendation Callout */}
-                  <div className="rounded-2xl border border-primary/40 bg-primary/10 p-5">
-                    <div className="flex items-start gap-3">
-                      <Lightbulb className="size-5 text-primary shrink-0 mt-0.5" />
-                      <div>
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-primary">
-                          ECHO Actionable Recommendation
-                        </h4>
-                        {loadingRec ? (
-                          <Skeleton className="mt-2 h-4 w-3/4" />
-                        ) : (
-                          <p className="mt-1.5 text-sm font-medium leading-relaxed">
-                            "{recommendation}"
-                          </p>
-                        )}
+                        ))}
                       </div>
                     </div>
-                  </div>
 
-                  {/* Navigation & Action Buttons */}
-                  <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
-                    <Button asChild size="lg" className="w-full sm:w-auto">
-                      <Link to="/repair" search={{ concept: conceptInput }}>
-                        Repair Concept Gap <ArrowRight className="ml-1.5 size-4" />
-                      </Link>
-                    </Button>
-                    <Button size="lg" variant="outline" onClick={handleReset} className="w-full sm:w-auto">
-                      <RotateCcw className="mr-2 size-4" /> Try another concept
-                    </Button>
+                    {/* AI Recommendation */}
+                    <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-1">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-primary">ECHO Action Recommendation</span>
+                      <p className="text-xs text-foreground leading-relaxed font-medium">
+                        {loadingRec ? "Generating recommendation..." : recommendation || "Focus on explaining why the invariant holds under edge cases."}
+                      </p>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="pt-2 flex flex-col sm:flex-row items-center justify-end gap-3">
+                      <Button asChild size="lg" className="w-full sm:w-auto">
+                        <Link to="/study-plan">View Tonight's Study Plan <ArrowRight className="ml-1.5 size-4" /></Link>
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              );
-            })()}
+                );
+              })()}
+            </div>
           </div>
         )}
       </main>
