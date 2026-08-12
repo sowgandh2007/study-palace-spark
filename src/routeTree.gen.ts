@@ -9,7 +9,13 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ResultsRouteImport } from './routes/results'
+import { Route as PlanRouteImport } from './routes/plan'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as FacultyRouteImport } from './routes/faculty'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AssessmentRouteImport } from './routes/assessment'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
@@ -34,9 +40,39 @@ import { Route as AuthenticatedAppAiAnalyticsRouteImport } from './routes/_authe
 import { Route as AuthenticatedAppAiRoadmapIndexRouteImport } from './routes/_authenticated/app.ai.roadmap.index'
 import { Route as AuthenticatedAppAiRoadmapRoadmapIdRouteImport } from './routes/_authenticated/app.ai.roadmap.$roadmapId'
 
+const ResultsRoute = ResultsRouteImport.update({
+  id: '/results',
+  path: '/results',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlanRoute = PlanRouteImport.update({
+  id: '/plan',
+  path: '/plan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FacultyRoute = FacultyRouteImport.update({
+  id: '/faculty',
+  path: '/faculty',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AssessmentRoute = AssessmentRouteImport.update({
+  id: '/assessment',
+  path: '/assessment',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -169,7 +205,13 @@ const AuthenticatedAppAiRoadmapRoadmapIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/assessment': typeof AssessmentRoute
   '/auth': typeof AuthRoute
+  '/dashboard': typeof DashboardRoute
+  '/faculty': typeof FacultyRoute
+  '/login': typeof LoginRoute
+  '/plan': typeof PlanRoute
+  '/results': typeof ResultsRoute
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/app/mastery': typeof AuthenticatedAppMasteryRoute
   '/app/missions': typeof AuthenticatedAppMissionsRoute
@@ -194,7 +236,13 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/assessment': typeof AssessmentRoute
   '/auth': typeof AuthRoute
+  '/dashboard': typeof DashboardRoute
+  '/faculty': typeof FacultyRoute
+  '/login': typeof LoginRoute
+  '/plan': typeof PlanRoute
+  '/results': typeof ResultsRoute
   '/app/mastery': typeof AuthenticatedAppMasteryRoute
   '/app/missions': typeof AuthenticatedAppMissionsRoute
   '/app/music': typeof AuthenticatedAppMusicRoute
@@ -220,7 +268,13 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/assessment': typeof AssessmentRoute
   '/auth': typeof AuthRoute
+  '/dashboard': typeof DashboardRoute
+  '/faculty': typeof FacultyRoute
+  '/login': typeof LoginRoute
+  '/plan': typeof PlanRoute
+  '/results': typeof ResultsRoute
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/_authenticated/app/mastery': typeof AuthenticatedAppMasteryRoute
   '/_authenticated/app/missions': typeof AuthenticatedAppMissionsRoute
@@ -247,7 +301,13 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/assessment'
     | '/auth'
+    | '/dashboard'
+    | '/faculty'
+    | '/login'
+    | '/plan'
+    | '/results'
     | '/app'
     | '/app/mastery'
     | '/app/missions'
@@ -272,7 +332,13 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/assessment'
     | '/auth'
+    | '/dashboard'
+    | '/faculty'
+    | '/login'
+    | '/plan'
+    | '/results'
     | '/app/mastery'
     | '/app/missions'
     | '/app/music'
@@ -297,7 +363,13 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/assessment'
     | '/auth'
+    | '/dashboard'
+    | '/faculty'
+    | '/login'
+    | '/plan'
+    | '/results'
     | '/_authenticated/app'
     | '/_authenticated/app/mastery'
     | '/_authenticated/app/missions'
@@ -324,16 +396,64 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AssessmentRoute: typeof AssessmentRoute
   AuthRoute: typeof AuthRoute
+  DashboardRoute: typeof DashboardRoute
+  FacultyRoute: typeof FacultyRoute
+  LoginRoute: typeof LoginRoute
+  PlanRoute: typeof PlanRoute
+  ResultsRoute: typeof ResultsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/results': {
+      id: '/results'
+      path: '/results'
+      fullPath: '/results'
+      preLoaderRoute: typeof ResultsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/plan': {
+      id: '/plan'
+      path: '/plan'
+      fullPath: '/plan'
+      preLoaderRoute: typeof PlanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faculty': {
+      id: '/faculty'
+      path: '/faculty'
+      fullPath: '/faculty'
+      preLoaderRoute: typeof FacultyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/assessment': {
+      id: '/assessment'
+      path: '/assessment'
+      fullPath: '/assessment'
+      preLoaderRoute: typeof AssessmentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -564,7 +684,13 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AssessmentRoute: AssessmentRoute,
   AuthRoute: AuthRoute,
+  DashboardRoute: DashboardRoute,
+  FacultyRoute: FacultyRoute,
+  LoginRoute: LoginRoute,
+  PlanRoute: PlanRoute,
+  ResultsRoute: ResultsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
