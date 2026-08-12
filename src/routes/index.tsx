@@ -2,12 +2,14 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowRight,
   BrainCircuit,
+  Calendar,
   CheckCircle2,
   Compass,
   FileCheck2,
   HelpCircle,
   Layers,
   RotateCcw,
+  Settings,
   ShieldAlert,
   ShieldCheck,
   Sparkles,
@@ -35,11 +37,11 @@ export function EchoLogo() {
 }
 
 const FIVE_STEP_LOOP = [
-  { step: "01", name: "Plan", detail: "Prioritize topics based on historical conceptual weakness, not raw hours." },
-  { step: "02", name: "Learn", detail: "Engage with core study material via lectures, reading, or problem sets." },
-  { step: "03", name: "Reflect", detail: "Complete a 5-second post-class check-in (Understood, Mostly, Confused, Lost)." },
-  { step: "04", name: "Verify", detail: "Take a 3-dimension ECHO probe (Direct, Explain, Transfer) to test survival." },
-  { step: "05", name: "Adapt", detail: "Update tonight's study plan automatically based on verified stability gaps." },
+  { step: "01", name: "Timetable", detail: "Enter tomorrow's scheduled classes to trigger automated post-class reminders." },
+  { step: "02", name: "Reflection", detail: "Complete a 10-second post-class check-in (Confidence slider + What didn't you understand?)." },
+  { step: "03", name: "Gap Diagnosis", detail: "AI analyzes your self-reported confidence and diagnoses the exact underlying gap." },
+  { step: "04", name: "Verification", detail: "Take a targeted 3-dimension probe (Direct, Explain, Transfer) to verify survival." },
+  { step: "05", name: "Repair & Re-check", detail: "Execute step-by-step gap repair and re-check post-repair score increase." },
 ];
 
 function LandingPage() {
@@ -49,7 +51,9 @@ function LandingPage() {
       <header className="sticky top-0 z-40 border-b border-border bg-card/60 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <EchoLogo />
-          <nav className="hidden md:flex items-center gap-6 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <nav className="hidden lg:flex items-center gap-6 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <Link to="/timetable" className="hover:text-foreground transition-colors">Timetable</Link>
+            <Link to="/reflection" className="hover:text-foreground transition-colors">Reflection</Link>
             <Link to="/assessment" className="hover:text-foreground transition-colors">Probe Engine</Link>
             <Link to="/dashboard" className="hover:text-foreground transition-colors">Telemetry</Link>
             <Link to="/faculty" className="hover:text-foreground transition-colors">Faculty Portal</Link>
@@ -57,6 +61,9 @@ function LandingPage() {
           </nav>
           <div className="flex items-center gap-3">
             <ThemeSelect />
+            <Button asChild size="sm" variant="ghost">
+              <Link to="/settings"><Settings className="size-3.5 mr-1" /> API Settings</Link>
+            </Button>
             <Button asChild size="sm" variant="outline">
               <Link to="/login">Sign In</Link>
             </Button>
@@ -82,8 +89,8 @@ function LandingPage() {
 
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Button asChild size="lg" className="w-full sm:w-auto px-6 font-semibold">
-              <Link to="/assessment">
-                Start ECHO Probe <ArrowRight className="ml-2 size-4" />
+              <Link to="/reflection">
+                Start ECHO Reflection <ArrowRight className="ml-2 size-4" />
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="w-full sm:w-auto px-6">
@@ -100,7 +107,7 @@ function LandingPage() {
         <div className="mx-auto max-w-5xl space-y-8">
           <div className="text-center space-y-2">
             <span className="text-xs font-bold uppercase tracking-widest text-primary">Continuous Verification Protocol</span>
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">The Five-Step Daily ECHO Loop</h2>
+            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">The Five-Step ECHO Workflow</h2>
             <p className="text-xs text-muted-foreground max-w-xl mx-auto">
               How students build verifiable, bulletproof conceptual understanding every single day.
             </p>
@@ -174,7 +181,7 @@ function LandingPage() {
 
           <div className="pt-6 text-center">
             <Button asChild size="lg" className="px-8">
-              <Link to="/assessment">Launch ECHO Probe Engine <ArrowRight className="ml-2 size-4" /></Link>
+              <Link to="/reflection">Launch ECHO Reflection <ArrowRight className="ml-2 size-4" /></Link>
             </Button>
           </div>
         </div>

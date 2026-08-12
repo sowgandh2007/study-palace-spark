@@ -1,29 +1,32 @@
-import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, ShieldCheck, AlertTriangle, CheckCircle2, ThumbsUp, HelpCircle, Frown } from "lucide-react";
+import { ArrowRight, ShieldCheck, AlertTriangle, BookOpen, Clock, Settings, Sparkles, BrainCircuit } from "lucide-react";
 import { EchoLogo } from "@/routes/index";
 import { Button } from "@/components/ui/button";
 import { ThemeSelect } from "@/lib/theme";
 import { STABILITY_TREND, PRIORITY_REPAIRS } from "@/lib/echo/data";
-import { CHECKIN_OPTIONS, type ReflectionCheckIn } from "@/lib/echo/types";
-import { cn } from "@/lib/utils";
+import { useEcho } from "@/lib/echo/store";
 
 export const Route = createFileRoute("/dashboard")({
   component: DashboardPage,
 });
 
 function DashboardPage() {
-  const [activeCheckIn, setActiveCheckIn] = useState<ReflectionCheckIn | null>("mostly");
+  const { timetable, reflections, latestResult, recheckHistory } = useEcho();
+
+  const confidentButFragileCount = latestResult?.isConfidentButFragile ? 1 : 0;
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-20 text-foreground">
       <header className="border-b border-border bg-card/50 backdrop-blur-xl">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <EchoLogo />
           <div className="flex items-center gap-3">
             <ThemeSelect />
             <Button asChild variant="outline" size="sm">
-              <Link to="/assessment">Start New Probe</Link>
+              <Link to="/settings"><Settings className="size-3.5 mr-1" /> API Settings</Link>
+            </Button>
+            <Button asChild size="sm">
+              <Link to="/reflection">New Reflection</Link>
             </Button>
           </div>
         </div>
@@ -32,37 +35,46 @@ function DashboardPage() {
       <main className="mx-auto max-w-5xl px-6 pt-8 space-y-8">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Student Telemetry Dashboard</h1>
-          <p className="text-xs text-muted-foreground mt-1">Real-time understanding stability telemetry and post-class reflection.</p>
+          <p className="text-xs text-muted-foreground mt-1">Real-time understanding stability, reflection logs, and tomorrow-aware repair schedules.</p>
         </div>
 
-        {/* 5-Second Post-Class Reflection Check-In Widget */}
-        <div className="rounded-2xl border border-border bg-card p-6 card-shadow space-y-4">
-          <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-primary">5-Second Post-Class Reflection</span>
-            <h2 className="text-base font-bold mt-0.5">How well did today's DBMS lecture feel?</h2>
+        {/* 4 Summary Stat Cards */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-2xl border border-border bg-card p-5 card-shadow space-y-1">
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">Tomorrow's Scheduled Classes</span>
+            <p className="font-mono text-3xl font-extrabold text-foreground">{timetable.length}</p>
+            <Link to="/timetable" className="text-[11px] font-semibold text-primary hover:underline block pt-1">View timetable →</Link>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-4">
-            {CHECKIN_OPTIONS.map((opt) => {
-              const isSelected = activeCheckIn === opt.id;
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => setActiveCheckIn(opt.id)}
-                  className={cn(
-                    "rounded-xl border p-4 text-left transition-all",
-                    isSelected
-                      ? "border-primary bg-primary/10 shadow-sm"
-                      : "border-border bg-background/50 hover:border-border/80"
-                  )}
-                >
-                  <p className="font-bold text-sm">{opt.label}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{opt.hint}</p>
-                </button>
-              );
-            })}
+          <div className="rounded-2xl border border-border bg-card p-5 card-shadow space-y-1">
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">Today's Reflections</span>
+            <p className="font-mono text-3xl font-extrabold text-foreground">{reflections.length || 3}</p>
+            <Link to="/reflection" className="text-[11px] font-semibold text-primary hover:underline block pt-1">Reflect on class →</Link>
           </div>
+
+          <div className="rounded-2xl border border-border bg-card p-5 card-shadow space-y-1">
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">Detected Conceptual Gaps</span>
+            <p className="font-mono text-3xl font-extrabold text-warning">2</p>
+            <Link to="/plan" className="text-[11px] font-semibold text-warning hover:underline block pt-1">View tonight's repairs →</Link>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-card p-5 card-shadow space-y-1">
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">Confidence Traps</span>
+            <p className="font-mono text-3xl font-extrabold text-destructive">{confidentButFragileCount || 1}</p>
+            <span className="text-[11px] text-destructive font-medium block pt-1">1 Confident-but-Fragile</span>
+          </div>
+        </div>
+
+        {/* Tonight's ECHO Plan Summary Banner */}
+        <div className="rounded-2xl border border-primary/40 bg-primary/10 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-primary">Tonight's ECHO Study Plan</span>
+            <h2 className="text-lg font-bold">25 minutes · 2 concepts requiring repair</h2>
+            <p className="text-xs text-muted-foreground">Priority repair for Binary Search (fragile understanding + scheduled in tomorrow's 9:00 AM class).</p>
+          </div>
+          <Button asChild size="lg">
+            <Link to="/plan">Open Study Plan <ArrowRight className="ml-1.5 size-4" /></Link>
+          </Button>
         </div>
 
         {/* Stability Trend & Summary Cards */}
@@ -90,9 +102,11 @@ function DashboardPage() {
           <div className="rounded-2xl border border-border bg-card p-5 card-shadow flex flex-col justify-between">
             <div>
               <span className="text-xs uppercase tracking-wider text-muted-foreground">Overall Stability Index</span>
-              <p className="font-mono text-4xl font-extrabold text-foreground mt-2">68%</p>
+              <p className="font-mono text-4xl font-extrabold text-foreground mt-2">
+                {latestResult ? `${latestResult.stabilityScore}%` : "68%"}
+              </p>
               <span className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                <ShieldCheck className="size-3.5" /> Developing Stability
+                <ShieldCheck className="size-3.5" /> {latestResult?.bandLabel || "Developing Stability"}
               </span>
             </div>
             <div className="pt-4 border-t border-border/60">
@@ -110,7 +124,7 @@ function DashboardPage() {
               <h2 className="text-xs font-semibold uppercase tracking-wider">Priority Concept Repairs</h2>
             </div>
             <Button asChild size="sm" variant="ghost">
-              <Link to="/assessment">Probe engine <ArrowRight className="size-3.5 ml-1" /></Link>
+              <Link to="/plan">Full repair list <ArrowRight className="size-3.5 ml-1" /></Link>
             </Button>
           </div>
 
@@ -124,7 +138,7 @@ function DashboardPage() {
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">{c.repairActivity}</p>
                 <Button asChild size="sm" className="mt-2 w-full" variant="outline">
-                  <Link to="/assessment" search={{ concept: c.conceptId }}>Re-probe now</Link>
+                  <Link to="/repair" search={{ concept: c.name }}>Repair concept gap</Link>
                 </Button>
               </div>
             ))}

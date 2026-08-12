@@ -9,7 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TimetableRouteImport } from './routes/timetable'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ResultsRouteImport } from './routes/results'
+import { Route as RepairRouteImport } from './routes/repair'
+import { Route as ReflectionRouteImport } from './routes/reflection'
+import { Route as RecheckRouteImport } from './routes/recheck'
 import { Route as PlanRouteImport } from './routes/plan'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as FacultyRouteImport } from './routes/faculty'
@@ -18,9 +23,34 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AssessmentRouteImport } from './routes/assessment'
 import { Route as IndexRouteImport } from './routes/index'
 
+const TimetableRoute = TimetableRouteImport.update({
+  id: '/timetable',
+  path: '/timetable',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResultsRoute = ResultsRouteImport.update({
   id: '/results',
   path: '/results',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RepairRoute = RepairRouteImport.update({
+  id: '/repair',
+  path: '/repair',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReflectionRoute = ReflectionRouteImport.update({
+  id: '/reflection',
+  path: '/reflection',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecheckRoute = RecheckRouteImport.update({
+  id: '/recheck',
+  path: '/recheck',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PlanRoute = PlanRouteImport.update({
@@ -67,7 +97,12 @@ export interface FileRoutesByFullPath {
   '/faculty': typeof FacultyRoute
   '/login': typeof LoginRoute
   '/plan': typeof PlanRoute
+  '/recheck': typeof RecheckRoute
+  '/reflection': typeof ReflectionRoute
+  '/repair': typeof RepairRoute
   '/results': typeof ResultsRoute
+  '/settings': typeof SettingsRoute
+  '/timetable': typeof TimetableRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -77,7 +112,12 @@ export interface FileRoutesByTo {
   '/faculty': typeof FacultyRoute
   '/login': typeof LoginRoute
   '/plan': typeof PlanRoute
+  '/recheck': typeof RecheckRoute
+  '/reflection': typeof ReflectionRoute
+  '/repair': typeof RepairRoute
   '/results': typeof ResultsRoute
+  '/settings': typeof SettingsRoute
+  '/timetable': typeof TimetableRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -88,7 +128,12 @@ export interface FileRoutesById {
   '/faculty': typeof FacultyRoute
   '/login': typeof LoginRoute
   '/plan': typeof PlanRoute
+  '/recheck': typeof RecheckRoute
+  '/reflection': typeof ReflectionRoute
+  '/repair': typeof RepairRoute
   '/results': typeof ResultsRoute
+  '/settings': typeof SettingsRoute
+  '/timetable': typeof TimetableRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -100,7 +145,12 @@ export interface FileRouteTypes {
     | '/faculty'
     | '/login'
     | '/plan'
+    | '/recheck'
+    | '/reflection'
+    | '/repair'
     | '/results'
+    | '/settings'
+    | '/timetable'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -110,7 +160,12 @@ export interface FileRouteTypes {
     | '/faculty'
     | '/login'
     | '/plan'
+    | '/recheck'
+    | '/reflection'
+    | '/repair'
     | '/results'
+    | '/settings'
+    | '/timetable'
   id:
     | '__root__'
     | '/'
@@ -120,7 +175,12 @@ export interface FileRouteTypes {
     | '/faculty'
     | '/login'
     | '/plan'
+    | '/recheck'
+    | '/reflection'
+    | '/repair'
     | '/results'
+    | '/settings'
+    | '/timetable'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -131,16 +191,56 @@ export interface RootRouteChildren {
   FacultyRoute: typeof FacultyRoute
   LoginRoute: typeof LoginRoute
   PlanRoute: typeof PlanRoute
+  RecheckRoute: typeof RecheckRoute
+  ReflectionRoute: typeof ReflectionRoute
+  RepairRoute: typeof RepairRoute
   ResultsRoute: typeof ResultsRoute
+  SettingsRoute: typeof SettingsRoute
+  TimetableRoute: typeof TimetableRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/timetable': {
+      id: '/timetable'
+      path: '/timetable'
+      fullPath: '/timetable'
+      preLoaderRoute: typeof TimetableRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/results': {
       id: '/results'
       path: '/results'
       fullPath: '/results'
       preLoaderRoute: typeof ResultsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/repair': {
+      id: '/repair'
+      path: '/repair'
+      fullPath: '/repair'
+      preLoaderRoute: typeof RepairRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reflection': {
+      id: '/reflection'
+      path: '/reflection'
+      fullPath: '/reflection'
+      preLoaderRoute: typeof ReflectionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recheck': {
+      id: '/recheck'
+      path: '/recheck'
+      fullPath: '/recheck'
+      preLoaderRoute: typeof RecheckRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/plan': {
@@ -203,7 +303,12 @@ const rootRouteChildren: RootRouteChildren = {
   FacultyRoute: FacultyRoute,
   LoginRoute: LoginRoute,
   PlanRoute: PlanRoute,
+  RecheckRoute: RecheckRoute,
+  ReflectionRoute: ReflectionRoute,
+  RepairRoute: RepairRoute,
   ResultsRoute: ResultsRoute,
+  SettingsRoute: SettingsRoute,
+  TimetableRoute: TimetableRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

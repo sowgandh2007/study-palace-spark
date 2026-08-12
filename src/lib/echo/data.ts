@@ -1,37 +1,28 @@
-import type { Concept, ConceptRepair } from "./types";
+import type { TimetableEntry } from "./types";
 
-export const CONCEPTS: Record<string, Concept> = {
-  "binary-search": {
-    id: "binary-search",
-    name: "Binary Search",
+export const SAMPLE_TIMETABLE: TimetableEntry[] = [
+  {
+    id: "tt-1",
+    time: "9:00 AM",
     subject: "Data Structures & Algorithms",
-    unit: "Searching · Divide and Conquer",
+    topic: "Binary Search",
+    date: "Tomorrow",
   },
-  "hash-collisions": {
-    id: "hash-collisions",
-    name: "Hash Collision Resolution",
-    subject: "Data Structures & Algorithms",
-    unit: "Hashing",
+  {
+    id: "tt-2",
+    time: "11:30 AM",
+    subject: "Database Management Systems",
+    topic: "Database Normalization (3NF)",
+    date: "Tomorrow",
   },
-  normalization: {
-    id: "normalization",
-    name: "Database Normalization (3NF)",
-    subject: "DBMS",
-    unit: "Relational Design",
-  },
-  "tcp-flow": {
-    id: "tcp-flow",
-    name: "TCP Flow Control",
+  {
+    id: "tt-3",
+    time: "2:00 PM",
     subject: "Computer Networks",
-    unit: "Transport Layer",
+    topic: "TCP Flow Control",
+    date: "Tomorrow",
   },
-  eigenvectors: {
-    id: "eigenvectors",
-    name: "Eigenvectors & Eigenvalues",
-    subject: "Linear Algebra",
-    unit: "Matrix Decomposition",
-  },
-};
+];
 
 export const DEMO_BINARY_SEARCH_DATA = {
   concept: "Binary Search",
@@ -60,9 +51,39 @@ export const DEMO_BINARY_SEARCH_DATA = {
   ],
   expectedScores: { direct: 100, explain: 55, transfer: 20 },
   expectedStabilityScore: 50, // round(100*0.2 + 55*0.4 + 20*0.4) = 50
+  expectedConfidence: 90,
+  expectedConfidenceGap: 40, // 90 - 50 = +40 gap
+  isConfidentButFragile: true,
   expectedBandLabel: "Fragile Understanding",
   recommendation: "Practice adapting Binary Search to boundary-finding variants (first/last occurrence, insertion point).",
 };
+
+export const PRIORITY_REPAIRS = [
+  {
+    conceptId: "binary-search",
+    name: "Binary Search",
+    stability: 50,
+    weakest: "Transfer",
+    repairActivity: "Practice boundary-finding variants (first/last occurrence, insertion index).",
+    estimatedMinutes: 20,
+  },
+  {
+    conceptId: "tcp-flow",
+    name: "TCP Flow Control",
+    stability: 38,
+    weakest: "Assumption",
+    repairActivity: "Differentiate flow control sliding windows from congestion control windows.",
+    estimatedMinutes: 15,
+  },
+  {
+    conceptId: "hash-collisions",
+    name: "Hash Collision Resolution",
+    stability: 47,
+    weakest: "Transfer",
+    repairActivity: "Compare open addressing vs separate chaining performance under high load factors.",
+    estimatedMinutes: 25,
+  },
+];
 
 export const FACULTY_CLASS = {
   cohort: "CSE — Semester 4 · Section B",
@@ -119,31 +140,4 @@ export const STABILITY_TREND = [
   { day: "Fri", stability: 64 },
   { day: "Sat", stability: 68 },
   { day: "Sun", stability: 71 },
-];
-
-export const PRIORITY_REPAIRS: ConceptRepair[] = [
-  {
-    conceptId: "binary-search",
-    name: "Binary Search",
-    stability: 50,
-    weakest: "Transfer",
-    repairActivity: "Practice boundary-finding variants (first/last occurrence, insertion index).",
-    estimatedMinutes: 20,
-  },
-  {
-    conceptId: "tcp-flow",
-    name: "TCP Flow Control",
-    stability: 38,
-    weakest: "Assumption",
-    repairActivity: "Differentiate flow control sliding windows from congestion control windows.",
-    estimatedMinutes: 15,
-  },
-  {
-    conceptId: "hash-collisions",
-    name: "Hash Collision Resolution",
-    stability: 47,
-    weakest: "Transfer",
-    repairActivity: "Compare open addressing vs separate chaining performance under high load factors.",
-    estimatedMinutes: 25,
-  },
 ];

@@ -14,6 +14,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { ThemeProvider } from "@/lib/theme";
+import { EchoProvider } from "@/lib/echo/store";
 
 function NotFoundComponent() {
   return (
@@ -117,8 +118,10 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <Outlet />
-        <Toaster theme="dark" position="top-center" richColors />
+        <EchoProvider>
+          <Outlet />
+          <Toaster theme="dark" position="top-center" richColors />
+        </EchoProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

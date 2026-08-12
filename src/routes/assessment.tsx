@@ -26,26 +26,27 @@ import {
   generateRecommendation,
   scoreAnswer,
 } from "@/lib/echo/llm";
-import { calculateStabilityScore, bandFor } from "@/lib/echo/scoring";
+import { calculateStabilityScore, calculateConfidenceGap, bandFor } from "@/lib/echo/scoring";
 import { DEMO_BINARY_SEARCH_DATA } from "@/lib/echo/data";
-import type { ProbeDimension, ProbeQuestion, ProbeEvaluation } from "@/lib/echo/types";
+import type { ProbeDimension, ProbeQuestion, ProbeEvaluation, StabilityResult } from "@/lib/echo/types";
+import { useEcho } from "@/lib/echo/store";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/assessment")({
   validateSearch: (search: Record<string, unknown>) => ({
     concept: typeof search["concept"] === "string" ? (search["concept"] as string) : undefined,
+    gap: typeof search["gap"] === "string" ? (search["gap"] as string) : undefined,
+    confidence: typeof search["confidence"] === "string" ? (search["confidence"] as string) : undefined,
     demo: search["demo"] === "true" || search["demo"] === true,
   }),
   head: () => ({
     meta: [
-      { title: "ECHO Assessment — Understanding Stability Probe" },
+      { title: "ECHO Assessment — Targeted Verification Probe" },
       {
         name: "description",
         content:
-          "ECHO live assessment probe loop: concept input, 3-dimension AI probing (Direct, Explain, Transfer), weighted scoring, and evidence-based results.",
+          "ECHO targeted verification probe: 3-dimension AI probing (Direct, Explain, Transfer), weighted scoring, confidence gap, and evidence-based results.",
       },
-      { property: "og:title", content: "ECHO Assessment" },
-      { property: "og:description", content: "Probes whether your conceptual understanding is real or memorized." },
     ],
   }),
   component: AssessmentPage,
@@ -76,16 +77,19 @@ const DIMENSION_CONFIG: Record<
 };
 
 function AssessmentPage() {
-  const { concept: searchConcept, demo } = Route.useSearch();
+  const { concept: searchConcept, gap: searchGap, confidence: searchConf, demo } = Route.useSearch();
   const isDemo = Boolean(demo);
+  const { setLatestResult } = useEcho();
 
   const [step, setStep] = useState<"input" | "generating" | "answering" | "results">("input");
 
   const [conceptInput, setConceptInput] = useState(
     searchConcept === "binary-search" || isDemo ? "Binary Search" : searchConcept ?? ""
   );
-  const [notesInput, setNotesInput] = useState("");
-  const [confidenceInput, setConfidenceInput] = useState(isDemo ? 90 : 80);
+  const [notesInput, setNotesInput] = useState(searchGap ? `Diagnosed gap: ${searchGap}` : "");
+  const [confidenceInput, setConfidenceInput] = useState(
+    searchConf ? Number(searchConf) : isDemo ? 90 : 80
+  );
 
   const [probes, setProbes] = useState<ProbeQuestion[]>([]);
   const [index, setIndex] = useState(0);
@@ -204,17 +208,22 @@ function AssessmentPage() {
 
     // Use single centralized scoring formula: round(direct*0.2 + explain*0.4 + transfer*0.4)
     const stabilityScore = calculateStabilityScore(directScore, explainScore, transferScore);
+    const confidenceGap = calculateConfidenceGap(confidenceInput, stabilityScore);
     const band = bandFor(stabilityScore);
+
+    const isConfidentButFragile = confidenceInput >= 70 && stabilityScore < 60;
 
     const lowestEval = [...finalEvals].sort((a, b) => a.score - b.score)[0];
     const weakestDim = lowestEval ? lowestEval.dimension : "transfer";
 
+    let recText = "";
     if (isDemo) {
-      setRecommendation(DEMO_BINARY_SEARCH_DATA.recommendation);
+      recText = DEMO_BINARY_SEARCH_DATA.recommendation;
+      setRecommendation(recText);
     } else {
       setLoadingRec(true);
       try {
-        const recText = await generateRecommendation(
+        recText = await generateRecommendation(
           conceptInput,
           stabilityScore,
           band.label,
@@ -222,11 +231,25 @@ function AssessmentPage() {
         );
         setRecommendation(recText);
       } catch {
-        setRecommendation("Review your weakest dimension with step-by-step practice problems.");
+        recText = "Review your weakest dimension with step-by-step practice problems.";
+        setRecommendation(recText);
       } finally {
         setLoadingRec(false);
       }
     }
+
+    const resObj: StabilityResult = {
+      conceptName: conceptInput,
+      confidenceInput,
+      stabilityScore,
+      confidenceGap,
+      isConfidentButFragile,
+      bandLabel: band.label,
+      evaluations: finalEvals,
+      recommendation: recText || DEMO_BINARY_SEARCH_DATA.recommendation,
+    };
+
+    setLatestResult(resObj);
   }
 
   function handleReset() {
@@ -243,7 +266,7 @@ function AssessmentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-20 text-foreground">
       <header className="border-b border-border bg-card/50 backdrop-blur-xl">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
           <EchoLogo />
@@ -271,7 +294,7 @@ function AssessmentPage() {
                 <ShieldQuestion className="size-5" />
               </div>
               <div>
-                <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Conceptual Honesty Diagnostic</h1>
+                <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Targeted Verification Probe</h1>
                 <p className="text-xs text-muted-foreground">Define what you studied to generate your 3-dimension probe.</p>
               </div>
             </div>
@@ -292,12 +315,12 @@ function AssessmentPage() {
 
               <div>
                 <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Paste your notes (optional)
+                  Paste notes or diagnosed gap (optional)
                 </label>
                 <Textarea
                   rows={3}
                   className="mt-1.5 bg-background/60"
-                  placeholder="Paste key formulas, notes, or code snippets from class..."
+                  placeholder="Paste key formulas, notes, or diagnosed gap from reflection..."
                   value={notesInput}
                   onChange={(e) => setNotesInput(e.target.value)}
                 />
@@ -333,7 +356,7 @@ function AssessmentPage() {
 
               <div className="pt-2">
                 <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={!conceptInput.trim()}>
-                  Generate Understanding Probe <ArrowRight className="ml-2 size-4" />
+                  Generate Targeted Probe <ArrowRight className="ml-2 size-4" />
                 </Button>
               </div>
             </form>
@@ -483,7 +506,10 @@ function AssessmentPage() {
 
               // Use single centralized scoring formula: round(direct*0.2 + explain*0.4 + transfer*0.4)
               const stabilityScore = calculateStabilityScore(directScore, explainScore, transferScore);
+              const confidenceGap = calculateConfidenceGap(confidenceInput, stabilityScore);
               const band = bandFor(stabilityScore);
+
+              const isConfidentButFragile = confidenceInput >= 70 && stabilityScore < 60;
 
               let bandColorClass = "text-destructive border-destructive/40 bg-destructive/10";
               let bandIcon = ShieldAlert;
@@ -517,6 +543,14 @@ function AssessmentPage() {
                       {band.label}
                     </div>
 
+                    {/* Confident But Fragile Warning Badge */}
+                    {isConfidentButFragile && (
+                      <div className="mt-4 rounded-xl border border-warning/50 bg-warning/10 p-3 text-xs text-warning flex items-center gap-2 font-semibold">
+                        <ShieldAlert className="size-4 shrink-0" />
+                        <span>Confident but Fragile: Self-reported confidence ({confidenceInput}%) significantly exceeds verified evidence ({stabilityScore}%).</span>
+                      </div>
+                    )}
+
                     {/* Confidence vs Evidence Callout */}
                     <div className="mt-6 w-full rounded-2xl border border-border bg-background/60 p-4 text-center sm:text-left">
                       <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -533,7 +567,7 @@ function AssessmentPage() {
                         </div>
                         <div className="text-right">
                           <span className="font-mono text-xs text-muted-foreground">
-                            Gap: {Math.abs(confidenceInput - stabilityScore)}%
+                            Confidence Gap: {confidenceGap > 0 ? `+${confidenceGap}%` : `${confidenceGap}%`}
                           </span>
                         </div>
                       </div>
@@ -609,9 +643,14 @@ function AssessmentPage() {
                     </div>
                   </div>
 
-                  {/* Reset Button */}
-                  <div className="pt-2 flex justify-center">
-                    <Button size="lg" onClick={handleReset}>
+                  {/* Navigation & Action Buttons */}
+                  <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <Button asChild size="lg" className="w-full sm:w-auto">
+                      <Link to="/repair" search={{ concept: conceptInput }}>
+                        Repair Concept Gap <ArrowRight className="ml-1.5 size-4" />
+                      </Link>
+                    </Button>
+                    <Button size="lg" variant="outline" onClick={handleReset} className="w-full sm:w-auto">
                       <RotateCcw className="mr-2 size-4" /> Try another concept
                     </Button>
                   </div>

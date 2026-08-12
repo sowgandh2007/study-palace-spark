@@ -41,6 +41,13 @@ export function calculateStabilityScore(direct: number, explain: number, transfe
 }
 
 /**
+ * Calculates Confidence Gap = self-reported confidence - evidence stability score
+ */
+export function calculateConfidenceGap(confidenceInput: number, stabilityScore: number): number {
+  return confidenceInput - stabilityScore;
+}
+
+/**
  * Single centralized band classification function for ECHO.
  */
 export function bandFor(score: number): Band {

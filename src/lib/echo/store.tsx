@@ -1,100 +1,124 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import type { ReactNode } from "react";
-import type { AssessmentResult, CheckInResponse, Role } from "./types";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import type { ApiConfig, Reflection, RepairActivity, StabilityResult, TimetableEntry } from "./types";
+import { SAMPLE_TIMETABLE } from "./data";
+import { getApiConfig, saveApiConfig } from "./llm";
 
-export type EchoUser = { name: string; email: string; role: Role; cohort: string };
-
-export const DEMO_ACCOUNTS: Record<Role, EchoUser & { password: string }> = {
-  student: {
-    name: "Ananya Sharma",
-    email: "student@echo.edu",
-    password: "echo1234",
-    role: "student",
-    cohort: "CSE — Semester 4 · Section B",
-  },
-  faculty: {
-    name: "Dr. Rao",
-    email: "faculty@echo.edu",
-    password: "echo1234",
-    role: "faculty",
-    cohort: "CSE — Semester 4 · Section B",
-  },
+type EchoStoreState = {
+  timetable: TimetableEntry[];
+  reflections: Reflection[];
+  latestResult: StabilityResult | null;
+  activeRepair: RepairActivity | null;
+  recheckHistory: { concept: string; beforeScore: number; afterScore: number; date: string }[];
+  apiConfig: ApiConfig;
 };
 
-export type UploadedPlan = { timetableName: string; notesName: string; uploadedAt: string };
-
-type EchoState = {
-  user: EchoUser | null;
-  checkIns: Record<string, CheckInResponse>;
-  results: AssessmentResult[];
-  upload: UploadedPlan | null;
+type EchoStoreCtx = EchoStoreState & {
+  addTimetableEntry: (entry: Omit<TimetableEntry, "id">) => void;
+  deleteTimetableEntry: (id: string) => void;
+  saveReflection: (reflection: Omit<Reflection, "id" | "createdAt">) => Reflection;
+  setLatestResult: (result: StabilityResult) => void;
+  setActiveRepair: (repair: RepairActivity | null) => void;
+  completeRecheck: (concept: string, beforeScore: number, afterScore: number) => void;
+  updateApiConfig: (config: ApiConfig) => void;
 };
 
-const EMPTY: EchoState = { user: null, checkIns: {}, results: [], upload: null };
-const KEY = "echo-state-v1";
+const EchoContext = createContext<EchoStoreCtx | null>(null);
 
-type Ctx = EchoState & {
-  hydrated: boolean;
-  signIn: (email: string, password: string) => { ok: boolean; error?: string; role?: Role };
-  signOut: () => void;
-  setCheckIn: (classId: string, response: CheckInResponse) => void;
-  addResult: (result: AssessmentResult) => void;
-  setUpload: (upload: UploadedPlan) => void;
-  latestFor: (conceptId: string) => AssessmentResult | undefined;
-};
-
-const EchoContext = createContext<Ctx | null>(null);
+const STORAGE_KEY = "echo_app_state_v2";
 
 export function EchoProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<EchoState>(EMPTY);
-  const [hydrated, setHydrated] = useState(false);
+  const [timetable, setTimetable] = useState<TimetableEntry[]>(SAMPLE_TIMETABLE);
+  const [reflections, setReflections] = useState<Reflection[]>([]);
+  const [latestResult, setLatestResult] = useState<StabilityResult | null>(null);
+  const [activeRepair, setActiveRepair] = useState<RepairActivity | null>(null);
+  const [recheckHistory, setRecheckHistory] = useState<
+    { concept: string; beforeScore: number; afterScore: number; date: string }[]
+  >([
+    { concept: "Binary Search", beforeScore: 72, afterScore: 91, date: "Today" },
+  ]);
+  const [apiConfig, setApiConfigState] = useState<ApiConfig>(getApiConfig());
 
   useEffect(() => {
     try {
-      const raw = window.localStorage.getItem(KEY);
-      if (raw) setState({ ...EMPTY, ...(JSON.parse(raw) as EchoState) });
+      if (typeof window !== "undefined") {
+        const raw = window.localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed.timetable)) setTimetable(parsed.timetable);
+          if (Array.isArray(parsed.reflections)) setReflections(parsed.reflections);
+          if (parsed.latestResult) setLatestResult(parsed.latestResult);
+          if (parsed.activeRepair) setActiveRepair(parsed.activeRepair);
+          if (Array.isArray(parsed.recheckHistory)) setRecheckHistory(parsed.recheckHistory);
+        }
+      }
     } catch {
-      /* ignore corrupt state */
+      /* ignore storage parse errors */
     }
-    setHydrated(true);
   }, []);
 
   useEffect(() => {
-    if (!hydrated) return;
     try {
-      window.localStorage.setItem(KEY, JSON.stringify(state));
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({ timetable, reflections, latestResult, activeRepair, recheckHistory })
+        );
+      }
     } catch {
-      /* storage unavailable */
+      /* ignore storage write errors */
     }
-  }, [state, hydrated]);
+  }, [timetable, reflections, latestResult, activeRepair, recheckHistory]);
 
-  const signIn = useCallback((email: string, password: string) => {
-    const match = Object.values(DEMO_ACCOUNTS).find(
-      (a) => a.email.toLowerCase() === email.trim().toLowerCase(),
-    );
-    if (!match) return { ok: false, error: "No account found for that email." };
-    if (match.password !== password) return { ok: false, error: "Incorrect password." };
-    const { password: _pw, ...user } = match;
-    setState((s) => ({ ...s, user }));
-    return { ok: true, role: user.role };
-  }, []);
+  function addTimetableEntry(entry: Omit<TimetableEntry, "id">) {
+    const newEntry: TimetableEntry = { ...entry, id: "tt-" + Date.now() };
+    setTimetable((prev) => [newEntry, ...prev]);
+  }
 
-  const value = useMemo<Ctx>(
-    () => ({
-      ...state,
-      hydrated,
-      signIn,
-      signOut: () => setState((s) => ({ ...s, user: null })),
-      setCheckIn: (classId, response) =>
-        setState((s) => ({ ...s, checkIns: { ...s.checkIns, [classId]: response } })),
-      addResult: (result) => setState((s) => ({ ...s, results: [result, ...s.results] })),
-      setUpload: (upload) => setState((s) => ({ ...s, upload })),
-      latestFor: (conceptId) => state.results.find((r) => r.conceptId === conceptId),
-    }),
-    [state, hydrated, signIn],
+  function deleteTimetableEntry(id: string) {
+    setTimetable((prev) => prev.filter((t) => t.id !== id));
+  }
+
+  function saveReflection(reflection: Omit<Reflection, "id" | "createdAt">): Reflection {
+    const newRef: Reflection = {
+      ...reflection,
+      id: "ref-" + Date.now(),
+      createdAt: new Date().toISOString(),
+    };
+    setReflections((prev) => [newRef, ...prev]);
+    return newRef;
+  }
+
+  function completeRecheck(concept: string, beforeScore: number, afterScore: number) {
+    const item = { concept, beforeScore, afterScore, date: new Date().toLocaleTimeString() };
+    setRecheckHistory((prev) => [item, ...prev]);
+  }
+
+  function updateApiConfig(config: ApiConfig) {
+    setApiConfigState(config);
+    saveApiConfig(config);
+  }
+
+  return (
+    <EchoContext.Provider
+      value={{
+        timetable,
+        reflections,
+        latestResult,
+        activeRepair,
+        recheckHistory,
+        apiConfig,
+        addTimetableEntry,
+        deleteTimetableEntry,
+        saveReflection,
+        setLatestResult,
+        setActiveRepair,
+        completeRecheck,
+        updateApiConfig,
+      }}
+    >
+      {children}
+    </EchoContext.Provider>
   );
-
-  return <EchoContext.Provider value={value}>{children}</EchoContext.Provider>;
 }
 
 export function useEcho() {

@@ -21,17 +21,30 @@ export const FRAMEWORK_DIMENSIONS: { id: FrameworkDimension; label: string; blur
 
 export type ReflectionCheckIn = "understood" | "mostly" | "confused" | "lost";
 
-export const CHECKIN_OPTIONS: {
-  id: ReflectionCheckIn;
-  label: string;
-  hint: string;
-  tone: "success" | "primary" | "warning" | "destructive";
-}[] = [
-  { id: "understood", label: "Understood", hint: "Felt clear end to end", tone: "success" },
-  { id: "mostly", label: "Mostly understood", hint: "One or two fuzzy parts", tone: "primary" },
-  { id: "confused", label: "Confused", hint: "Lost the thread midway", tone: "warning" },
-  { id: "lost", label: "Didn't understand", hint: "Need to relearn it", tone: "destructive" },
-];
+export type TimetableEntry = {
+  id: string;
+  time: string;
+  subject: string;
+  topic: string;
+  date: string;
+};
+
+export type Reflection = {
+  id: string;
+  conceptId: string;
+  conceptName: string;
+  confidence: number;
+  understoodText: string;
+  notUnderstoodText: string;
+  createdAt: string;
+};
+
+export type DiagnosedGap = {
+  gapText: string;
+  severity: "low" | "medium" | "high";
+  relevantAssumption: string;
+  recommendedProbe: string;
+};
 
 export type ProbeQuestion = {
   dimension: ProbeDimension;
@@ -52,20 +65,34 @@ export type ProbeEvaluation = {
   answer: string;
 };
 
-export type Concept = {
-  id: string;
-  name: string;
-  subject: string;
-  unit: string;
+export type StabilityResult = {
+  conceptName: string;
+  confidenceInput: number;
+  stabilityScore: number;
+  confidenceGap: number;
+  isConfidentButFragile: boolean;
+  bandLabel: string;
+  evaluations: ProbeEvaluation[];
+  recommendation: string;
 };
 
-export type ConceptRepair = {
-  conceptId: string;
-  name: string;
-  stability: number;
-  weakest: string;
-  repairActivity: string;
-  estimatedMinutes: number;
+export type RepairActivity = {
+  id: string;
+  conceptName: string;
+  gapText: string;
+  priority: "High" | "Medium" | "Low";
+  totalMinutes: number;
+  steps: { title: string; minutes: number; instruction: string }[];
+  beforeScore: number;
+  afterScore?: number;
+};
+
+export type ApiConfig = {
+  activeProvider: "gemini" | "openai" | "anthropic" | "custom";
+  geminiApiKey: string;
+  openaiApiKey: string;
+  anthropicApiKey: string;
+  customEndpoint: string;
 };
 
 export type Band = {
