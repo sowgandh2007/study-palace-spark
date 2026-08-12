@@ -25,9 +25,10 @@ import {
   generateProbes,
   generateRecommendation,
   scoreAnswer,
-  type ProbeDimension,
-  type ProbeQuestion,
 } from "@/lib/echo/llm";
+import { calculateStabilityScore, bandFor } from "@/lib/echo/scoring";
+import { DEMO_BINARY_SEARCH_DATA } from "@/lib/echo/data";
+import type { ProbeDimension, ProbeQuestion, ProbeEvaluation } from "@/lib/echo/types";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/assessment")({
@@ -49,42 +50,6 @@ export const Route = createFileRoute("/assessment")({
   }),
   component: AssessmentPage,
 });
-
-const DEMO_PROBES: ProbeQuestion[] = [
-  {
-    dimension: "direct",
-    question: "What is the time complexity of Binary Search, and what is one precondition the array must satisfy?",
-  },
-  {
-    dimension: "explain",
-    question: "Why does Binary Search fail on unsorted data — walk through what breaks in the logic?",
-  },
-  {
-    dimension: "transfer",
-    question:
-      "How would you adapt Binary Search to find the first occurrence of a repeated value in a sorted array (not just any occurrence)?",
-  },
-];
-
-const DEMO_ANSWERS = [
-  "O(log n), and the array must be sorted.",
-  "It just won't work because you need it sorted.",
-  "You'd still use binary search.",
-];
-
-const DEMO_SCORES = [
-  { score: 100, reasoning: "Correct complexity and precondition identified." },
-  {
-    score: 55,
-    reasoning:
-      "States the requirement but doesn't explain the mechanism — why eliminating half the search space relies on order.",
-  },
-  {
-    score: 20,
-    reasoning:
-      "Names the technique but shows no adaptation logic — the standard version doesn't guarantee the first occurrence.",
-  },
-];
 
 const DIMENSION_CONFIG: Record<
   ProbeDimension,
@@ -110,18 +75,8 @@ const DIMENSION_CONFIG: Record<
   },
 };
 
-type DimensionScore = {
-  dimension: ProbeDimension;
-  score: number;
-  reasoning: string;
-  question: string;
-  answer: string;
-};
-
 function AssessmentPage() {
   const { concept: searchConcept, demo } = Route.useSearch();
-  const navigate = useNavigate();
-
   const isDemo = Boolean(demo);
 
   const [step, setStep] = useState<"input" | "generating" | "answering" | "results">("input");
@@ -134,8 +89,8 @@ function AssessmentPage() {
 
   const [probes, setProbes] = useState<ProbeQuestion[]>([]);
   const [index, setIndex] = useState(0);
-  const [currentAnswer, setCurrentAnswer] = useState("");
-  const [scores, setScores] = useState<DimensionScore[]>([]);
+  const [answersMap, setAnswersMap] = useState<Record<number, string>>({});
+  const [evaluations, setEvaluations] = useState<ProbeEvaluation[]>([]);
 
   const [generating, setGenerating] = useState(false);
   const [evaluating, setEvaluating] = useState(false);
@@ -161,13 +116,22 @@ function AssessmentPage() {
     setGenerating(true);
 
     if (isDemo) {
+      // Offline hardcoded demo path - 0 network calls
       setTimeout(() => {
-        setProbes(DEMO_PROBES);
+        const demoProbes: ProbeQuestion[] = DEMO_BINARY_SEARCH_DATA.probes.map((p) => ({
+          dimension: p.dimension,
+          question: p.question,
+        }));
+        setProbes(demoProbes);
         setIndex(0);
-        setCurrentAnswer(DEMO_ANSWERS[0]!);
+        setAnswersMap({
+          0: DEMO_BINARY_SEARCH_DATA.probes[0]!.demoAnswer,
+          1: DEMO_BINARY_SEARCH_DATA.probes[1]!.demoAnswer,
+          2: DEMO_BINARY_SEARCH_DATA.probes[2]!.demoAnswer,
+        });
         setGenerating(false);
         setStep("answering");
-      }, 500);
+      }, 400);
       return;
     }
 
@@ -175,8 +139,8 @@ function AssessmentPage() {
       const generatedProbes = await generateProbes(concept, notesInput, confidenceInput);
       setProbes(generatedProbes);
       setIndex(0);
-      setCurrentAnswer("");
-      setScores([]);
+      setAnswersMap({});
+      setEvaluations([]);
       setGenerating(false);
       setStep("answering");
     } catch (err: unknown) {
@@ -187,18 +151,24 @@ function AssessmentPage() {
 
   async function handleSubmitAnswer() {
     const q = probes[index];
-    if (!q || !currentAnswer.trim()) return;
+    const currentAnswerText = answersMap[index] ?? "";
+    if (!q || !currentAnswerText.trim()) return;
 
     setEvaluating(true);
 
     let scoreRes: { score: number; reasoning: string };
 
     if (isDemo) {
+      // Hardcoded evaluation with ~800ms simulated delay, 0 network requests
       await new Promise((r) => setTimeout(r, 800));
-      scoreRes = DEMO_SCORES[index] ?? { score: 50, reasoning: "Pre-evaluated answer for demo." };
+      const demoItem = DEMO_BINARY_SEARCH_DATA.probes[index];
+      scoreRes = {
+        score: demoItem?.demoScore ?? 50,
+        reasoning: demoItem?.demoReasoning ?? "Pre-evaluated answer for demo.",
+      };
     } else {
       try {
-        scoreRes = await scoreAnswer(conceptInput, q.dimension, q.question, currentAnswer);
+        scoreRes = await scoreAnswer(conceptInput, q.dimension, q.question, currentAnswerText);
       } catch (err: unknown) {
         setEvaluating(false);
         setError((err as Error).message || "Failed to evaluate answer.");
@@ -206,55 +176,48 @@ function AssessmentPage() {
       }
     }
 
-    const newScore: DimensionScore = {
+    const newEval: ProbeEvaluation = {
       dimension: q.dimension,
       score: scoreRes.score,
       reasoning: scoreRes.reasoning,
       question: q.question,
-      answer: currentAnswer,
+      answer: currentAnswerText,
     };
 
-    const updatedScores = [...scores.filter((s) => s.dimension !== q.dimension), newScore];
-    setScores(updatedScores);
+    const updatedEvals = [...evaluations.filter((e) => e.dimension !== q.dimension), newEval];
+    setEvaluations(updatedEvals);
     setEvaluating(false);
 
     if (index < probes.length - 1) {
-      const nextIdx = index + 1;
-      setIndex(nextIdx);
-      setCurrentAnswer(isDemo ? DEMO_ANSWERS[nextIdx] ?? "" : "");
+      setIndex(index + 1);
     } else {
-      finalizeResults(updatedScores);
+      finalizeResults(updatedEvals);
     }
   }
 
-  async function finalizeResults(finalScores: DimensionScore[]) {
+  async function finalizeResults(finalEvals: ProbeEvaluation[]) {
     setStep("results");
 
-    const directScore = finalScores.find((s) => s.dimension === "direct")?.score ?? 0;
-    const explainScore = finalScores.find((s) => s.dimension === "explain")?.score ?? 0;
-    const transferScore = finalScores.find((s) => s.dimension === "transfer")?.score ?? 0;
+    const directScore = finalEvals.find((s) => s.dimension === "direct")?.score ?? 0;
+    const explainScore = finalEvals.find((s) => s.dimension === "explain")?.score ?? 0;
+    const transferScore = finalEvals.find((s) => s.dimension === "transfer")?.score ?? 0;
 
-    const stabilityScore = Math.round(directScore * 0.2 + explainScore * 0.4 + transferScore * 0.4);
+    // Use single centralized scoring formula: round(direct*0.2 + explain*0.4 + transfer*0.4)
+    const stabilityScore = calculateStabilityScore(directScore, explainScore, transferScore);
+    const band = bandFor(stabilityScore);
 
-    let bandLabel = "Surface Knowledge";
-    if (stabilityScore >= 80) bandLabel = "Stable Understanding";
-    else if (stabilityScore >= 60) bandLabel = "Developing Understanding";
-    else if (stabilityScore >= 40) bandLabel = "Fragile Understanding";
-
-    const lowestScoreObj = [...finalScores].sort((a, b) => a.score - b.score)[0];
-    const weakestDim = lowestScoreObj ? lowestScoreObj.dimension : "transfer";
+    const lowestEval = [...finalEvals].sort((a, b) => a.score - b.score)[0];
+    const weakestDim = lowestEval ? lowestEval.dimension : "transfer";
 
     if (isDemo) {
-      setRecommendation(
-        "Practice adapting Binary Search to boundary-finding variants (first/last occurrence, insertion point)."
-      );
+      setRecommendation(DEMO_BINARY_SEARCH_DATA.recommendation);
     } else {
       setLoadingRec(true);
       try {
         const recText = await generateRecommendation(
           conceptInput,
           stabilityScore,
-          bandLabel,
+          band.label,
           weakestDim
         );
         setRecommendation(recText);
@@ -273,8 +236,8 @@ function AssessmentPage() {
     setConfidenceInput(80);
     setProbes([]);
     setIndex(0);
-    setCurrentAnswer("");
-    setScores([]);
+    setAnswersMap({});
+    setEvaluations([]);
     setError(null);
     setRecommendation("");
   }
@@ -292,7 +255,7 @@ function AssessmentPage() {
               </Badge>
             ) : (
               <Badge variant="outline" className="border-primary/50 bg-primary/10 text-primary px-3 py-1 font-medium text-xs">
-                <Sparkles className="mr-1.5 size-3.5 text-primary" /> Live AI Assessment
+                <Sparkles className="mr-1.5 size-3.5 text-primary" /> Live AI Probe Engine
               </Badge>
             )}
           </div>
@@ -403,8 +366,8 @@ function AssessmentPage() {
                   <BrainCircuit className="size-5 text-primary" />
                   <span className="font-bold sm:text-lg">{conceptInput}</span>
                 </div>
-                <span className="font-mono text-xs text-muted-foreground">
-                  Question {index + 1} of {probes.length}
+                <span className="font-mono text-xs font-bold text-muted-foreground">
+                  {index + 1} / {probes.length}
                 </span>
               </div>
 
@@ -441,7 +404,7 @@ function AssessmentPage() {
               <div key={index} className="rounded-2xl border border-border bg-card p-6 card-shadow sm:p-8">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-semibold tracking-widest text-primary uppercase">
-                    Dimension {index + 1}: {DIMENSION_CONFIG[probes[index]!.dimension].label}
+                    Probe {index + 1} of 3: {DIMENSION_CONFIG[probes[index]!.dimension].label}
                   </p>
                   <span className="font-mono text-[11px] text-muted-foreground">
                     Weight: {DIMENSION_CONFIG[probes[index]!.dimension].percentLabel}
@@ -464,8 +427,8 @@ function AssessmentPage() {
                     disabled={evaluating}
                     className="mt-1.5 bg-background/50 font-sans"
                     placeholder="Explain in 1-3 sentences. ECHO scores depth of reasoning, not vocabulary."
-                    value={currentAnswer}
-                    onChange={(e) => setCurrentAnswer(e.target.value)}
+                    value={answersMap[index] ?? ""}
+                    onChange={(e) => setAnswersMap({ ...answersMap, [index]: e.target.value })}
                   />
                 </div>
 
@@ -480,16 +443,14 @@ function AssessmentPage() {
                     variant="ghost"
                     disabled={index === 0 || evaluating}
                     onClick={() => {
-                      const prevIdx = Math.max(0, index - 1);
-                      setIndex(prevIdx);
-                      if (isDemo) setCurrentAnswer(DEMO_ANSWERS[prevIdx] ?? "");
+                      setIndex(Math.max(0, index - 1));
                     }}
                   >
                     <ArrowLeft className="mr-1.5 size-4" /> Previous
                   </Button>
 
                   <Button
-                    disabled={!currentAnswer.trim() || evaluating}
+                    disabled={!(answersMap[index] ?? "").trim() || evaluating}
                     onClick={handleSubmitAnswer}
                   >
                     {evaluating ? (
@@ -498,7 +459,7 @@ function AssessmentPage() {
                       </>
                     ) : index < probes.length - 1 ? (
                       <>
-                        Next question <ArrowRight className="ml-1.5 size-4" />
+                        Next probe <ArrowRight className="ml-1.5 size-4" />
                       </>
                     ) : (
                       <>
@@ -516,28 +477,24 @@ function AssessmentPage() {
         {step === "results" && (
           <div className="space-y-6">
             {(() => {
-              const directScore = scores.find((s) => s.dimension === "direct")?.score ?? 0;
-              const explainScore = scores.find((s) => s.dimension === "explain")?.score ?? 0;
-              const transferScore = scores.find((s) => s.dimension === "transfer")?.score ?? 0;
+              const directScore = evaluations.find((s) => s.dimension === "direct")?.score ?? 0;
+              const explainScore = evaluations.find((s) => s.dimension === "explain")?.score ?? 0;
+              const transferScore = evaluations.find((s) => s.dimension === "transfer")?.score ?? 0;
 
-              const stabilityScore = Math.round(
-                directScore * 0.2 + explainScore * 0.4 + transferScore * 0.4
-              );
+              // Use single centralized scoring formula: round(direct*0.2 + explain*0.4 + transfer*0.4)
+              const stabilityScore = calculateStabilityScore(directScore, explainScore, transferScore);
+              const band = bandFor(stabilityScore);
 
-              let bandLabel = "Surface Knowledge";
               let bandColorClass = "text-destructive border-destructive/40 bg-destructive/10";
               let bandIcon = ShieldAlert;
 
-              if (stabilityScore >= 80) {
-                bandLabel = "Stable Understanding";
+              if (band.id === "stable") {
                 bandColorClass = "text-success border-success/40 bg-success/10";
                 bandIcon = ShieldCheck;
-              } else if (stabilityScore >= 60) {
-                bandLabel = "Developing Understanding";
+              } else if (band.id === "developing") {
                 bandColorClass = "text-primary border-primary/40 bg-primary/10";
                 bandIcon = CheckCircle2;
-              } else if (stabilityScore >= 40) {
-                bandLabel = "Fragile Understanding";
+              } else if (band.id === "fragile") {
                 bandColorClass = "text-warning border-warning/40 bg-warning/10";
                 bandIcon = ShieldAlert;
               }
@@ -557,7 +514,7 @@ function AssessmentPage() {
 
                     <div className={cn("mt-3 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-semibold", bandColorClass)}>
                       <BandIcon className="size-4" />
-                      {bandLabel}
+                      {band.label}
                     </div>
 
                     {/* Confidence vs Evidence Callout */}
@@ -590,7 +547,7 @@ function AssessmentPage() {
                     </h3>
                     <div className="grid gap-4 md:grid-cols-3">
                       {(["direct", "explain", "transfer"] as ProbeDimension[]).map((dim) => {
-                        const item = scores.find((s) => s.dimension === dim);
+                        const item = evaluations.find((s) => s.dimension === dim);
                         const scoreVal = item ? item.score : 0;
                         const cfg = DIMENSION_CONFIG[dim];
 

@@ -1,12 +1,17 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { BrainCircuit, Mail, Lock } from "lucide-react";
+import { BrainCircuit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
+
+export const DEMO_ACCOUNTS = [
+  { role: "Student", email: "student@echo.edu", password: "demo", title: "Student Mode" },
+  { role: "Faculty", email: "faculty@echo.edu", password: "demo", title: "Faculty Portal" },
+];
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -15,7 +20,19 @@ function LoginPage() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    navigate({ to: "/assessment" });
+    if (email.includes("faculty")) {
+      navigate({ to: "/faculty" });
+    } else {
+      navigate({ to: "/dashboard" });
+    }
+  }
+
+  function loginAs(demoEmail: string) {
+    if (demoEmail.includes("faculty")) {
+      navigate({ to: "/faculty" });
+    } else {
+      navigate({ to: "/dashboard" });
+    }
   }
 
   return (
@@ -57,9 +74,20 @@ function LoginPage() {
           </Button>
         </form>
 
+        <div className="space-y-2 pt-2">
+          <p className="text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">One-Click Demo Accounts</p>
+          <div className="grid grid-cols-2 gap-2">
+            {DEMO_ACCOUNTS.map((acc) => (
+              <Button key={acc.email} variant="outline" size="sm" onClick={() => loginAs(acc.email)}>
+                {acc.title}
+              </Button>
+            ))}
+          </div>
+        </div>
+
         <div className="pt-2 text-center text-xs">
           <Link to="/assessment" search={{ concept: "binary-search", demo: "true" }} className="font-semibold text-primary hover:underline">
-            Try Binary Search Demo Probe (No login needed) →
+            Try Binary Search Demo Probe (Guest Mode) →
           </Link>
         </div>
       </div>

@@ -1,15 +1,4 @@
-/**
- * ECHO LLM Service
- * Communicates with connected LLM endpoint for probe generation, scoring, and recommendation text.
- * Handles JSON markdown stripping, error states, and intelligent fallback execution.
- */
-
-export type ProbeDimension = "direct" | "explain" | "transfer";
-
-export type ProbeQuestion = {
-  dimension: ProbeDimension;
-  question: string;
-};
+import type { ProbeDimension, ProbeQuestion } from "./types";
 
 export type ProbeScore = {
   score: number;
@@ -17,19 +6,27 @@ export type ProbeScore = {
 };
 
 /**
- * Helper to strip markdown code blocks before parsing JSON.
+ * Robust JSON parser that strips markdown code fences (```json ... ``` or ``` ... ```)
+ * before parsing JSON string responses from LLMs.
  */
 export function cleanAndParseJSON<T>(rawText: string): T {
   let cleaned = rawText.trim();
-  const fenceMatch = cleaned.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
-  if (fenceMatch && fenceMatch[1]) {
-    cleaned = fenceMatch[1].trim();
+  // Strip starting ```json or ``` and trailing ```
+  cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+  
+  // Find first { or [ and last } or ]
+  const firstBrace = cleaned.search(/[\{\[]/);
+  const lastBrace = cleaned.search(/[\}\]][^View]*$/);
+  
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace >= firstBrace) {
+    cleaned = cleaned.substring(firstBrace, lastBrace + 1);
   }
+
   return JSON.parse(cleaned) as T;
 }
 
 /**
- * Call connected LLM API or fallback to realistic mock generator.
+ * Call connected LLM API or fallback to intelligent generator.
  */
 async function callLLM(prompt: string): Promise<string> {
   const apiKey =
@@ -38,8 +35,8 @@ async function callLLM(prompt: string): Promise<string> {
 
   if (apiKey) {
     try {
-      if (process.env.GEMINI_API_KEY || import.meta.env?.VITE_GEMINI_API_KEY) {
-        const key = process.env.GEMINI_API_KEY || import.meta.env?.VITE_GEMINI_API_KEY;
+      if (process.env?.GEMINI_API_KEY || import.meta.env?.VITE_GEMINI_API_KEY) {
+        const key = process.env?.GEMINI_API_KEY || import.meta.env?.VITE_GEMINI_API_KEY;
         const res = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
           {
@@ -108,7 +105,7 @@ function generateFallbackResponse(prompt: string): string {
   if (prompt.includes("Score a student's answer")) {
     const answerMatch = prompt.match(/Student's answer:\s*(.*)/i);
     const answer = answerMatch ? answerMatch[1].trim() : "";
-    const words = answer.split(/\s+/).length;
+    const words = answer.split(/\s+/).filter(Boolean).length;
 
     let score = 75;
     let reasoning = "Solid explanation covering the essential mechanics.";

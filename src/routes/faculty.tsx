@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Users, AlertCircle, ShieldAlert } from "lucide-react";
+import { ShieldAlert, Users } from "lucide-react";
 import { EchoLogo } from "@/routes/index";
 import { ThemeSelect } from "@/lib/theme";
 import { FACULTY_CLASS } from "@/lib/echo/data";
@@ -21,9 +21,9 @@ function FacultyPage() {
       <main className="mx-auto max-w-5xl px-6 pt-8 space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-primary">Instructor Telemetry Portal</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-primary">Faculty Cohort Telemetry Portal</span>
             <h1 className="text-2xl font-bold tracking-tight mt-1">{FACULTY_CLASS.cohort}</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">{FACULTY_CLASS.students} Enrolled Students</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{FACULTY_CLASS.students} Enrolled Students · Overall Class Stability: {FACULTY_CLASS.avgStability}%</p>
           </div>
         </div>
 
@@ -45,7 +45,7 @@ function FacultyPage() {
               </div>
 
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Top Class Misconceptions</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Cohort Misconception Breakdown</p>
                 <ul className="space-y-2">
                   {c.misconceptions.map((m, i) => (
                     <li key={i} className="rounded-lg bg-background/50 border border-border/50 p-2 text-xs flex justify-between gap-2">

@@ -16,29 +16,7 @@ import { Route as FacultyRouteImport } from './routes/faculty'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AssessmentRouteImport } from './routes/assessment'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
-import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
-import { Route as AuthenticatedAppSkillsRouteImport } from './routes/_authenticated/app.skills'
-import { Route as AuthenticatedAppProfileRouteImport } from './routes/_authenticated/app.profile'
-import { Route as AuthenticatedAppNotificationsRouteImport } from './routes/_authenticated/app.notifications'
-import { Route as AuthenticatedAppMusicRouteImport } from './routes/_authenticated/app.music'
-import { Route as AuthenticatedAppMissionsRouteImport } from './routes/_authenticated/app.missions'
-import { Route as AuthenticatedAppMasteryRouteImport } from './routes/_authenticated/app.mastery'
-import { Route as AuthenticatedAppRoomsIndexRouteImport } from './routes/_authenticated/app.rooms.index'
-import { Route as AuthenticatedAppAiIndexRouteImport } from './routes/_authenticated/app.ai.index'
-import { Route as AuthenticatedAppRoomsRoomIdRouteImport } from './routes/_authenticated/app.rooms.$roomId'
-import { Route as AuthenticatedAppAiWeaknessRouteImport } from './routes/_authenticated/app.ai.weakness'
-import { Route as AuthenticatedAppAiRevisionRouteImport } from './routes/_authenticated/app.ai.revision'
-import { Route as AuthenticatedAppAiKnowledgeRouteImport } from './routes/_authenticated/app.ai.knowledge'
-import { Route as AuthenticatedAppAiExamRouteImport } from './routes/_authenticated/app.ai.exam'
-import { Route as AuthenticatedAppAiCareerRouteImport } from './routes/_authenticated/app.ai.career'
-import { Route as AuthenticatedAppAiBattleRouteImport } from './routes/_authenticated/app.ai.battle'
-import { Route as AuthenticatedAppAiAssistantRouteImport } from './routes/_authenticated/app.ai.assistant'
-import { Route as AuthenticatedAppAiAnalyticsRouteImport } from './routes/_authenticated/app.ai.analytics'
-import { Route as AuthenticatedAppAiRoadmapIndexRouteImport } from './routes/_authenticated/app.ai.roadmap.index'
-import { Route as AuthenticatedAppAiRoadmapRoadmapIdRouteImport } from './routes/_authenticated/app.ai.roadmap.$roadmapId'
 
 const ResultsRoute = ResultsRouteImport.update({
   id: '/results',
@@ -75,133 +53,11 @@ const AssessmentRoute = AssessmentRouteImport.update({
   path: '/assessment',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
-  id: '/app',
-  path: '/app',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AuthenticatedAppRoute,
-} as any)
-const AuthenticatedAppSkillsRoute = AuthenticatedAppSkillsRouteImport.update({
-  id: '/skills',
-  path: '/skills',
-  getParentRoute: () => AuthenticatedAppRoute,
-} as any)
-const AuthenticatedAppProfileRoute = AuthenticatedAppProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => AuthenticatedAppRoute,
-} as any)
-const AuthenticatedAppNotificationsRoute =
-  AuthenticatedAppNotificationsRouteImport.update({
-    id: '/notifications',
-    path: '/notifications',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppMusicRoute = AuthenticatedAppMusicRouteImport.update({
-  id: '/music',
-  path: '/music',
-  getParentRoute: () => AuthenticatedAppRoute,
-} as any)
-const AuthenticatedAppMissionsRoute =
-  AuthenticatedAppMissionsRouteImport.update({
-    id: '/missions',
-    path: '/missions',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppMasteryRoute = AuthenticatedAppMasteryRouteImport.update({
-  id: '/mastery',
-  path: '/mastery',
-  getParentRoute: () => AuthenticatedAppRoute,
-} as any)
-const AuthenticatedAppRoomsIndexRoute =
-  AuthenticatedAppRoomsIndexRouteImport.update({
-    id: '/rooms/',
-    path: '/rooms/',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppAiIndexRoute = AuthenticatedAppAiIndexRouteImport.update({
-  id: '/ai/',
-  path: '/ai/',
-  getParentRoute: () => AuthenticatedAppRoute,
-} as any)
-const AuthenticatedAppRoomsRoomIdRoute =
-  AuthenticatedAppRoomsRoomIdRouteImport.update({
-    id: '/rooms/$roomId',
-    path: '/rooms/$roomId',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppAiWeaknessRoute =
-  AuthenticatedAppAiWeaknessRouteImport.update({
-    id: '/ai/weakness',
-    path: '/ai/weakness',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppAiRevisionRoute =
-  AuthenticatedAppAiRevisionRouteImport.update({
-    id: '/ai/revision',
-    path: '/ai/revision',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppAiKnowledgeRoute =
-  AuthenticatedAppAiKnowledgeRouteImport.update({
-    id: '/ai/knowledge',
-    path: '/ai/knowledge',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppAiExamRoute = AuthenticatedAppAiExamRouteImport.update({
-  id: '/ai/exam',
-  path: '/ai/exam',
-  getParentRoute: () => AuthenticatedAppRoute,
-} as any)
-const AuthenticatedAppAiCareerRoute =
-  AuthenticatedAppAiCareerRouteImport.update({
-    id: '/ai/career',
-    path: '/ai/career',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppAiBattleRoute =
-  AuthenticatedAppAiBattleRouteImport.update({
-    id: '/ai/battle',
-    path: '/ai/battle',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppAiAssistantRoute =
-  AuthenticatedAppAiAssistantRouteImport.update({
-    id: '/ai/assistant',
-    path: '/ai/assistant',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppAiAnalyticsRoute =
-  AuthenticatedAppAiAnalyticsRouteImport.update({
-    id: '/ai/analytics',
-    path: '/ai/analytics',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppAiRoadmapIndexRoute =
-  AuthenticatedAppAiRoadmapIndexRouteImport.update({
-    id: '/ai/roadmap/',
-    path: '/ai/roadmap/',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppAiRoadmapRoadmapIdRoute =
-  AuthenticatedAppAiRoadmapRoadmapIdRouteImport.update({
-    id: '/ai/roadmap/$roadmapId',
-    path: '/ai/roadmap/$roadmapId',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -212,27 +68,6 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/plan': typeof PlanRoute
   '/results': typeof ResultsRoute
-  '/app': typeof AuthenticatedAppRouteWithChildren
-  '/app/mastery': typeof AuthenticatedAppMasteryRoute
-  '/app/missions': typeof AuthenticatedAppMissionsRoute
-  '/app/music': typeof AuthenticatedAppMusicRoute
-  '/app/notifications': typeof AuthenticatedAppNotificationsRoute
-  '/app/profile': typeof AuthenticatedAppProfileRoute
-  '/app/skills': typeof AuthenticatedAppSkillsRoute
-  '/app/': typeof AuthenticatedAppIndexRoute
-  '/app/ai/analytics': typeof AuthenticatedAppAiAnalyticsRoute
-  '/app/ai/assistant': typeof AuthenticatedAppAiAssistantRoute
-  '/app/ai/battle': typeof AuthenticatedAppAiBattleRoute
-  '/app/ai/career': typeof AuthenticatedAppAiCareerRoute
-  '/app/ai/exam': typeof AuthenticatedAppAiExamRoute
-  '/app/ai/knowledge': typeof AuthenticatedAppAiKnowledgeRoute
-  '/app/ai/revision': typeof AuthenticatedAppAiRevisionRoute
-  '/app/ai/weakness': typeof AuthenticatedAppAiWeaknessRoute
-  '/app/rooms/$roomId': typeof AuthenticatedAppRoomsRoomIdRoute
-  '/app/ai/': typeof AuthenticatedAppAiIndexRoute
-  '/app/rooms/': typeof AuthenticatedAppRoomsIndexRoute
-  '/app/ai/roadmap/$roadmapId': typeof AuthenticatedAppAiRoadmapRoadmapIdRoute
-  '/app/ai/roadmap/': typeof AuthenticatedAppAiRoadmapIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -243,31 +78,10 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/plan': typeof PlanRoute
   '/results': typeof ResultsRoute
-  '/app/mastery': typeof AuthenticatedAppMasteryRoute
-  '/app/missions': typeof AuthenticatedAppMissionsRoute
-  '/app/music': typeof AuthenticatedAppMusicRoute
-  '/app/notifications': typeof AuthenticatedAppNotificationsRoute
-  '/app/profile': typeof AuthenticatedAppProfileRoute
-  '/app/skills': typeof AuthenticatedAppSkillsRoute
-  '/app': typeof AuthenticatedAppIndexRoute
-  '/app/ai/analytics': typeof AuthenticatedAppAiAnalyticsRoute
-  '/app/ai/assistant': typeof AuthenticatedAppAiAssistantRoute
-  '/app/ai/battle': typeof AuthenticatedAppAiBattleRoute
-  '/app/ai/career': typeof AuthenticatedAppAiCareerRoute
-  '/app/ai/exam': typeof AuthenticatedAppAiExamRoute
-  '/app/ai/knowledge': typeof AuthenticatedAppAiKnowledgeRoute
-  '/app/ai/revision': typeof AuthenticatedAppAiRevisionRoute
-  '/app/ai/weakness': typeof AuthenticatedAppAiWeaknessRoute
-  '/app/rooms/$roomId': typeof AuthenticatedAppRoomsRoomIdRoute
-  '/app/ai': typeof AuthenticatedAppAiIndexRoute
-  '/app/rooms': typeof AuthenticatedAppRoomsIndexRoute
-  '/app/ai/roadmap/$roadmapId': typeof AuthenticatedAppAiRoadmapRoadmapIdRoute
-  '/app/ai/roadmap': typeof AuthenticatedAppAiRoadmapIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/assessment': typeof AssessmentRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
@@ -275,27 +89,6 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/plan': typeof PlanRoute
   '/results': typeof ResultsRoute
-  '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
-  '/_authenticated/app/mastery': typeof AuthenticatedAppMasteryRoute
-  '/_authenticated/app/missions': typeof AuthenticatedAppMissionsRoute
-  '/_authenticated/app/music': typeof AuthenticatedAppMusicRoute
-  '/_authenticated/app/notifications': typeof AuthenticatedAppNotificationsRoute
-  '/_authenticated/app/profile': typeof AuthenticatedAppProfileRoute
-  '/_authenticated/app/skills': typeof AuthenticatedAppSkillsRoute
-  '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
-  '/_authenticated/app/ai/analytics': typeof AuthenticatedAppAiAnalyticsRoute
-  '/_authenticated/app/ai/assistant': typeof AuthenticatedAppAiAssistantRoute
-  '/_authenticated/app/ai/battle': typeof AuthenticatedAppAiBattleRoute
-  '/_authenticated/app/ai/career': typeof AuthenticatedAppAiCareerRoute
-  '/_authenticated/app/ai/exam': typeof AuthenticatedAppAiExamRoute
-  '/_authenticated/app/ai/knowledge': typeof AuthenticatedAppAiKnowledgeRoute
-  '/_authenticated/app/ai/revision': typeof AuthenticatedAppAiRevisionRoute
-  '/_authenticated/app/ai/weakness': typeof AuthenticatedAppAiWeaknessRoute
-  '/_authenticated/app/rooms/$roomId': typeof AuthenticatedAppRoomsRoomIdRoute
-  '/_authenticated/app/ai/': typeof AuthenticatedAppAiIndexRoute
-  '/_authenticated/app/rooms/': typeof AuthenticatedAppRoomsIndexRoute
-  '/_authenticated/app/ai/roadmap/$roadmapId': typeof AuthenticatedAppAiRoadmapRoadmapIdRoute
-  '/_authenticated/app/ai/roadmap/': typeof AuthenticatedAppAiRoadmapIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -308,27 +101,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/plan'
     | '/results'
-    | '/app'
-    | '/app/mastery'
-    | '/app/missions'
-    | '/app/music'
-    | '/app/notifications'
-    | '/app/profile'
-    | '/app/skills'
-    | '/app/'
-    | '/app/ai/analytics'
-    | '/app/ai/assistant'
-    | '/app/ai/battle'
-    | '/app/ai/career'
-    | '/app/ai/exam'
-    | '/app/ai/knowledge'
-    | '/app/ai/revision'
-    | '/app/ai/weakness'
-    | '/app/rooms/$roomId'
-    | '/app/ai/'
-    | '/app/rooms/'
-    | '/app/ai/roadmap/$roadmapId'
-    | '/app/ai/roadmap/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -339,30 +111,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/plan'
     | '/results'
-    | '/app/mastery'
-    | '/app/missions'
-    | '/app/music'
-    | '/app/notifications'
-    | '/app/profile'
-    | '/app/skills'
-    | '/app'
-    | '/app/ai/analytics'
-    | '/app/ai/assistant'
-    | '/app/ai/battle'
-    | '/app/ai/career'
-    | '/app/ai/exam'
-    | '/app/ai/knowledge'
-    | '/app/ai/revision'
-    | '/app/ai/weakness'
-    | '/app/rooms/$roomId'
-    | '/app/ai'
-    | '/app/rooms'
-    | '/app/ai/roadmap/$roadmapId'
-    | '/app/ai/roadmap'
   id:
     | '__root__'
     | '/'
-    | '/_authenticated'
     | '/assessment'
     | '/auth'
     | '/dashboard'
@@ -370,32 +121,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/plan'
     | '/results'
-    | '/_authenticated/app'
-    | '/_authenticated/app/mastery'
-    | '/_authenticated/app/missions'
-    | '/_authenticated/app/music'
-    | '/_authenticated/app/notifications'
-    | '/_authenticated/app/profile'
-    | '/_authenticated/app/skills'
-    | '/_authenticated/app/'
-    | '/_authenticated/app/ai/analytics'
-    | '/_authenticated/app/ai/assistant'
-    | '/_authenticated/app/ai/battle'
-    | '/_authenticated/app/ai/career'
-    | '/_authenticated/app/ai/exam'
-    | '/_authenticated/app/ai/knowledge'
-    | '/_authenticated/app/ai/revision'
-    | '/_authenticated/app/ai/weakness'
-    | '/_authenticated/app/rooms/$roomId'
-    | '/_authenticated/app/ai/'
-    | '/_authenticated/app/rooms/'
-    | '/_authenticated/app/ai/roadmap/$roadmapId'
-    | '/_authenticated/app/ai/roadmap/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AssessmentRoute: typeof AssessmentRoute
   AuthRoute: typeof AuthRoute
   DashboardRoute: typeof DashboardRoute
@@ -456,13 +185,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AssessmentRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -470,220 +192,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/app': {
-      id: '/_authenticated/app'
-      path: '/app'
-      fullPath: '/app'
-      preLoaderRoute: typeof AuthenticatedAppRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/app/': {
-      id: '/_authenticated/app/'
-      path: '/'
-      fullPath: '/app/'
-      preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/skills': {
-      id: '/_authenticated/app/skills'
-      path: '/skills'
-      fullPath: '/app/skills'
-      preLoaderRoute: typeof AuthenticatedAppSkillsRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/profile': {
-      id: '/_authenticated/app/profile'
-      path: '/profile'
-      fullPath: '/app/profile'
-      preLoaderRoute: typeof AuthenticatedAppProfileRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/notifications': {
-      id: '/_authenticated/app/notifications'
-      path: '/notifications'
-      fullPath: '/app/notifications'
-      preLoaderRoute: typeof AuthenticatedAppNotificationsRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/music': {
-      id: '/_authenticated/app/music'
-      path: '/music'
-      fullPath: '/app/music'
-      preLoaderRoute: typeof AuthenticatedAppMusicRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/missions': {
-      id: '/_authenticated/app/missions'
-      path: '/missions'
-      fullPath: '/app/missions'
-      preLoaderRoute: typeof AuthenticatedAppMissionsRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/mastery': {
-      id: '/_authenticated/app/mastery'
-      path: '/mastery'
-      fullPath: '/app/mastery'
-      preLoaderRoute: typeof AuthenticatedAppMasteryRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/rooms/': {
-      id: '/_authenticated/app/rooms/'
-      path: '/rooms'
-      fullPath: '/app/rooms/'
-      preLoaderRoute: typeof AuthenticatedAppRoomsIndexRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/ai/': {
-      id: '/_authenticated/app/ai/'
-      path: '/ai'
-      fullPath: '/app/ai/'
-      preLoaderRoute: typeof AuthenticatedAppAiIndexRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/rooms/$roomId': {
-      id: '/_authenticated/app/rooms/$roomId'
-      path: '/rooms/$roomId'
-      fullPath: '/app/rooms/$roomId'
-      preLoaderRoute: typeof AuthenticatedAppRoomsRoomIdRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/ai/weakness': {
-      id: '/_authenticated/app/ai/weakness'
-      path: '/ai/weakness'
-      fullPath: '/app/ai/weakness'
-      preLoaderRoute: typeof AuthenticatedAppAiWeaknessRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/ai/revision': {
-      id: '/_authenticated/app/ai/revision'
-      path: '/ai/revision'
-      fullPath: '/app/ai/revision'
-      preLoaderRoute: typeof AuthenticatedAppAiRevisionRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/ai/knowledge': {
-      id: '/_authenticated/app/ai/knowledge'
-      path: '/ai/knowledge'
-      fullPath: '/app/ai/knowledge'
-      preLoaderRoute: typeof AuthenticatedAppAiKnowledgeRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/ai/exam': {
-      id: '/_authenticated/app/ai/exam'
-      path: '/ai/exam'
-      fullPath: '/app/ai/exam'
-      preLoaderRoute: typeof AuthenticatedAppAiExamRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/ai/career': {
-      id: '/_authenticated/app/ai/career'
-      path: '/ai/career'
-      fullPath: '/app/ai/career'
-      preLoaderRoute: typeof AuthenticatedAppAiCareerRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/ai/battle': {
-      id: '/_authenticated/app/ai/battle'
-      path: '/ai/battle'
-      fullPath: '/app/ai/battle'
-      preLoaderRoute: typeof AuthenticatedAppAiBattleRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/ai/assistant': {
-      id: '/_authenticated/app/ai/assistant'
-      path: '/ai/assistant'
-      fullPath: '/app/ai/assistant'
-      preLoaderRoute: typeof AuthenticatedAppAiAssistantRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/ai/analytics': {
-      id: '/_authenticated/app/ai/analytics'
-      path: '/ai/analytics'
-      fullPath: '/app/ai/analytics'
-      preLoaderRoute: typeof AuthenticatedAppAiAnalyticsRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/ai/roadmap/': {
-      id: '/_authenticated/app/ai/roadmap/'
-      path: '/ai/roadmap'
-      fullPath: '/app/ai/roadmap/'
-      preLoaderRoute: typeof AuthenticatedAppAiRoadmapIndexRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/ai/roadmap/$roadmapId': {
-      id: '/_authenticated/app/ai/roadmap/$roadmapId'
-      path: '/ai/roadmap/$roadmapId'
-      fullPath: '/app/ai/roadmap/$roadmapId'
-      preLoaderRoute: typeof AuthenticatedAppAiRoadmapRoadmapIdRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
   }
 }
 
-interface AuthenticatedAppRouteChildren {
-  AuthenticatedAppMasteryRoute: typeof AuthenticatedAppMasteryRoute
-  AuthenticatedAppMissionsRoute: typeof AuthenticatedAppMissionsRoute
-  AuthenticatedAppMusicRoute: typeof AuthenticatedAppMusicRoute
-  AuthenticatedAppNotificationsRoute: typeof AuthenticatedAppNotificationsRoute
-  AuthenticatedAppProfileRoute: typeof AuthenticatedAppProfileRoute
-  AuthenticatedAppSkillsRoute: typeof AuthenticatedAppSkillsRoute
-  AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
-  AuthenticatedAppAiAnalyticsRoute: typeof AuthenticatedAppAiAnalyticsRoute
-  AuthenticatedAppAiAssistantRoute: typeof AuthenticatedAppAiAssistantRoute
-  AuthenticatedAppAiBattleRoute: typeof AuthenticatedAppAiBattleRoute
-  AuthenticatedAppAiCareerRoute: typeof AuthenticatedAppAiCareerRoute
-  AuthenticatedAppAiExamRoute: typeof AuthenticatedAppAiExamRoute
-  AuthenticatedAppAiKnowledgeRoute: typeof AuthenticatedAppAiKnowledgeRoute
-  AuthenticatedAppAiRevisionRoute: typeof AuthenticatedAppAiRevisionRoute
-  AuthenticatedAppAiWeaknessRoute: typeof AuthenticatedAppAiWeaknessRoute
-  AuthenticatedAppRoomsRoomIdRoute: typeof AuthenticatedAppRoomsRoomIdRoute
-  AuthenticatedAppAiIndexRoute: typeof AuthenticatedAppAiIndexRoute
-  AuthenticatedAppRoomsIndexRoute: typeof AuthenticatedAppRoomsIndexRoute
-  AuthenticatedAppAiRoadmapRoadmapIdRoute: typeof AuthenticatedAppAiRoadmapRoadmapIdRoute
-  AuthenticatedAppAiRoadmapIndexRoute: typeof AuthenticatedAppAiRoadmapIndexRoute
-}
-
-const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
-  AuthenticatedAppMasteryRoute: AuthenticatedAppMasteryRoute,
-  AuthenticatedAppMissionsRoute: AuthenticatedAppMissionsRoute,
-  AuthenticatedAppMusicRoute: AuthenticatedAppMusicRoute,
-  AuthenticatedAppNotificationsRoute: AuthenticatedAppNotificationsRoute,
-  AuthenticatedAppProfileRoute: AuthenticatedAppProfileRoute,
-  AuthenticatedAppSkillsRoute: AuthenticatedAppSkillsRoute,
-  AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
-  AuthenticatedAppAiAnalyticsRoute: AuthenticatedAppAiAnalyticsRoute,
-  AuthenticatedAppAiAssistantRoute: AuthenticatedAppAiAssistantRoute,
-  AuthenticatedAppAiBattleRoute: AuthenticatedAppAiBattleRoute,
-  AuthenticatedAppAiCareerRoute: AuthenticatedAppAiCareerRoute,
-  AuthenticatedAppAiExamRoute: AuthenticatedAppAiExamRoute,
-  AuthenticatedAppAiKnowledgeRoute: AuthenticatedAppAiKnowledgeRoute,
-  AuthenticatedAppAiRevisionRoute: AuthenticatedAppAiRevisionRoute,
-  AuthenticatedAppAiWeaknessRoute: AuthenticatedAppAiWeaknessRoute,
-  AuthenticatedAppRoomsRoomIdRoute: AuthenticatedAppRoomsRoomIdRoute,
-  AuthenticatedAppAiIndexRoute: AuthenticatedAppAiIndexRoute,
-  AuthenticatedAppRoomsIndexRoute: AuthenticatedAppRoomsIndexRoute,
-  AuthenticatedAppAiRoadmapRoadmapIdRoute:
-    AuthenticatedAppAiRoadmapRoadmapIdRoute,
-  AuthenticatedAppAiRoadmapIndexRoute: AuthenticatedAppAiRoadmapIndexRoute,
-}
-
-const AuthenticatedAppRouteWithChildren =
-  AuthenticatedAppRoute._addFileChildren(AuthenticatedAppRouteChildren)
-
-interface AuthenticatedRouteRouteChildren {
-  AuthenticatedAppRoute: typeof AuthenticatedAppRouteWithChildren
-}
-
-const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAppRoute: AuthenticatedAppRouteWithChildren,
-}
-
-const AuthenticatedRouteRouteWithChildren =
-  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AssessmentRoute: AssessmentRoute,
   AuthRoute: AuthRoute,
   DashboardRoute: DashboardRoute,

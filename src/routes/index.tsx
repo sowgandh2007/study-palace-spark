@@ -1,136 +1,184 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Sparkles, Users, Map, ShieldCheck, ArrowRight, BrainCircuit } from "lucide-react";
-import { motion, fadeUp, stagger, useReducedMotion } from "@/lib/motion";
+import {
+  ArrowRight,
+  BrainCircuit,
+  CheckCircle2,
+  Compass,
+  FileCheck2,
+  HelpCircle,
+  Layers,
+  RotateCcw,
+  ShieldAlert,
+  ShieldCheck,
+  Sparkles,
+  Zap,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ThemeSelect } from "@/lib/theme";
+import { FRAMEWORK_DIMENSIONS } from "@/lib/echo/types";
+import { BANDS } from "@/lib/echo/scoring";
 
 export const Route = createFileRoute("/")({
-  component: Landing,
+  component: LandingPage,
 });
-
-const HEADLINE_LINES = [
-  <>The Answer Is <span className="text-gradient">Correct</span>.</>,
-  <>But Is the Understanding</>,
-  <>Real?</>,
-];
 
 export function EchoLogo() {
   return (
-    <div className="flex items-center gap-2.5">
-      <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 border border-primary/40 text-primary">
-        <BrainCircuit className="h-5 w-5" />
+    <Link to="/" className="flex items-center gap-2 font-bold text-foreground">
+      <div className="grid h-8 w-8 place-items-center rounded-xl bg-primary/10 border border-primary/40 text-primary">
+        <BrainCircuit className="h-4 w-4" />
       </div>
-      <div className="flex flex-col">
-        <span className="text-lg font-bold tracking-tight text-foreground">ECHO</span>
-        <span className="text-[10px] font-medium tracking-widest text-muted-foreground uppercase">Verification Engine</span>
-      </div>
-    </div>
+      <span className="tracking-tight text-base font-extrabold font-mono">ECHO</span>
+    </Link>
   );
 }
 
-function Landing() {
-  const reduced = useReducedMotion();
+const FIVE_STEP_LOOP = [
+  { step: "01", name: "Plan", detail: "Prioritize topics based on historical conceptual weakness, not raw hours." },
+  { step: "02", name: "Learn", detail: "Engage with core study material via lectures, reading, or problem sets." },
+  { step: "03", name: "Reflect", detail: "Complete a 5-second post-class check-in (Understood, Mostly, Confused, Lost)." },
+  { step: "04", name: "Verify", detail: "Take a 3-dimension ECHO probe (Direct, Explain, Transfer) to test survival." },
+  { step: "05", name: "Adapt", detail: "Update tonight's study plan automatically based on verified stability gaps." },
+];
 
+function LandingPage() {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-background">
-      <div className="pointer-events-none absolute inset-0 opacity-40">
-        <div className="absolute -left-40 top-0 h-96 w-96 rounded-full bg-primary/20 blur-3xl" />
-        <div className="absolute right-0 top-40 h-96 w-96 rounded-full bg-[color:var(--brand-2)]/15 blur-3xl" />
-      </div>
-
-      {!reduced && (
-        <div aria-hidden className="pointer-events-none absolute inset-0 hidden overflow-hidden sm:block">
-          {[
-            { size: 260, x: "10%", y: "20%", color: "bg-primary/15", d: 14 },
-            { size: 200, x: "70%", y: "10%", color: "bg-[color:var(--brand-2)]/15", d: 18 },
-            { size: 140, x: "20%", y: "70%", color: "bg-primary/20", d: 16 },
-          ].map((o, i) => (
-            <motion.span
-              key={i}
-              className={`absolute rounded-full blur-3xl ${o.color}`}
-              style={{ width: o.size, height: o.size, left: o.x, top: o.y }}
-              animate={{ x: [0, 30, -20, 0], y: [0, -25, 15, 0], opacity: [0.3, 0.6, 0.3] }}
-              transition={{ duration: o.d, repeat: Infinity, ease: "easeInOut" }}
-            />
-          ))}
-        </div>
-      )}
-
-      <div className="relative mx-auto flex min-h-screen max-w-md md:max-w-4xl flex-col px-6 pt-14 pb-10 justify-center">
-        <motion.div
-          className="flex items-center justify-between gap-2"
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-        >
+    <div className="min-h-screen bg-background text-foreground selection:bg-primary/20">
+      {/* Header */}
+      <header className="sticky top-0 z-40 border-b border-border bg-card/60 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <EchoLogo />
-          <ThemeSelect />
-        </motion.div>
-
-        <div className="mt-16 flex-1">
-          <motion.h1
-            className="text-[2.5rem] md:text-[3.25rem] font-black leading-[1.08] tracking-tight"
-            variants={stagger(0.12, 0.15)}
-            initial="hidden"
-            animate="show"
-          >
-            {HEADLINE_LINES.map((line, i) => (
-              <motion.span key={i} variants={fadeUp} className="block">
-                {line}
-              </motion.span>
-            ))}
-          </motion.h1>
-          <motion.p
-            className="mt-5 max-w-2xl text-base text-muted-foreground leading-relaxed sm:text-lg"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.55, duration: 0.5 }}
-          >
-            ECHO doesn't ask whether you know the answer. It asks whether your understanding survives — under variation, hidden assumptions, broken code, and unfamiliar ground.
-          </motion.p>
-
-          <motion.div
-            className="mt-10 grid grid-cols-2 gap-3"
-            variants={stagger(0.08, 0.7)}
-            initial="hidden"
-            animate="show"
-          >
-            <motion.div variants={fadeUp}><FeatureChip icon={<Users className="h-4 w-4" />} label="Collaborative Probes" /></motion.div>
-            <motion.div variants={fadeUp}><FeatureChip icon={<ShieldCheck className="h-4 w-4" />} label="Verification Activity" /></motion.div>
-            <motion.div variants={fadeUp}><FeatureChip icon={<Map className="h-4 w-4" />} label="Adaptive Roadmaps" /></motion.div>
-            <motion.div variants={fadeUp}><FeatureChip icon={<Sparkles className="h-4 w-4" />} label="Diagnostic Checks" /></motion.div>
-          </motion.div>
+          <nav className="hidden md:flex items-center gap-6 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <Link to="/assessment" className="hover:text-foreground transition-colors">Probe Engine</Link>
+            <Link to="/dashboard" className="hover:text-foreground transition-colors">Telemetry</Link>
+            <Link to="/faculty" className="hover:text-foreground transition-colors">Faculty Portal</Link>
+            <Link to="/plan" className="hover:text-foreground transition-colors">Adaptive Plan</Link>
+          </nav>
+          <div className="flex items-center gap-3">
+            <ThemeSelect />
+            <Button asChild size="sm" variant="outline">
+              <Link to="/login">Sign In</Link>
+            </Button>
+          </div>
         </div>
+      </header>
 
-        <motion.div
-          className="space-y-3 mt-10"
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.05, duration: 0.5 }}
-        >
-          <Link
-            to="/auth"
-            className="group flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 text-base font-bold text-primary-foreground transition-all hover:bg-primary/90 active:scale-[0.98]"
-          >
-            Enter ECHO Engine <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
-          </Link>
-          <Link
-            to="/auth"
-            search={{ mode: "guest" } as never}
-            className="block rounded-2xl border border-border bg-card/60 px-6 py-4 text-center text-base font-semibold backdrop-blur transition-all hover:border-primary/60 hover:bg-card active:bg-card"
-          >
-            Continue as Guest Verification
-          </Link>
-        </motion.div>
-      </div>
-    </main>
-  );
-}
+      {/* Hero Section */}
+      <section className="relative overflow-hidden px-6 pt-16 pb-20 md:pt-24 md:pb-28 text-center">
+        <div className="mx-auto max-w-4xl space-y-6">
+          <Badge variant="outline" className="border-primary/40 bg-primary/10 text-primary px-3.5 py-1 text-xs font-semibold tracking-wide">
+            <Sparkles className="mr-1.5 size-3.5" /> Evidence-Based Conceptual Honesty Engine
+          </Badge>
 
-function FeatureChip({ icon, label }: { icon: React.ReactNode; label: string }) {
-  return (
-    <div className="flex items-center gap-2.5 rounded-2xl border border-border bg-card/60 px-3.5 py-3 text-sm font-medium backdrop-blur transition-colors hover:border-primary/50">
-      <div className="grid h-8 w-8 place-items-center rounded-lg bg-accent text-accent-foreground">{icon}</div>
-      <span>{label}</span>
+          <h1 className="text-3xl font-extrabold tracking-tight sm:text-5xl md:text-6xl leading-[1.1]">
+            The Answer Is Correct. <br className="hidden sm:inline" />
+            <span className="text-primary">But Is the Understanding Real?</span>
+          </h1>
+
+          <p className="mx-auto max-w-2xl text-sm sm:text-base leading-relaxed text-muted-foreground">
+            ECHO checks whether a student's understanding of a concept is real, not just memorized or lucky. It probes whether your reasoning survives under structural variation, hidden assumptions, and unfamiliar transfer problems.
+          </p>
+
+          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Button asChild size="lg" className="w-full sm:w-auto px-6 font-semibold">
+              <Link to="/assessment">
+                Start ECHO Probe <ArrowRight className="ml-2 size-4" />
+              </Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="w-full sm:w-auto px-6">
+              <Link to="/assessment" search={{ concept: "binary-search", demo: "true" }}>
+                <Zap className="mr-2 size-4 text-warning" /> Try a Binary Search probe
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* 5-Step Daily Loop Section */}
+      <section className="border-t border-border bg-card/40 py-16 px-6">
+        <div className="mx-auto max-w-5xl space-y-8">
+          <div className="text-center space-y-2">
+            <span className="text-xs font-bold uppercase tracking-widest text-primary">Continuous Verification Protocol</span>
+            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">The Five-Step Daily ECHO Loop</h2>
+            <p className="text-xs text-muted-foreground max-w-xl mx-auto">
+              How students build verifiable, bulletproof conceptual understanding every single day.
+            </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-5">
+            {FIVE_STEP_LOOP.map((item) => (
+              <div key={item.step} className="rounded-2xl border border-border bg-card p-5 card-shadow space-y-2 flex flex-col justify-between">
+                <div>
+                  <span className="font-mono text-xs font-bold text-primary">{item.step}</span>
+                  <h3 className="text-base font-bold mt-1">{item.name}</h3>
+                  <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{item.detail}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 6-Dimension Framework Section */}
+      <section className="border-t border-border py-16 px-6">
+        <div className="mx-auto max-w-5xl space-y-8">
+          <div className="text-center space-y-2">
+            <span className="text-xs font-bold uppercase tracking-widest text-primary">Diagnostic Architecture</span>
+            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">The Six-Dimension Framework</h2>
+            <p className="text-xs text-muted-foreground max-w-xl mx-auto">
+              ECHO probes understanding across 6 rigorous dimensions (currently evaluating 3 core probe dimensions in active assessments).
+            </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+            {FRAMEWORK_DIMENSIONS.map((dim) => (
+              <div key={dim.id} className="rounded-2xl border border-border bg-card p-5 card-shadow space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-primary">{dim.label}</span>
+                  {(dim.id === "direct" || dim.id === "explain" || dim.id === "transfer") && (
+                    <Badge variant="outline" className="text-[10px] border-primary/40 bg-primary/10 text-primary">
+                      Active Probe
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-xs leading-relaxed text-muted-foreground pt-1">{dim.blurb}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Stability Score Bands Section */}
+      <section className="border-t border-border bg-card/40 py-16 px-6">
+        <div className="mx-auto max-w-5xl space-y-8">
+          <div className="text-center space-y-2">
+            <span className="text-xs font-bold uppercase tracking-widest text-primary">Scoring Engine</span>
+            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Understanding Stability Score Bands</h2>
+            <p className="text-xs text-muted-foreground max-w-xl mx-auto">
+              Single centralized score bands based strictly on weighted performance: round(Direct × 20% + Explain × 40% + Transfer × 40%).
+            </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {BANDS.map((band) => (
+              <div key={band.id} className="rounded-2xl border border-border bg-card p-5 card-shadow space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs font-bold text-muted-foreground">{band.range}</span>
+                  <span className="text-xs font-bold uppercase tracking-wider">{band.label}</span>
+                </div>
+                <p className="text-xs leading-relaxed text-muted-foreground">{band.verdict}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="pt-6 text-center">
+            <Button asChild size="lg" className="px-8">
+              <Link to="/assessment">Launch ECHO Probe Engine <ArrowRight className="ml-2 size-4" /></Link>
+            </Button>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

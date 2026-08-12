@@ -1,88 +1,74 @@
-import type { Question } from "./types";
+import type { Concept, ConceptRepair } from "./types";
 
-export const CONCEPTS: Record<string, { id: string; name: string; subject: string; unit: string }> =
-  {
-    "binary-search": {
-      id: "binary-search",
-      name: "Binary Search",
-      subject: "Data Structures & Algorithms",
-      unit: "Searching · Divide and Conquer",
-    },
-    "hash-collisions": {
-      id: "hash-collisions",
-      name: "Hash Collision Resolution",
-      subject: "Data Structures & Algorithms",
-      unit: "Hashing",
-    },
-    normalization: {
-      id: "normalization",
-      name: "Database Normalization (3NF)",
-      subject: "DBMS",
-      unit: "Relational Design",
-    },
-    "tcp-flow": {
-      id: "tcp-flow",
-      name: "TCP Flow Control",
-      subject: "Computer Networks",
-      unit: "Transport Layer",
-    },
-    eigenvectors: {
-      id: "eigenvectors",
-      name: "Eigenvectors & Eigenvalues",
-      subject: "Linear Algebra",
-      unit: "Matrix Decomposition",
-    },
-  };
+export const CONCEPTS: Record<string, Concept> = {
+  "binary-search": {
+    id: "binary-search",
+    name: "Binary Search",
+    subject: "Data Structures & Algorithms",
+    unit: "Searching · Divide and Conquer",
+  },
+  "hash-collisions": {
+    id: "hash-collisions",
+    name: "Hash Collision Resolution",
+    subject: "Data Structures & Algorithms",
+    unit: "Hashing",
+  },
+  normalization: {
+    id: "normalization",
+    name: "Database Normalization (3NF)",
+    subject: "DBMS",
+    unit: "Relational Design",
+  },
+  "tcp-flow": {
+    id: "tcp-flow",
+    name: "TCP Flow Control",
+    subject: "Computer Networks",
+    unit: "Transport Layer",
+  },
+  eigenvectors: {
+    id: "eigenvectors",
+    name: "Eigenvectors & Eigenvalues",
+    subject: "Linear Algebra",
+    unit: "Matrix Decomposition",
+  },
+};
 
-export const BINARY_SEARCH_QUESTIONS: Question[] = [
-  {
-    id: "bs-1",
-    dimension: "direct",
-    kind: "choice",
-    prompt:
-      "Binary search runs on the sorted array [2, 5, 9, 14, 21, 30, 47] looking for 21. Which indices does mid land on, in order?",
-    options: [
-      { id: "a", text: "3, 5, 4" },
-      { id: "b", text: "3, 4" },
-      { id: "c", text: "0, 3, 4" },
-      { id: "d", text: "3, 5" },
-    ],
-    correct: "b",
-    trap: {
-      choice: "a",
-      misconception: "Treats the surviving half as inclusive of the already-rejected mid element.",
+export const DEMO_BINARY_SEARCH_DATA = {
+  concept: "Binary Search",
+  probes: [
+    {
+      dimension: "direct" as const,
+      question: "What is the time complexity of Binary Search, and what is one precondition the array must satisfy?",
+      demoAnswer: "O(log n), and the array must be sorted.",
+      demoScore: 100,
+      demoReasoning: "Correct complexity O(log n) and sorted array precondition identified.",
     },
-    ideal: "mid=3 (14) → search right half → mid=4 (21) → found.",
-  },
-  {
-    id: "bs-2",
-    dimension: "explain",
-    kind: "text",
-    prompt:
-      "In your own words: why is binary search O(log n)? Explain the mechanism, not the formula.",
-    keywords: ["half", "halv", "double", "log", "search space", "eliminat", "discard"],
-    ideal:
-      "Each comparison eliminates half of the remaining search space, so the space shrinks n → n/2 → n/4 …; the number of halvings before one element remains is log₂n.",
-  },
-  {
-    id: "bs-3",
-    dimension: "transfer",
-    kind: "text",
-    prompt:
-      "A deploy pipeline has 1024 commits; exactly one introduced a bug and every commit after it is broken. You can test any commit. Design the search and state why the binary-search idea legitimately applies here.",
-    keywords: ["monoton", "half", "log", "10", "predicate", "boundary", "first", "bisect"],
-    ideal:
-      "The predicate 'is broken' is monotonic (false…false, true…true), so bisect on the boundary: test the middle commit, keep the half containing the flip. ~10 tests (log₂1024).",
-  },
-];
-
-export const QUESTION_BANK: Record<string, Question[]> = {
-  "binary-search": BINARY_SEARCH_QUESTIONS,
+    {
+      dimension: "explain" as const,
+      question: "Why does Binary Search fail on unsorted data — walk through what breaks in the logic?",
+      demoAnswer: "It just won't work because you need it sorted.",
+      demoScore: 55,
+      demoReasoning: "States the requirement but misses the underlying mechanism — why eliminating half the search space relies on spatial order.",
+    },
+    {
+      dimension: "transfer" as const,
+      question: "How would you adapt Binary Search to find the first occurrence of a repeated value in a sorted array (not just any occurrence)?",
+      demoAnswer: "You'd still use binary search.",
+      demoScore: 20,
+      demoReasoning: "Names the technique but provides no adaptation logic — standard binary search does not guarantee the first occurrence index.",
+    },
+  ],
+  expectedScores: { direct: 100, explain: 55, transfer: 20 },
+  expectedStabilityScore: 50, // round(100*0.2 + 55*0.4 + 20*0.4) = 50
+  expectedBandLabel: "Fragile Understanding",
+  recommendation: "Practice adapting Binary Search to boundary-finding variants (first/last occurrence, insertion point).",
 };
 
 export const FACULTY_CLASS = {
   cohort: "CSE — Semester 4 · Section B",
   students: 48,
+  avgStability: 58,
+  confidentButFragile: 17,
   concepts: [
     {
       conceptId: "binary-search",
@@ -92,10 +78,7 @@ export const FACULTY_CLASS = {
       confidentButFragile: 17,
       dimensions: { direct: 91, explain: 63, variation: 46, assumption: 38, error: 44, transfer: 52 },
       misconceptions: [
-        {
-          text: "Believes binary search always returns the leftmost occurrence with duplicates",
-          share: 54,
-        },
+        { text: "Believes binary search always returns the leftmost occurrence with duplicates", share: 54 },
         { text: "Cannot state the sortedness precondition unprompted", share: 47 },
         { text: "Recites 'divide by 2' without connecting halving to log₂n", share: 39 },
         { text: "Blames the overflow bug for an infinite loop caused by lo = mid", share: 33 },
@@ -138,8 +121,29 @@ export const STABILITY_TREND = [
   { day: "Sun", stability: 71 },
 ];
 
-export const WEAK_CONCEPTS = [
-  { conceptId: "tcp-flow", name: "TCP Flow Control", stability: 38, weakest: "Assumption" },
-  { conceptId: "hash-collisions", name: "Hash Collision Resolution", stability: 47, weakest: "Transfer" },
-  { conceptId: "eigenvectors", name: "Eigenvectors & Eigenvalues", stability: 56, weakest: "Explain" },
+export const PRIORITY_REPAIRS: ConceptRepair[] = [
+  {
+    conceptId: "binary-search",
+    name: "Binary Search",
+    stability: 50,
+    weakest: "Transfer",
+    repairActivity: "Practice boundary-finding variants (first/last occurrence, insertion index).",
+    estimatedMinutes: 20,
+  },
+  {
+    conceptId: "tcp-flow",
+    name: "TCP Flow Control",
+    stability: 38,
+    weakest: "Assumption",
+    repairActivity: "Differentiate flow control sliding windows from congestion control windows.",
+    estimatedMinutes: 15,
+  },
+  {
+    conceptId: "hash-collisions",
+    name: "Hash Collision Resolution",
+    stability: 47,
+    weakest: "Transfer",
+    repairActivity: "Compare open addressing vs separate chaining performance under high load factors.",
+    estimatedMinutes: 25,
+  },
 ];
