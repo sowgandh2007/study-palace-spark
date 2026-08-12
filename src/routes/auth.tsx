@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Sparkles, Mail, Lock, User } from "lucide-react";
+import { BrainCircuit, Mail, Lock, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 
@@ -33,7 +33,7 @@ function AuthPage() {
           options: { data: { display_name: name || email.split("@")[0] } },
         });
         if (error) throw error;
-        toast.success("Welcome to StudySphere!");
+        toast.success("Welcome to ECHO Verification Engine!");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -72,20 +72,20 @@ function AuthPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-background px-6 py-10">
-      <div className="pointer-events-none absolute -top-32 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-primary/20 blur-3xl" />
+      <div className="pointer-events-none absolute -top-32 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-primary/15 blur-3xl" />
       <div className="relative mx-auto max-w-md md:max-w-xl md:pt-14">
-        <div className="mb-8 flex items-center gap-2">
-          <div className="grid h-9 w-9 place-items-center rounded-xl gradient-brand glow">
-            <Sparkles className="h-5 w-5 text-primary-foreground" />
+        <div className="mb-8 flex items-center gap-2.5">
+          <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 border border-primary/40 text-primary">
+            <BrainCircuit className="h-5 w-5" />
           </div>
-          <span className="text-lg font-bold">StudySphere</span>
+          <span className="text-lg font-bold tracking-tight">ECHO</span>
         </div>
 
         <h1 className="text-3xl font-black tracking-tight">
-          {mode === "signin" ? "Welcome back" : "Create account"}
+          {mode === "signin" ? "Access ECHO Engine" : "Create ECHO Account"}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          {mode === "signin" ? "Continue your streak." : "Join the study revolution."}
+          {mode === "signin" ? "Verify whether your conceptual understanding survives." : "Join the evidence-based verification engine."}
         </p>
 
         <form onSubmit={handleEmail} className="mt-8 space-y-3">
@@ -100,7 +100,7 @@ function AuthPage() {
           <Field icon={<Lock className="h-4 w-4" />}>
             <input type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" className="w-full bg-transparent outline-none" />
           </Field>
-          <button disabled={loading} className="w-full rounded-2xl gradient-brand py-3.5 text-sm font-bold text-primary-foreground glow disabled:opacity-60">
+          <button disabled={loading} className="w-full rounded-2xl bg-primary py-3.5 text-sm font-bold text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-60">
             {loading ? "..." : mode === "signin" ? "Sign in" : "Create account"}
           </button>
         </form>
@@ -116,7 +116,7 @@ function AuthPage() {
             <GoogleIcon /> Continue with Google
           </button>
           <button onClick={handleGuest} disabled={loading} className="w-full rounded-2xl border border-border bg-card/60 py-3.5 text-sm font-semibold hover:bg-accent">
-            Continue as guest
+            Continue as Guest Verification
           </button>
         </div>
 
@@ -125,7 +125,7 @@ function AuthPage() {
           onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
           className="mt-6 w-full text-center text-sm text-muted-foreground"
         >
-          {mode === "signin" ? "New here? " : "Have an account? "}
+          {mode === "signin" ? "New to ECHO? " : "Have an account? "}
           <span className="font-semibold text-foreground underline underline-offset-4">
             {mode === "signin" ? "Create account" : "Sign in"}
           </span>

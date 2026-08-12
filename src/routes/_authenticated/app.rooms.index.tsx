@@ -56,7 +56,7 @@ function Rooms() {
     if (!u.user) return;
     const roomCode = shortCode();
     const { data, error } = await supabase.from("rooms").insert({
-      name: name || "Study Room", subject: subject || null, is_public: isPublic, code: roomCode, owner_id: u.user.id,
+      name: name || "Verification Probe", subject: subject || null, is_public: isPublic, code: roomCode, owner_id: u.user.id,
     }).select().single();
     if (error) { toast.error(error.message); return; }
     await supabase.from("room_members").insert({ room_id: data.id, user_id: u.user.id, role: "owner", subject });
@@ -70,7 +70,7 @@ function Rooms() {
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) return;
     const { data: room, error } = await supabase.from("rooms").select("*").eq("code", code.toUpperCase()).maybeSingle();
-    if (error || !room) { toast.error("Room not found"); return; }
+    if (error || !room) { toast.error("Verification probe not found"); return; }
     await supabase.from("room_members").upsert({ room_id: room.id, user_id: u.user.id, role: "member" }, { onConflict: "room_id,user_id" });
     setJoining(false);
     navigate({ to: "/app/rooms/$roomId", params: { roomId: room.id } });
@@ -79,21 +79,24 @@ function Rooms() {
   return (
     <div className="mx-auto max-w-md md:max-w-5xl px-5 pt-8">
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-black">Study Rooms</h1>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Collaborative Probes</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">Real-time peer verification and focused study rooms</p>
+        </div>
         <div className="flex gap-2">
-          <button onClick={() => setJoining(true)} className="grid h-10 w-10 place-items-center rounded-xl border border-border bg-card"><Hash className="h-4 w-4" /></button>
-          <button onClick={() => setCreating(true)} className="grid h-10 w-10 place-items-center rounded-xl gradient-brand text-primary-foreground glow"><Plus className="h-5 w-5" /></button>
+          <button onClick={() => setJoining(true)} className="grid h-10 w-10 place-items-center rounded-xl border border-border bg-card hover:border-primary/50"><Hash className="h-4 w-4" /></button>
+          <button onClick={() => setCreating(true)} className="grid h-10 w-10 place-items-center rounded-xl bg-primary text-primary-foreground font-bold"><Plus className="h-5 w-5" /></button>
         </div>
       </header>
 
       <ul className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-24">
         {rooms.length === 0 && (
-          <li className="col-span-full rounded-3xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-            No rooms yet. Create your first one to study with friends.
+          <li className="col-span-full rounded-2xl border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
+            No verification probes yet. Create your first room to verify understanding together.
           </li>
         )}
         {rooms.map((r: any) => (
-          <Link key={r.id} to="/app/rooms/$roomId" params={{ roomId: r.id }} className="block rounded-3xl border border-border bg-card p-4 card-shadow transition-transform active:scale-[0.99]">
+          <Link key={r.id} to="/app/rooms/$roomId" params={{ roomId: r.id }} className="block rounded-2xl border border-border bg-card p-4 card-shadow transition-transform active:scale-[0.99] hover:border-primary/50">
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="text-base font-bold">{r.name}</h3>
@@ -112,24 +115,24 @@ function Rooms() {
       </ul>
 
       {creating && (
-        <Modal onClose={() => setCreating(false)} title="Create room">
+        <Modal onClose={() => setCreating(false)} title="Create Collaborative Probe">
           <form onSubmit={createRoom} className="space-y-3">
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Room name" required className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none" />
-            <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subject (optional)" className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none" />
-            <label className="flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-3 text-sm">
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Probe / Room name" required className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none" />
+            <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Concept / Subject (optional)" className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none" />
+            <label className="flex items-center justify-between rounded-xl border border-border bg-background px-4 py-3 text-sm">
               <span>Public room</span>
-              <input type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} className="h-5 w-5 accent-[color:var(--brand)]" />
+              <input type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} className="h-5 w-5 accent-primary" />
             </label>
-            <button className="w-full rounded-2xl gradient-brand py-3.5 text-sm font-bold text-primary-foreground glow">Create</button>
+            <button className="w-full rounded-xl bg-primary py-3.5 text-sm font-bold text-primary-foreground hover:bg-primary/90">Create Probe</button>
           </form>
         </Modal>
       )}
 
       {joining && (
-        <Modal onClose={() => setJoining(false)} title="Join with code">
+        <Modal onClose={() => setJoining(false)} title="Join Probe with Code">
           <form onSubmit={joinByCode} className="space-y-3">
-            <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="ABCDEF" required className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-center font-mono text-lg tracking-widest outline-none" />
-            <button className="w-full rounded-2xl gradient-brand py-3.5 text-sm font-bold text-primary-foreground glow">Join</button>
+            <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="ABCDEF" required className="w-full rounded-xl border border-border bg-background px-4 py-3 text-center font-mono text-lg tracking-widest outline-none" />
+            <button className="w-full rounded-xl bg-primary py-3.5 text-sm font-bold text-primary-foreground hover:bg-primary/90">Join Room</button>
           </form>
         </Modal>
       )}
@@ -139,10 +142,10 @@ function Rooms() {
 
 export function Modal({ children, onClose, title }: { children: React.ReactNode; onClose: () => void; title: string }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm" onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-t-3xl border border-border bg-card p-5 pb-8 card-shadow animate-in slide-in-from-bottom">
         <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-border" />
-        <h2 className="mb-4 text-lg font-bold">{title}</h2>
+        <h2 className="mb-4 text-base font-bold uppercase tracking-wider">{title}</h2>
         {children}
       </div>
     </div>

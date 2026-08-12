@@ -11,7 +11,7 @@ export const Route = createFileRoute("/_authenticated/app/ai/assistant")({
   component: Assistant,
 });
 
-const SYSTEM = `You are StudySphere AI, a friendly, patient tutor. Explain clearly, offer step-by-step reasoning, and prefer hints over direct answers unless the user explicitly asks for the solution. Use short paragraphs and markdown.`;
+const SYSTEM = `You are ECHO AI Assistant, an academic understanding-verification tutor. Explain clearly, offer step-by-step reasoning, and prefer diagnostic hints over direct answers unless the user explicitly asks for the solution. Use short paragraphs and markdown.`;
 
 const QUICK = [
   { label: "Explain a concept", icon: BookOpen, prefix: "Explain like I'm learning it for the first time: " },

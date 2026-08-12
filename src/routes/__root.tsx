@@ -19,17 +19,17 @@ function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-gradient">404</h1>
+        <h1 className="text-7xl font-bold text-gradient font-mono">404</h1>
         <h2 className="mt-4 text-xl font-semibold">Page not found</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist.
+          The diagnostic page you're looking for doesn't exist.
         </p>
         <div className="mt-6">
           <Link
             to="/"
-            className="inline-flex items-center justify-center rounded-full gradient-brand px-5 py-2.5 text-sm font-semibold text-primary-foreground glow"
+            className="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
           >
-            Back to StudySphere
+            Back to ECHO
           </Link>
         </div>
       </div>
@@ -47,16 +47,16 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold">Something went wrong</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Please try again or return home.</p>
+        <h1 className="text-xl font-semibold">Diagnostic Error Encountered</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Please re-initialize or return to the main dashboard.</p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => { router.invalidate(); reset(); }}
-            className="rounded-full gradient-brand px-5 py-2.5 text-sm font-semibold text-primary-foreground glow"
+            className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
           >
             Try again
           </button>
-          <a href="/" className="rounded-full border px-5 py-2.5 text-sm font-medium">Go home</a>
+          <a href="/" className="rounded-xl border border-border px-5 py-2.5 text-sm font-medium">Go home</a>
         </div>
       </div>
     </div>
@@ -68,17 +68,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { name: "theme-color", content: "#1a0d2e" },
-      { title: "StudySphere AI — Study Together, Level Up Together" },
-      { name: "description", content: "AI-powered collaborative learning with multiplayer study rooms, gamified progress, and personalized planning." },
-      { property: "og:title", content: "StudySphere AI — Study Together, Level Up Together" },
-      { property: "og:description", content: "AI-powered collaborative learning with multiplayer study rooms, gamified progress, and personalized planning." },
+      { name: "theme-color", content: "#0a0a0f" },
+      { title: "ECHO — Evidence-based Conceptual Honesty Engine" },
+      { name: "description", content: "ECHO verifies whether student understanding is real, not just correct — plan, learn, reflect, verify, adapt your study plan every day." },
+      { property: "og:title", content: "ECHO — Evidence-based Conceptual Honesty Engine" },
+      { property: "og:description", content: "ECHO verifies whether student understanding is real, not just correct — plan, learn, reflect, verify, adapt your study plan every day." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "StudySphere AI — Study Together, Level Up Together" },
-      { name: "twitter:description", content: "AI-powered collaborative learning with multiplayer study rooms, gamified progress, and personalized planning." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/57224acf-55c4-4288-9b2a-397fb62f21c8/id-preview-09cc25bb--00039a0b-00b3-4e08-a483-18bad6fdafb9.lovable.app-1784601934460.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/57224acf-55c4-4288-9b2a-397fb62f21c8/id-preview-09cc25bb--00039a0b-00b3-4e08-a483-18bad6fdafb9.lovable.app-1784601934460.png" },
+      { name: "twitter:title", content: "ECHO — Evidence-based Conceptual Honesty Engine" },
+      { name: "twitter:description", content: "ECHO verifies whether student understanding is real, not just correct — plan, learn, reflect, verify, adapt your study plan every day." },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

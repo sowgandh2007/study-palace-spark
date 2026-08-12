@@ -1,18 +1,18 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 export const THEMES = [
-  { id: "dark", label: "Dark", swatch: "#1a0d2e" },
-  { id: "dim", label: "Dim", swatch: "#3d3852" },
-  { id: "midnight", label: "Midnight", swatch: "#0b1428" },
-  { id: "light", label: "Light", swatch: "#f6f5fa" },
-  { id: "creamy", label: "Creamy", swatch: "#f3e8cf" },
-  { id: "sepia", label: "Sepia", swatch: "#e7d7b8" },
-  { id: "mint", label: "Mint", swatch: "#dff3e6" },
+  { id: "dark", label: "Dark", swatch: "#0a0a0f" },
+  { id: "dim", label: "Dim", swatch: "#1e2029" },
+  { id: "midnight", label: "Midnight", swatch: "#0d131f" },
+  { id: "light", label: "Light", swatch: "#f1f3f9" },
+  { id: "creamy", label: "Creamy", swatch: "#f2ede4" },
+  { id: "sepia", label: "Sepia", swatch: "#e8dfd1" },
+  { id: "mint", label: "Mint", swatch: "#e3f0e9" },
 ] as const;
 
 export type ThemeId = (typeof THEMES)[number]["id"];
 
-const STORAGE_KEY = "studysphere:theme";
+const STORAGE_KEY = "echo:theme";
 
 type Ctx = { theme: ThemeId; setTheme: (t: ThemeId) => void };
 const ThemeCtx = createContext<Ctx>({ theme: "dark", setTheme: () => {} });
