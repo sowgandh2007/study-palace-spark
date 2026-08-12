@@ -36,12 +36,23 @@ export function EchoLogo() {
   );
 }
 
+export function HeaderNav() {
+  return (
+    <nav className="hidden md:flex items-center gap-6 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+      <Link to="/timetable" className="hover:text-foreground transition-colors">TIMETABLE</Link>
+      <Link to="/dashboard" className="hover:text-foreground transition-colors">DASHBOARD</Link>
+      <Link to="/study-plan" className="hover:text-foreground transition-colors">STUDY PLAN</Link>
+      <Link to="/faculty" className="hover:text-foreground transition-colors">FACULTY</Link>
+    </nav>
+  );
+}
+
 const FIVE_STEP_LOOP = [
-  { step: "01", name: "Timetable", detail: "Enter tomorrow's scheduled classes to trigger automated post-class reminders." },
-  { step: "02", name: "Reflection", detail: "Complete a 10-second post-class check-in (Confidence slider + What didn't you understand?)." },
-  { step: "03", name: "Gap Diagnosis", detail: "AI analyzes your self-reported confidence and diagnoses the exact underlying gap." },
-  { step: "04", name: "Verification", detail: "Take a targeted 3-dimension probe (Direct, Explain, Transfer) to verify survival." },
-  { step: "05", name: "Repair & Re-check", detail: "Execute step-by-step gap repair and re-check post-repair score increase." },
+  { step: "01", name: "Learn", detail: "Attend class or engage with study material from your timetable." },
+  { step: "02", name: "Reflect", detail: "Complete a 10-second post-class check-in (Confidence slider + What didn't you understand?)." },
+  { step: "03", name: "Verify", detail: "ECHO diagnoses your conceptual gap and runs a targeted 3-dimension probe behind the scenes." },
+  { step: "04", name: "Repair", detail: "Execute a gap-specific repair exercise fitted within your evening study time budget." },
+  { step: "05", name: "Improve", detail: "Re-check understanding post-repair and track verified score increases." },
 ];
 
 function LandingPage() {
@@ -51,19 +62,12 @@ function LandingPage() {
       <header className="sticky top-0 z-40 border-b border-border bg-card/60 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <EchoLogo />
-          <nav className="hidden lg:flex items-center gap-6 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            <Link to="/timetable" className="hover:text-foreground transition-colors">Timetable</Link>
-            <Link to="/reflection" className="hover:text-foreground transition-colors">Reflection</Link>
-            <Link to="/assessment" className="hover:text-foreground transition-colors">Probe Engine</Link>
-            <Link to="/dashboard" className="hover:text-foreground transition-colors">Telemetry</Link>
-            <Link to="/faculty" className="hover:text-foreground transition-colors">Faculty Portal</Link>
-            <Link to="/plan" className="hover:text-foreground transition-colors">Adaptive Plan</Link>
-          </nav>
+          <HeaderNav />
           <div className="flex items-center gap-3">
             <ThemeSelect />
-            <Button asChild size="sm" variant="ghost">
-              <Link to="/settings"><Settings className="size-3.5 mr-1" /> API Settings</Link>
-            </Button>
+            <Link to="/settings" className="p-2 text-muted-foreground hover:text-foreground transition-colors" title="API Settings">
+              <Settings className="size-4" />
+            </Link>
             <Button asChild size="sm" variant="outline">
               <Link to="/login">Sign In</Link>
             </Button>
@@ -90,19 +94,19 @@ function LandingPage() {
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Button asChild size="lg" className="w-full sm:w-auto px-6 font-semibold">
               <Link to="/reflection">
-                Start ECHO Reflection <ArrowRight className="ml-2 size-4" />
+                Check My Understanding <ArrowRight className="ml-2 size-4" />
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="w-full sm:w-auto px-6">
               <Link to="/assessment" search={{ concept: "binary-search", demo: "true" }}>
-                <Zap className="mr-2 size-4 text-warning" /> Try a Binary Search probe
+                <Zap className="mr-2 size-4 text-warning" /> Try a Binary Search Probe
               </Link>
             </Button>
           </div>
         </div>
       </section>
 
-      {/* 5-Step Daily Loop Section */}
+      {/* 5-Step ECHO Workflow Loop Section */}
       <section className="border-t border-border bg-card/40 py-16 px-6">
         <div className="mx-auto max-w-5xl space-y-8">
           <div className="text-center space-y-2">
@@ -181,7 +185,7 @@ function LandingPage() {
 
           <div className="pt-6 text-center">
             <Button asChild size="lg" className="px-8">
-              <Link to="/reflection">Launch ECHO Reflection <ArrowRight className="ml-2 size-4" /></Link>
+              <Link to="/reflection">Check My Understanding <ArrowRight className="ml-2 size-4" /></Link>
             </Button>
           </div>
         </div>

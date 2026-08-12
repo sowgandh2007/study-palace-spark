@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, ShieldCheck, AlertTriangle, BookOpen, Clock, Settings, Sparkles, BrainCircuit } from "lucide-react";
-import { EchoLogo } from "@/routes/index";
+import { EchoLogo, HeaderNav } from "@/routes/index";
 import { Button } from "@/components/ui/button";
 import { ThemeSelect } from "@/lib/theme";
 import { STABILITY_TREND, PRIORITY_REPAIRS } from "@/lib/echo/data";
@@ -11,7 +11,7 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 function DashboardPage() {
-  const { timetable, reflections, latestResult, recheckHistory } = useEcho();
+  const { timetable, reflections, latestResult } = useEcho();
 
   const confidentButFragileCount = latestResult?.isConfidentButFragile ? 1 : 0;
 
@@ -20,30 +20,28 @@ function DashboardPage() {
       <header className="border-b border-border bg-card/50 backdrop-blur-xl">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <EchoLogo />
+          <HeaderNav />
           <div className="flex items-center gap-3">
             <ThemeSelect />
-            <Button asChild variant="outline" size="sm">
-              <Link to="/settings"><Settings className="size-3.5 mr-1" /> API Settings</Link>
-            </Button>
-            <Button asChild size="sm">
-              <Link to="/reflection">New Reflection</Link>
-            </Button>
+            <Link to="/settings" className="p-2 text-muted-foreground hover:text-foreground transition-colors" title="API Settings">
+              <Settings className="size-4" />
+            </Link>
           </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-5xl px-6 pt-8 space-y-8">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Student Telemetry Dashboard</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Student Dashboard</h1>
           <p className="text-xs text-muted-foreground mt-1">Real-time understanding stability, reflection logs, and tomorrow-aware repair schedules.</p>
         </div>
 
         {/* 4 Summary Stat Cards */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-2xl border border-border bg-card p-5 card-shadow space-y-1">
-            <span className="text-xs uppercase tracking-wider text-muted-foreground">Tomorrow's Scheduled Classes</span>
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">Today's Scheduled Classes</span>
             <p className="font-mono text-3xl font-extrabold text-foreground">{timetable.length}</p>
-            <Link to="/timetable" className="text-[11px] font-semibold text-primary hover:underline block pt-1">View timetable →</Link>
+            <Link to="/timetable" className="text-[11px] font-semibold text-primary hover:underline block pt-1">View schedule →</Link>
           </div>
 
           <div className="rounded-2xl border border-border bg-card p-5 card-shadow space-y-1">
@@ -53,9 +51,9 @@ function DashboardPage() {
           </div>
 
           <div className="rounded-2xl border border-border bg-card p-5 card-shadow space-y-1">
-            <span className="text-xs uppercase tracking-wider text-muted-foreground">Detected Conceptual Gaps</span>
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">Understanding Gaps</span>
             <p className="font-mono text-3xl font-extrabold text-warning">2</p>
-            <Link to="/plan" className="text-[11px] font-semibold text-warning hover:underline block pt-1">View tonight's repairs →</Link>
+            <Link to="/study-plan" className="text-[11px] font-semibold text-warning hover:underline block pt-1">View study plan →</Link>
           </div>
 
           <div className="rounded-2xl border border-border bg-card p-5 card-shadow space-y-1">
@@ -65,15 +63,15 @@ function DashboardPage() {
           </div>
         </div>
 
-        {/* Tonight's ECHO Plan Summary Banner */}
+        {/* Tonight's Plan Card */}
         <div className="rounded-2xl border border-primary/40 bg-primary/10 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-primary">Tonight's ECHO Study Plan</span>
-            <h2 className="text-lg font-bold">25 minutes · 2 concepts requiring repair</h2>
-            <p className="text-xs text-muted-foreground">Priority repair for Binary Search (fragile understanding + scheduled in tomorrow's 9:00 AM class).</p>
+            <span className="text-xs font-bold uppercase tracking-wider text-primary">Tonight's ECHO Plan</span>
+            <h2 className="text-lg font-bold">35 minutes · 2 concepts requiring repair</h2>
+            <p className="text-xs text-muted-foreground">Binary Search (Fragile Understanding, scheduled in tomorrow's 9:00 AM class).</p>
           </div>
           <Button asChild size="lg">
-            <Link to="/plan">Open Study Plan <ArrowRight className="ml-1.5 size-4" /></Link>
+            <Link to="/study-plan">View Study Plan <ArrowRight className="ml-1.5 size-4" /></Link>
           </Button>
         </div>
 
@@ -124,7 +122,7 @@ function DashboardPage() {
               <h2 className="text-xs font-semibold uppercase tracking-wider">Priority Concept Repairs</h2>
             </div>
             <Button asChild size="sm" variant="ghost">
-              <Link to="/plan">Full repair list <ArrowRight className="size-3.5 ml-1" /></Link>
+              <Link to="/study-plan">Full repair list <ArrowRight className="size-3.5 ml-1" /></Link>
             </Button>
           </div>
 

@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TimetableRouteImport } from './routes/timetable'
+import { Route as StudyPlanRouteImport } from './routes/study-plan'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ResultsRouteImport } from './routes/results'
 import { Route as RepairRouteImport } from './routes/repair'
@@ -26,6 +27,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const TimetableRoute = TimetableRouteImport.update({
   id: '/timetable',
   path: '/timetable',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudyPlanRoute = StudyPlanRouteImport.update({
+  id: '/study-plan',
+  path: '/study-plan',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/repair': typeof RepairRoute
   '/results': typeof ResultsRoute
   '/settings': typeof SettingsRoute
+  '/study-plan': typeof StudyPlanRoute
   '/timetable': typeof TimetableRoute
 }
 export interface FileRoutesByTo {
@@ -117,6 +124,7 @@ export interface FileRoutesByTo {
   '/repair': typeof RepairRoute
   '/results': typeof ResultsRoute
   '/settings': typeof SettingsRoute
+  '/study-plan': typeof StudyPlanRoute
   '/timetable': typeof TimetableRoute
 }
 export interface FileRoutesById {
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/repair': typeof RepairRoute
   '/results': typeof ResultsRoute
   '/settings': typeof SettingsRoute
+  '/study-plan': typeof StudyPlanRoute
   '/timetable': typeof TimetableRoute
 }
 export interface FileRouteTypes {
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
     | '/repair'
     | '/results'
     | '/settings'
+    | '/study-plan'
     | '/timetable'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -165,6 +175,7 @@ export interface FileRouteTypes {
     | '/repair'
     | '/results'
     | '/settings'
+    | '/study-plan'
     | '/timetable'
   id:
     | '__root__'
@@ -180,6 +191,7 @@ export interface FileRouteTypes {
     | '/repair'
     | '/results'
     | '/settings'
+    | '/study-plan'
     | '/timetable'
   fileRoutesById: FileRoutesById
 }
@@ -196,6 +208,7 @@ export interface RootRouteChildren {
   RepairRoute: typeof RepairRoute
   ResultsRoute: typeof ResultsRoute
   SettingsRoute: typeof SettingsRoute
+  StudyPlanRoute: typeof StudyPlanRoute
   TimetableRoute: typeof TimetableRoute
 }
 
@@ -206,6 +219,13 @@ declare module '@tanstack/react-router' {
       path: '/timetable'
       fullPath: '/timetable'
       preLoaderRoute: typeof TimetableRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/study-plan': {
+      id: '/study-plan'
+      path: '/study-plan'
+      fullPath: '/study-plan'
+      preLoaderRoute: typeof StudyPlanRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -308,6 +328,7 @@ const rootRouteChildren: RootRouteChildren = {
   RepairRoute: RepairRoute,
   ResultsRoute: ResultsRoute,
   SettingsRoute: SettingsRoute,
+  StudyPlanRoute: StudyPlanRoute,
   TimetableRoute: TimetableRoute,
 }
 export const routeTree = rootRouteImport

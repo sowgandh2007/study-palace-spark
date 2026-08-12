@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ShieldAlert, Users } from "lucide-react";
-import { EchoLogo } from "@/routes/index";
+import { ShieldAlert, Users, Settings } from "lucide-react";
+import { EchoLogo, HeaderNav } from "@/routes/index";
 import { ThemeSelect } from "@/lib/theme";
 import { FACULTY_CLASS } from "@/lib/echo/data";
+import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/faculty")({
   component: FacultyPage,
@@ -10,11 +11,17 @@ export const Route = createFileRoute("/faculty")({
 
 function FacultyPage() {
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-20 text-foreground">
       <header className="border-b border-border bg-card/50 backdrop-blur-xl">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <EchoLogo />
-          <ThemeSelect />
+          <HeaderNav />
+          <div className="flex items-center gap-3">
+            <ThemeSelect />
+            <Link to="/settings" className="p-2 text-muted-foreground hover:text-foreground transition-colors" title="API Settings">
+              <Settings className="size-4" />
+            </Link>
+          </div>
         </div>
       </header>
 
