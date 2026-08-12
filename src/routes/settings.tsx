@@ -80,7 +80,7 @@ export function SettingsPage() {
           <span className="text-xs font-bold uppercase tracking-wider text-primary">System Configuration</span>
           <h1 className="text-2xl font-bold tracking-tight mt-1">AI API Settings</h1>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Configure your AI provider keys and model selections for ECHO reflection analysis, targeted probe generation, and study plan recommendations.
+            Configure your AI provider keys or choose the Built-in ECHO Engine (Offline Mode) for diagnostic checks and study plan recommendations.
           </p>
         </div>
 
@@ -88,12 +88,12 @@ export function SettingsPage() {
           {/* Active Provider Radio Cards */}
           <div className="space-y-3">
             <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Select Active AI Provider
+              Select Active AI Provider Mode
             </label>
             <div className="grid gap-3 sm:grid-cols-2">
               {(
                 [
-                  { id: "gemini", name: "Google Gemini", badge: "Recommended" },
+                  { id: "gemini", name: "Google Gemini", badge: "Live API" },
                   { id: "openai", name: "OpenAI", badge: "GPT-4o" },
                   { id: "anthropic", name: "Anthropic Claude", badge: "Claude 3.5" },
                   { id: "custom", name: "Custom LLM Endpoint", badge: "Local/Proxy" },
@@ -293,7 +293,7 @@ export function SettingsPage() {
             </Button>
 
             <Button type="submit" size="lg" className="w-full sm:w-auto">
-              <Save className="mr-2 size-4" /> Save API Configuration
+              <Save className="mr-2 size-4" /> Save Configuration
             </Button>
           </div>
         </form>
