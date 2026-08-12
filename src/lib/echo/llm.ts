@@ -67,7 +67,7 @@ function logDev(message: string, ...data: unknown[]) {
 export function cleanAndParseJSON<T>(rawText: string): T {
   let text = rawText.trim();
 
-  // Strip markdown code fences
+  // Defensive Markdown code fence stripping
   if (text.includes("```")) {
     text = text.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
   }
@@ -81,9 +81,13 @@ export function cleanAndParseJSON<T>(rawText: string): T {
   }
 
   try {
-    return JSON.parse(text) as T;
+    const parsed = JSON.parse(text) as T;
+    if (parsed && typeof parsed === "object") {
+      logDev("Parsed JSON keys:", Object.keys(parsed as object));
+    }
+    return parsed;
   } catch (e) {
-    logDev("JSON parse failed on output:", text);
+    logDev("JSON parse failed on text:", text);
     throw new ECHOAIError(
       "ECHO received an invalid JSON response structure from the AI provider.",
       "INVALID_RESPONSE"
@@ -164,15 +168,19 @@ async function callProviderAPI(prompt: string, overrideConfig?: ApiConfig): Prom
         },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseMimeType: "application/json",
+            temperature: 0.2,
+          },
         }),
         signal: controller.signal,
       });
 
       const responseText = await res.text();
       logDev(`Gemini HTTP Status: ${res.status}`);
-      logDev(`Gemini Raw Response:`, responseText);
 
       if (!res.ok) {
+        logDev(`Gemini Error Response Body:`, responseText);
         if (res.status === 401 || res.status === 403) {
           throw new ECHOAIError("Gemini API key is invalid.", "INVALID_KEY", res.status);
         }
@@ -192,12 +200,17 @@ async function callProviderAPI(prompt: string, overrideConfig?: ApiConfig): Prom
       try {
         data = JSON.parse(responseText);
       } catch {
-        throw new ECHOAIError("Gemini returned an invalid JSON payload.", "INVALID_RESPONSE");
+        throw new ECHOAIError("Gemini returned an unparseable JSON response.", "INVALID_RESPONSE");
       }
 
+      const finishReason = data?.candidates?.[0]?.finishReason;
+      logDev(`Gemini finishReason: ${finishReason || "STOP"}`);
+
       const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      logDev(`Gemini Raw Response Text:`, text || "(empty)");
+
       if (!text) {
-        throw new ECHOAIError("Gemini API returned an empty or unreadable content payload.", "INVALID_RESPONSE");
+        throw new ECHOAIError("Gemini API returned an empty content payload.", "INVALID_RESPONSE");
       }
       return text;
     }
@@ -219,6 +232,7 @@ async function callProviderAPI(prompt: string, overrideConfig?: ApiConfig): Prom
           model,
           messages: [{ role: "user", content: prompt }],
           temperature: 0.2,
+          response_format: { type: "json_object" },
         }),
         signal: controller.signal,
       });
@@ -238,6 +252,7 @@ async function callProviderAPI(prompt: string, overrideConfig?: ApiConfig): Prom
 
       const data = JSON.parse(responseText);
       const text = data?.choices?.[0]?.message?.content;
+      logDev(`OpenAI Response Text:`, text || "(empty)");
       if (!text) {
         throw new ECHOAIError("OpenAI API returned an empty content payload.", "INVALID_RESPONSE");
       }
@@ -282,6 +297,7 @@ async function callProviderAPI(prompt: string, overrideConfig?: ApiConfig): Prom
 
       const data = JSON.parse(responseText);
       const text = data?.content?.[0]?.text;
+      logDev(`Anthropic Response Text:`, text || "(empty)");
       if (!text) {
         throw new ECHOAIError("Anthropic API returned an empty content payload.", "INVALID_RESPONSE");
       }
@@ -331,6 +347,57 @@ async function callProviderAPI(prompt: string, overrideConfig?: ApiConfig): Prom
   }
 }
 
+export function parseGeminiProbeResponse(rawText: string, conceptName: string): ProbeQuestion[] {
+  const parsed = cleanAndParseJSON<{ concept?: string; probes?: { dimension: string; question: string }[] }>(rawText);
+
+  let rawList = parsed.probes;
+  if (!rawList || !Array.isArray(rawList)) {
+    // Check if parsed object itself is an array of probes
+    if (Array.isArray(parsed)) {
+      rawList = parsed as unknown as { dimension: string; question: string }[];
+    } else {
+      throw new ECHOAIError("AI response missing 'probes' array.", "INVALID_RESPONSE");
+    }
+  }
+
+  const validProbes: ProbeQuestion[] = [];
+
+  for (const item of rawList) {
+    if (!item.question || typeof item.question !== "string" || !item.question.trim()) {
+      continue;
+    }
+
+    const rawDim = (item.dimension || "").toLowerCase().trim();
+    let dim: "direct" | "explain" | "transfer" | null = null;
+
+    if (rawDim.includes("direct")) dim = "direct";
+    else if (rawDim.includes("explain")) dim = "explain";
+    else if (rawDim.includes("transfer")) dim = "transfer";
+
+    if (dim) {
+      validProbes.push({
+        dimension: dim,
+        question: item.question.trim(),
+      });
+    }
+  }
+
+  // Ensure we have direct, explain, and transfer dimensions
+  const hasDirect = validProbes.some((p) => p.dimension === "direct");
+  const hasExplain = validProbes.some((p) => p.dimension === "explain");
+  const hasTransfer = validProbes.some((p) => p.dimension === "transfer");
+
+  if (validProbes.length < 3 || !hasDirect || !hasExplain || !hasTransfer) {
+    logDev("Parsed probes missing dimensions. Parsed:", validProbes);
+    throw new ECHOAIError(
+      `AI generated incomplete probe dimensions for "${conceptName}". Expected Direct, Explain, and Transfer probes.`,
+      "INVALID_RESPONSE"
+    );
+  }
+
+  return validProbes;
+}
+
 export async function testAiConnection(overrideConfig?: ApiConfig): Promise<{ ok: boolean; message: string; durationMs: number }> {
   const cfg = overrideConfig || getApiConfig();
   const start = Date.now();
@@ -345,12 +412,12 @@ export async function testAiConnection(overrideConfig?: ApiConfig): Promise<{ ok
 
   try {
     const response = await callProviderAPI(
-      'Respond with valid JSON: {"status": "ok", "message": "connection successful"}',
+      'Respond strictly in JSON format: {"status": "ok", "message": "connection successful"}',
       cfg
     );
     const durationMs = Date.now() - start;
-    const parsed = cleanAndParseJSON<{ status: string }>(response);
-    if (parsed.status === "ok" || typeof response === "string") {
+    const parsed = cleanAndParseJSON<{ status?: string }>(response);
+    if (parsed?.status === "ok" || typeof response === "string") {
       return { ok: true, message: `Connected in ${durationMs}ms`, durationMs };
     }
     return { ok: true, message: `Response received in ${durationMs}ms`, durationMs };
@@ -374,12 +441,12 @@ A student reflected on learning "${concept}".
 - What they STRUGGLE with: "${notUnderstoodText || "Not specified"}"
 
 Analyze their self-assessment and diagnose their exact conceptual gap.
-Return strictly valid JSON with this format:
+Return strictly valid JSON with this exact schema:
 {
   "gapText": "One precise sentence stating their exact conceptual gap or structural flaw in reasoning.",
-  "severity": "high" | "medium" | "low",
+  "severity": "high",
   "relevantAssumption": "One sentence describing the underlying assumption or precondition they may be missing.",
-  "recommendedProbe": "Direct, Explain, or Transfer recommendation"
+  "recommendedProbe": "Explain dimension probe"
 }`;
 
   try {
@@ -416,39 +483,18 @@ Context:
 - Diagnosed Conceptual Gap: "${gapContext || "General conceptual verification"}"
 - Learner Confidence: ${confidence ?? 75}%
 
-Generate EXACTLY 3 targeted probe questions corresponding to 3 distinct dimensions:
-1. "direct": Tests if the learner can produce the correct baseline definition/answer directly.
-2. "explain": Tests "why it works" — depth of reasoning and underlying mechanism, not recall.
-3. "transfer": Tests applying the concept to a new, unfamiliar scenario or boundary condition.
-
-Return strictly valid JSON in this format:
+Respond strictly with valid JSON conforming to this structure:
 {
   "concept": "${concept}",
   "probes": [
-    { "dimension": "direct", "question": "..." },
-    { "dimension": "explain", "question": "..." },
-    { "dimension": "transfer", "question": "..." }
+    { "dimension": "direct", "question": "Direct baseline question testing definition or core mechanism of ${concept}." },
+    { "dimension": "explain", "question": "Deep reasoning question asking why ${concept} works under the hood." },
+    { "dimension": "transfer", "question": "Application question testing ${concept} in an unfamiliar scenario or boundary condition." }
   ]
 }`;
 
   const raw = await callProviderAPI(prompt);
-  const parsed = cleanAndParseJSON<{ concept: string; probes: ProbeQuestion[] }>(raw);
-
-  if (!parsed.probes || !Array.isArray(parsed.probes) || parsed.probes.length < 3) {
-    throw new ECHOAIError("AI output did not return 3 valid probe dimensions.", "INVALID_RESPONSE");
-  }
-
-  // Validate required dimensions
-  const validProbes = parsed.probes.filter(
-    (p) => (p.dimension === "direct" || p.dimension === "explain" || p.dimension === "transfer") && p.question?.trim()
-  );
-
-  if (validProbes.length < 3) {
-    throw new ECHOAIError("AI output contained incomplete probe questions.", "INVALID_RESPONSE");
-  }
-
-  logDev("Probes generated successfully:", validProbes);
-  return validProbes;
+  return parseGeminiProbeResponse(raw, concept);
 }
 
 export async function scoreAnswer(
@@ -463,9 +509,9 @@ Question asked: "${question}"
 Learner's answer: "${userAnswer}"
 
 Evaluate evidence of real understanding vs shallow memorization.
-Return strictly valid JSON:
+Return strictly valid JSON with this format:
 {
-  "score": integer between 0 and 100,
+  "score": 75,
   "reasoning": "1-2 sentence concise explanation of why this score was awarded."
 }`;
 
@@ -494,11 +540,15 @@ Confidence Gap: ${confidenceGap > 0 ? `+${confidenceGap}% (Overconfident)` : `${
 Evaluations:
 ${evaluations.map((e) => `- ${e.dimension}: Score ${e.score}/100 (${e.reasoning})`).join("\n")}
 
-Provide a 1-sentence actionable study recommendation addressing their weakest dimension.`;
+Respond strictly in JSON format:
+{
+  "recommendation": "1-sentence actionable study recommendation addressing their weakest dimension."
+}`;
 
   try {
     const raw = await callProviderAPI(prompt);
-    return raw.trim().replace(/^"|"$/g, "");
+    const parsed = cleanAndParseJSON<{ recommendation?: string }>(raw);
+    return parsed.recommendation || "Focus on explaining the underlying mechanism in your own words before attempting boundary variations.";
   } catch {
     return "Focus on explaining the underlying mechanism in your own words before attempting boundary variations.";
   }
