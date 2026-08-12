@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Settings, Save, CheckCircle2, Shield, AlertTriangle, Key, Loader2, Sparkles, Activity } from "lucide-react";
+import { useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { Save, CheckCircle2, AlertTriangle, Loader2, Activity, RefreshCw } from "lucide-react";
 import { EchoLogo, HeaderNav } from "@/routes/index";
 import { ThemeSelect } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getApiConfig, saveApiConfig, testAiConnection } from "@/lib/echo/llm";
+import { getApiConfig, saveApiConfig, testAiConnection, discoverGeminiModels } from "@/lib/echo/llm";
 import type { ApiProviderId, ApiConfig } from "@/lib/echo/types";
 import { toast } from "sonner";
 
@@ -16,10 +16,12 @@ export const Route = createFileRoute("/settings")({
 export function SettingsPage() {
   const [config, setConfig] = useState<ApiConfig>(getApiConfig());
   const [testing, setTesting] = useState(false);
+  const [discovering, setDiscovering] = useState(false);
+  const [discoveredGeminiModels, setDiscoveredGeminiModels] = useState<string[]>([]);
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
 
-  function handleSave(e: React.FormEvent) {
-    e.preventDefault();
+  function handleSave(e?: React.FormEvent) {
+    if (e) e.preventDefault();
     saveApiConfig(config);
     toast.success("API provider configuration saved");
   }
@@ -36,9 +38,28 @@ export function SettingsPage() {
     setTestResult(result);
 
     if (result.ok) {
-      toast.success("AI API connection successful!");
+      toast.success("AI API connection working!");
     } else {
       toast.error(`Connection failed: ${result.message}`);
+    }
+  }
+
+  async function handleDiscoverModels() {
+    if (!config.geminiApiKey.trim()) {
+      toast.error("Please enter a Gemini API Key first");
+      return;
+    }
+    setDiscovering(true);
+    const models = await discoverGeminiModels(config.geminiApiKey.trim());
+    setDiscovering(false);
+    if (models.length > 0) {
+      setDiscoveredGeminiModels(models);
+      if (!models.includes(config.geminiModel)) {
+        setConfig({ ...config, geminiModel: models[0]! });
+      }
+      toast.success(`Discovered ${models.length} generateContent models from Gemini!`);
+    } else {
+      toast.error("Could not discover models. Verify your Gemini API Key.");
     }
   }
 
@@ -107,7 +128,24 @@ export function SettingsPage() {
           {/* Gemini Settings */}
           {config.activeProvider === "gemini" && (
             <div className="rounded-xl border border-border bg-background/50 p-4 space-y-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-primary">Google Gemini Settings</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-primary">Google Gemini Settings</h3>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleDiscoverModels}
+                  disabled={discovering}
+                  className="text-xs text-primary"
+                >
+                  {discovering ? (
+                    <Loader2 className="size-3.5 animate-spin mr-1" />
+                  ) : (
+                    <RefreshCw className="size-3.5 mr-1" />
+                  )}
+                  Discover Models
+                </Button>
+              </div>
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Gemini API Key</label>
                 <Input
@@ -127,6 +165,14 @@ export function SettingsPage() {
                 >
                   <option value="gemini-1.5-flash">gemini-1.5-flash (Fast & Recommended)</option>
                   <option value="gemini-1.5-pro">gemini-1.5-pro (Deep Reasoning)</option>
+                  <option value="gemini-2.0-flash">gemini-2.0-flash (Latest Generation)</option>
+                  {discoveredGeminiModels
+                    .filter((m) => !["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash"].includes(m))
+                    .map((m) => (
+                      <option key={m} value={m}>
+                        {m} (Discovered)
+                      </option>
+                    ))}
                 </select>
               </div>
             </div>
@@ -226,7 +272,7 @@ export function SettingsPage() {
             >
               <div className="flex items-center gap-2 font-bold">
                 {testResult.ok ? <CheckCircle2 className="size-4" /> : <AlertTriangle className="size-4" />}
-                <span>{testResult.ok ? "✓ Connection Successful" : "✕ Connection Failed"}</span>
+                <span>{testResult.ok ? "✓ AI Connection Working" : "✕ Connection Failed"}</span>
               </div>
               <p className="text-[11px] opacity-90">{testResult.message}</p>
             </div>

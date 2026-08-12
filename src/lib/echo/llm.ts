@@ -91,12 +91,45 @@ export function cleanAndParseJSON<T>(rawText: string): T {
   }
 }
 
+export async function discoverGeminiModels(apiKey: string): Promise<string[]> {
+  if (!apiKey.trim()) return [];
+  try {
+    const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey.trim(),
+      },
+    });
+
+    if (!res.ok) {
+      logDev(`Gemini Model discovery HTTP Status: ${res.status}`);
+      return [];
+    }
+
+    const data = await res.json();
+    if (data?.models && Array.isArray(data.models)) {
+      const validModels = data.models
+        .filter((m: { supportedGenerationMethods?: string[] }) =>
+          m.supportedGenerationMethods?.includes("generateContent")
+        )
+        .map((m: { name: string }) => m.name.replace(/^models\//, ""));
+
+      logDev("Discovered Gemini models with generateContent capability:", validModels);
+      return validModels;
+    }
+  } catch (e) {
+    logDev("Gemini model discovery network error:", e);
+  }
+  return [];
+}
+
 async function callProviderAPI(prompt: string, overrideConfig?: ApiConfig): Promise<string> {
   const cfg = overrideConfig || getApiConfig();
   const provider = cfg.activeProvider;
   const timeoutMs = cfg.timeoutMs || 30000;
 
-  logDev(`Request starting. Provider: ${provider}, Model: ${cfg[`${provider}Model` as keyof ApiConfig] || "default"}`);
+  logDev(`Request starting. Provider: ${provider}`);
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -105,46 +138,74 @@ async function callProviderAPI(prompt: string, overrideConfig?: ApiConfig): Prom
     if (provider === "gemini") {
       const apiKey = cfg.geminiApiKey.trim() || (import.meta.env.VITE_GEMINI_API_KEY as string) || "";
       if (!apiKey) {
-        throw new ECHOAIError(
-          "Your Gemini API key is missing. Please enter a valid Gemini API key in API Settings.",
-          "INVALID_KEY"
-        );
+        throw new ECHOAIError("Gemini API key is invalid.", "INVALID_KEY");
       }
-      const model = cfg.geminiModel || "gemini-1.5-flash";
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-      const res = await fetch(url, {
+      let modelName = (cfg.geminiModel || "gemini-1.5-flash").trim().replace(/^models\//, "");
+
+      // Model discovery check if requested model is invalid or legacy
+      const availableModels = await discoverGeminiModels(apiKey);
+      if (availableModels.length > 0 && !availableModels.includes(modelName)) {
+        logDev(`Requested Gemini model '${modelName}' not found. Auto-selecting '${availableModels[0]}'.`);
+        modelName = availableModels[0]!;
+      }
+
+      const modelPath = `models/${modelName}`;
+      const requestUrl = `https://generativelanguage.googleapis.com/v1beta/${modelPath}:generateContent`;
+
+      logDev(`Gemini URL: ${requestUrl}`);
+      logDev(`Gemini Selected Model: ${modelName}`);
+
+      const res = await fetch(requestUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": apiKey,
+        },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
         }),
         signal: controller.signal,
       });
 
+      const responseText = await res.text();
+      logDev(`Gemini HTTP Status: ${res.status}`);
+      logDev(`Gemini Raw Response:`, responseText);
+
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
-          throw new ECHOAIError("Your Gemini API key appears to be invalid or unauthorized.", "INVALID_KEY", res.status);
+          throw new ECHOAIError("Gemini API key is invalid.", "INVALID_KEY", res.status);
+        }
+        if (res.status === 404) {
+          throw new ECHOAIError("Gemini could not find the requested model or API resource.", "SERVER_ERROR", res.status);
         }
         if (res.status === 429) {
           throw new ECHOAIError("The Gemini API is temporarily rate-limiting requests. Please try again shortly.", "RATE_LIMIT", res.status);
         }
-        throw new ECHOAIError(`Gemini API returned a server error (Status: ${res.status}).`, "SERVER_ERROR", res.status);
+        if (res.status === 400) {
+          throw new ECHOAIError("Model not available for this API key.", "INVALID_RESPONSE", res.status);
+        }
+        throw new ECHOAIError(`Gemini API returned an error (Status: ${res.status}).`, "SERVER_ERROR", res.status);
       }
 
-      const data = await res.json();
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        throw new ECHOAIError("Gemini returned an invalid JSON payload.", "INVALID_RESPONSE");
+      }
+
       const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!text) {
         throw new ECHOAIError("Gemini API returned an empty or unreadable content payload.", "INVALID_RESPONSE");
       }
-      logDev("Request succeeded from Gemini");
       return text;
     }
 
     if (provider === "openai") {
       const apiKey = cfg.openaiApiKey.trim() || (import.meta.env.VITE_OPENAI_API_KEY as string) || "";
       if (!apiKey) {
-        throw new ECHOAIError("Your OpenAI API key is missing. Please enter a valid OpenAI API key in API Settings.", "INVALID_KEY");
+        throw new ECHOAIError("Your OpenAI API key is missing.", "INVALID_KEY");
       }
       const model = cfg.openaiModel || "gpt-4o-mini";
 
@@ -162,29 +223,31 @@ async function callProviderAPI(prompt: string, overrideConfig?: ApiConfig): Prom
         signal: controller.signal,
       });
 
+      const responseText = await res.text();
+      logDev(`OpenAI HTTP Status: ${res.status}`);
+
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
           throw new ECHOAIError("Your OpenAI API key appears to be invalid or unauthorized.", "INVALID_KEY", res.status);
         }
         if (res.status === 429) {
-          throw new ECHOAIError("OpenAI rate limit or quota exceeded. Please check your OpenAI usage.", "RATE_LIMIT", res.status);
+          throw new ECHOAIError("OpenAI rate limit or quota exceeded.", "RATE_LIMIT", res.status);
         }
-        throw new ECHOAIError(`OpenAI API returned a server error (Status: ${res.status}).`, "SERVER_ERROR", res.status);
+        throw new ECHOAIError(`OpenAI API returned an error (Status: ${res.status}).`, "SERVER_ERROR", res.status);
       }
 
-      const data = await res.json();
+      const data = JSON.parse(responseText);
       const text = data?.choices?.[0]?.message?.content;
       if (!text) {
         throw new ECHOAIError("OpenAI API returned an empty content payload.", "INVALID_RESPONSE");
       }
-      logDev("Request succeeded from OpenAI");
       return text;
     }
 
     if (provider === "anthropic") {
       const apiKey = cfg.anthropicApiKey.trim() || (import.meta.env.VITE_ANTHROPIC_API_KEY as string) || "";
       if (!apiKey) {
-        throw new ECHOAIError("Your Anthropic API key is missing. Please enter a valid Anthropic API key in API Settings.", "INVALID_KEY");
+        throw new ECHOAIError("Your Anthropic API key is missing.", "INVALID_KEY");
       }
       const model = cfg.anthropicModel || "claude-3-5-sonnet-20240620";
 
@@ -204,6 +267,9 @@ async function callProviderAPI(prompt: string, overrideConfig?: ApiConfig): Prom
         signal: controller.signal,
       });
 
+      const responseText = await res.text();
+      logDev(`Anthropic HTTP Status: ${res.status}`);
+
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
           throw new ECHOAIError("Your Anthropic API key appears to be invalid or unauthorized.", "INVALID_KEY", res.status);
@@ -211,15 +277,14 @@ async function callProviderAPI(prompt: string, overrideConfig?: ApiConfig): Prom
         if (res.status === 429) {
           throw new ECHOAIError("Anthropic API rate limit exceeded.", "RATE_LIMIT", res.status);
         }
-        throw new ECHOAIError(`Anthropic API returned a server error (Status: ${res.status}).`, "SERVER_ERROR", res.status);
+        throw new ECHOAIError(`Anthropic API returned an error (Status: ${res.status}).`, "SERVER_ERROR", res.status);
       }
 
-      const data = await res.json();
+      const data = JSON.parse(responseText);
       const text = data?.content?.[0]?.text;
       if (!text) {
         throw new ECHOAIError("Anthropic API returned an empty content payload.", "INVALID_RESPONSE");
       }
-      logDev("Request succeeded from Anthropic");
       return text;
     }
 
@@ -246,7 +311,6 @@ async function callProviderAPI(prompt: string, overrideConfig?: ApiConfig): Prom
 
       const data = await res.json();
       const text = data?.choices?.[0]?.message?.content || data?.response || JSON.stringify(data);
-      logDev("Request succeeded from Custom Endpoint");
       return text;
     }
 
@@ -268,11 +332,21 @@ async function callProviderAPI(prompt: string, overrideConfig?: ApiConfig): Prom
 }
 
 export async function testAiConnection(overrideConfig?: ApiConfig): Promise<{ ok: boolean; message: string; durationMs: number }> {
+  const cfg = overrideConfig || getApiConfig();
   const start = Date.now();
+
+  // Validate API key presence first for Gemini
+  if (cfg.activeProvider === "gemini") {
+    const apiKey = cfg.geminiApiKey.trim() || (import.meta.env.VITE_GEMINI_API_KEY as string) || "";
+    if (!apiKey) {
+      return { ok: false, message: "Gemini API key is invalid.", durationMs: 0 };
+    }
+  }
+
   try {
     const response = await callProviderAPI(
       'Respond with valid JSON: {"status": "ok", "message": "connection successful"}',
-      overrideConfig
+      cfg
     );
     const durationMs = Date.now() - start;
     const parsed = cleanAndParseJSON<{ status: string }>(response);
