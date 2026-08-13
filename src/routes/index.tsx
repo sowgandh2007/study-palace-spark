@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowRight,
@@ -47,6 +47,18 @@ const BAND_COLORS: Record<string, string> = {
 };
 
 function LandingPage() {
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  // Disable WebGL Prism on mobile to fix loading & performance issues
+  useEffect(() => {
+    function checkViewport() {
+      setIsDesktop(window.innerWidth >= 768);
+    }
+    checkViewport();
+    window.addEventListener("resize", checkViewport, { passive: true });
+    return () => window.removeEventListener("resize", checkViewport);
+  }, []);
+
   // Scroll Reveal via IntersectionObserver
   useEffect(() => {
     const elements = document.querySelectorAll(".reveal-card");
@@ -72,41 +84,58 @@ function LandingPage() {
       {/* High-performance scroll navbar */}
       <EchoNavbar variant="dark" />
 
-      {/* Hero Section with React Bits 3D Prism WebGL Background & FoldText */}
+      {/* Hero Section with Prism WebGL on Desktop Only */}
       <section className="hero-gradient-bg relative overflow-hidden px-4 sm:px-6 pt-16 sm:pt-20 pb-20 sm:pb-24 md:pt-28 md:pb-32 text-center border-b border-white/10">
-        {/* React Bits 3D Prism WebGL Background */}
-        <div className="absolute inset-0 pointer-events-none z-0 opacity-45">
-          <Prism
-            animationType="rotate"
-            timeScale={0.5}
-            height={3.5}
-            baseWidth={5.5}
-            scale={3.6}
-            hueShift={0}
-            colorFrequency={1}
-            noise={0.5}
-            glow={1}
-          />
-        </div>
+        {/* Prism WebGL Canvas (Rendered on Desktop ONLY, hidden/disabled on mobile) */}
+        {isDesktop && (
+          <div className="absolute inset-0 pointer-events-none z-0 opacity-40">
+            <Prism
+              animationType="rotate"
+              timeScale={0.5}
+              height={3.5}
+              baseWidth={5.5}
+              scale={3.6}
+              hueShift={0}
+              colorFrequency={1}
+              noise={0.5}
+              glow={1}
+              suspendWhenOffscreen={true}
+            />
+          </div>
+        )}
 
         <div className="relative z-10 mx-auto max-w-5xl space-y-6 sm:space-y-8">
           <Badge variant="outline" className="border-primary/50 bg-primary/10 text-primary px-3 sm:px-4 py-1.5 text-[11px] sm:text-xs font-bold tracking-wide shadow-glow">
             <Sparkles className="mr-2 size-3.5" /> Continuous Learning Intelligence System
           </Badge>
 
-          {/* FoldText applied to full headline */}
-          <div className="flex flex-col items-center justify-center">
+          {/* Clean Word-Level FoldText headline ensuring full words stay together */}
+          <div className="flex flex-col items-center justify-center space-y-3">
             <FoldText
-              text="The Answer Is Correct. But Is the Understanding Real?"
-              splitBy="char"
+              text="The Answer Is Correct."
+              splitBy="word"
               hinge="top"
               trigger="mount"
               duration={0.65}
-              stagger={0.035}
+              stagger={0.05}
               ease="power3.out"
               perspective={700}
               creaseShading={0.55}
               fontSize="clamp(1.8rem, 4.8vw, 3.8rem)"
+              fontWeight={800}
+              color="#ffffff"
+            />
+            <FoldText
+              text="But Is the Understanding Real?"
+              splitBy="word"
+              hinge="top"
+              trigger="mount"
+              duration={0.75}
+              stagger={0.04}
+              ease="power3.out"
+              perspective={700}
+              creaseShading={0.55}
+              fontSize="clamp(1.6rem, 4.2vw, 3.4rem)"
               fontWeight={800}
               color="#60a5fa"
             />
