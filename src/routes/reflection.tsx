@@ -69,29 +69,29 @@ function ReflectionPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20 text-foreground">
-      <header className="border-b border-border bg-card/50 backdrop-blur-xl">
+    <div className="min-h-screen text-foreground selection:bg-primary/30 pb-20">
+      <header className="sticky top-0 z-40 glass-header">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
           <EchoLogo />
           <ThemeSelect />
         </div>
       </header>
 
-      <main className="mx-auto max-w-2xl px-6 pt-8">
-        <div className="rounded-2xl border border-border bg-card p-6 card-shadow sm:p-8 space-y-6">
+      <main className="mx-auto max-w-2xl px-6 pt-10">
+        <div className="glass-card p-6 sm:p-8 space-y-6">
           <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 border border-primary/30 text-primary">
-              <BrainCircuit className="size-5" />
+            <div className="grid h-11 w-11 place-items-center rounded-xl bg-primary/20 border border-primary/40 text-primary shadow-glow">
+              <BrainCircuit className="size-6" />
             </div>
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-primary">Post-Class Self-Assessment</span>
-              <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Quick ECHO Reflection</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-white">Quick ECHO Reflection</h1>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
                 Topic / Concept Name <span className="text-destructive">*</span>
               </label>
               <Input
@@ -99,13 +99,13 @@ function ReflectionPage() {
                 value={concept}
                 onChange={(e) => setConcept(e.target.value)}
                 placeholder="e.g. Binary Search, TCP Flow Control"
-                className="mt-1.5 bg-background/60"
+                className="mt-1.5 bg-black/40 border-white/10 text-white"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
                   How much do you understand this? (0–100%)
                 </label>
                 <span className="font-mono text-sm font-bold text-primary">{confidence}%</span>
@@ -116,9 +116,9 @@ function ReflectionPage() {
                 max="100"
                 value={confidence}
                 onChange={(e) => setConfidence(Number(e.target.value))}
-                className="mt-2.5 h-2 w-full cursor-pointer appearance-none rounded-lg bg-secondary accent-primary"
+                className="mt-3 h-2 w-full cursor-pointer appearance-none rounded-lg bg-white/10 accent-primary"
               />
-              <div className="mt-1 flex justify-between font-mono text-[11px] text-muted-foreground">
+              <div className="mt-1.5 flex justify-between font-mono text-[11px] text-slate-400">
                 <span>0% — Totally Lost</span>
                 <span>50% — Somewhat Clear</span>
                 <span>100% — Absolute Mastery</span>
@@ -126,8 +126,8 @@ function ReflectionPage() {
             </div>
 
             <div>
-              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                <HelpCircle className="size-3.5 text-warning" /> What part didn't you understand? <span className="text-destructive">*</span>
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                <HelpCircle className="size-4 text-warning" /> What part didn't you understand? <span className="text-destructive">*</span>
               </label>
               <Textarea
                 required
@@ -135,27 +135,27 @@ function ReflectionPage() {
                 value={notUnderstoodText}
                 onChange={(e) => setNotUnderstoodText(e.target.value)}
                 placeholder="e.g. I don't understand why sorted order allows us to eliminate half the array..."
-                className="mt-1.5 bg-background/60 text-xs"
+                className="mt-1.5 bg-black/40 border-white/10 text-xs text-white"
               />
             </div>
 
             <div>
-              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                <CheckCircle2 className="size-3.5 text-success" /> What part do you already understand? (Optional)
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                <CheckCircle2 className="size-4 text-success" /> What part do you already understand? (Optional)
               </label>
               <Textarea
                 rows={2}
                 value={understoodText}
                 onChange={(e) => setUnderstoodText(e.target.value)}
                 placeholder="e.g. I know how to calculate the mid index..."
-                className="mt-1.5 bg-background/60 text-xs"
+                className="mt-1.5 bg-black/40 border-white/10 text-xs text-white"
               />
             </div>
 
-            <Button type="submit" size="lg" disabled={loading} className="w-full">
+            <Button type="submit" size="lg" disabled={loading} className="w-full bg-primary hover:bg-primary/90 font-bold shadow-glow text-base">
               {loading ? (
                 <>
-                  <Loader2 className="mr-2 size-4 animate-spin" /> AI is diagnosing conceptual gap...
+                  <Loader2 className="mr-2 size-4 animate-spin" /> Diagnosing Gap...
                 </>
               ) : (
                 <>

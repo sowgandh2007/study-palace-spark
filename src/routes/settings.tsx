@@ -30,7 +30,6 @@ export function SettingsPage() {
     setTesting(true);
     setTestResult(null);
 
-    // Save configuration first before testing
     const savedConfig = saveApiConfig(config);
     const result = await testAiConnection(savedConfig);
 
@@ -64,8 +63,8 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20 text-foreground">
-      <header className="border-b border-border bg-card/50 backdrop-blur-xl">
+    <div className="min-h-screen text-foreground selection:bg-primary/30 pb-20">
+      <header className="sticky top-0 z-40 glass-header">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <EchoLogo />
           <HeaderNav />
@@ -75,19 +74,19 @@ export function SettingsPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-6 pt-8 space-y-6">
+      <main className="mx-auto max-w-3xl px-6 pt-10 space-y-6">
         <div>
           <span className="text-xs font-bold uppercase tracking-wider text-primary">System Configuration</span>
-          <h1 className="text-2xl font-bold tracking-tight mt-1">AI API Settings</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <h1 className="text-3xl font-extrabold tracking-tight text-white mt-1">AI API Settings</h1>
+          <p className="text-xs sm:text-sm text-slate-300 mt-1">
             Configure your AI provider keys or choose the Built-in ECHO Engine (Offline Mode) for diagnostic checks and study plan recommendations.
           </p>
         </div>
 
-        <form onSubmit={handleSave} className="rounded-2xl border border-border bg-card p-6 card-shadow space-y-6 sm:p-8">
+        <form onSubmit={handleSave} className="glass-card p-6 space-y-6 sm:p-8">
           {/* Active Provider Radio Cards */}
           <div className="space-y-3">
-            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-400">
               Select Active AI Provider Mode
             </label>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -105,20 +104,20 @@ export function SettingsPage() {
                   onClick={() => setConfig({ ...config, activeProvider: p.id })}
                   className={`flex items-center justify-between rounded-xl border p-4 text-left transition-all ${
                     config.activeProvider === p.id
-                      ? "border-primary bg-primary/10 text-foreground ring-1 ring-primary"
-                      : "border-border bg-background/50 hover:border-border/80 text-muted-foreground"
+                      ? "border-primary bg-primary/20 text-white shadow-glow"
+                      : "border-white/10 bg-black/20 hover:border-white/30 text-slate-400"
                   }`}
                 >
                   <div>
-                    <p className="text-sm font-bold text-foreground">{p.name}</p>
+                    <p className="text-sm font-bold text-white">{p.name}</p>
                     <span className="text-[10px] font-mono uppercase tracking-wider text-primary">{p.badge}</span>
                   </div>
                   <div
                     className={`h-4 w-4 rounded-full border flex items-center justify-center ${
-                      config.activeProvider === p.id ? "border-primary bg-primary" : "border-border"
+                      config.activeProvider === p.id ? "border-primary bg-primary" : "border-white/20"
                     }`}
                   >
-                    {config.activeProvider === p.id && <div className="h-1.5 w-1.5 rounded-full bg-primary-foreground" />}
+                    {config.activeProvider === p.id && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
                   </div>
                 </button>
               ))}
@@ -127,7 +126,7 @@ export function SettingsPage() {
 
           {/* Gemini Settings */}
           {config.activeProvider === "gemini" && (
-            <div className="rounded-xl border border-border bg-background/50 p-4 space-y-4">
+            <div className="rounded-xl border border-white/10 bg-black/40 p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-primary">Google Gemini Settings</h3>
                 <Button
@@ -147,21 +146,21 @@ export function SettingsPage() {
                 </Button>
               </div>
               <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Gemini API Key</label>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Gemini API Key</label>
                 <Input
                   type="password"
                   placeholder="AIzaSy..."
                   value={config.geminiApiKey}
                   onChange={(e) => setConfig({ ...config, geminiApiKey: e.target.value })}
-                  className="mt-1 bg-background font-mono text-xs"
+                  className="mt-1 bg-black/50 border-white/10 font-mono text-xs text-white"
                 />
               </div>
               <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Model Selection</label>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Model Selection</label>
                 <select
                   value={config.geminiModel || "gemini-1.5-flash"}
                   onChange={(e) => setConfig({ ...config, geminiModel: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-mono font-medium focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-black/50 px-3 py-2 text-xs font-mono font-medium text-white focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   <option value="gemini-1.5-flash">gemini-1.5-flash (Fast & Recommended)</option>
                   <option value="gemini-1.5-pro">gemini-1.5-pro (Deep Reasoning)</option>
@@ -180,24 +179,24 @@ export function SettingsPage() {
 
           {/* OpenAI Settings */}
           {config.activeProvider === "openai" && (
-            <div className="rounded-xl border border-border bg-background/50 p-4 space-y-4">
+            <div className="rounded-xl border border-white/10 bg-black/40 p-5 space-y-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-primary">OpenAI Settings</h3>
               <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">OpenAI API Key</label>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">OpenAI API Key</label>
                 <Input
                   type="password"
                   placeholder="sk-proj-..."
                   value={config.openaiApiKey}
                   onChange={(e) => setConfig({ ...config, openaiApiKey: e.target.value })}
-                  className="mt-1 bg-background font-mono text-xs"
+                  className="mt-1 bg-black/50 border-white/10 font-mono text-xs text-white"
                 />
               </div>
               <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Model Selection</label>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Model Selection</label>
                 <select
                   value={config.openaiModel || "gpt-4o-mini"}
                   onChange={(e) => setConfig({ ...config, openaiModel: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-mono font-medium focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-black/50 px-3 py-2 text-xs font-mono font-medium text-white focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   <option value="gpt-4o-mini">gpt-4o-mini (Fast & Recommended)</option>
                   <option value="gpt-4o">gpt-4o (High Intelligence)</option>
@@ -208,24 +207,24 @@ export function SettingsPage() {
 
           {/* Anthropic Settings */}
           {config.activeProvider === "anthropic" && (
-            <div className="rounded-xl border border-border bg-background/50 p-4 space-y-4">
+            <div className="rounded-xl border border-white/10 bg-black/40 p-5 space-y-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-primary">Anthropic Claude Settings</h3>
               <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Anthropic API Key</label>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Anthropic API Key</label>
                 <Input
                   type="password"
                   placeholder="sk-ant-..."
                   value={config.anthropicApiKey}
                   onChange={(e) => setConfig({ ...config, anthropicApiKey: e.target.value })}
-                  className="mt-1 bg-background font-mono text-xs"
+                  className="mt-1 bg-black/50 border-white/10 font-mono text-xs text-white"
                 />
               </div>
               <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Model Selection</label>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Model Selection</label>
                 <select
                   value={config.anthropicModel || "claude-3-5-sonnet-20240620"}
                   onChange={(e) => setConfig({ ...config, anthropicModel: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-mono font-medium focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-black/50 px-3 py-2 text-xs font-mono font-medium text-white focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   <option value="claude-3-5-sonnet-20240620">claude-3-5-sonnet-20240620 (Recommended)</option>
                   <option value="claude-3-haiku-20240307">claude-3-haiku-20240307 (Fast)</option>
@@ -236,26 +235,26 @@ export function SettingsPage() {
 
           {/* Custom Endpoint Settings */}
           {config.activeProvider === "custom" && (
-            <div className="rounded-xl border border-border bg-background/50 p-4 space-y-4">
+            <div className="rounded-xl border border-white/10 bg-black/40 p-5 space-y-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-primary">Custom LLM Endpoint</h3>
               <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Endpoint URL</label>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Endpoint URL</label>
                 <Input
                   type="text"
                   placeholder="https://api.openai.com/v1/chat/completions"
                   value={config.customEndpoint}
                   onChange={(e) => setConfig({ ...config, customEndpoint: e.target.value })}
-                  className="mt-1 bg-background font-mono text-xs"
+                  className="mt-1 bg-black/50 border-white/10 font-mono text-xs text-white"
                 />
               </div>
               <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Model Name</label>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Model Name</label>
                 <Input
                   type="text"
                   placeholder="gpt-4o-mini"
                   value={config.customModel}
                   onChange={(e) => setConfig({ ...config, customModel: e.target.value })}
-                  className="mt-1 bg-background font-mono text-xs"
+                  className="mt-1 bg-black/50 border-white/10 font-mono text-xs text-white"
                 />
               </div>
             </div>
@@ -280,7 +279,7 @@ export function SettingsPage() {
 
           {/* Action Buttons */}
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <Button type="button" variant="outline" onClick={handleTestConnection} disabled={testing} className="w-full sm:w-auto">
+            <Button type="button" variant="outline" onClick={handleTestConnection} disabled={testing} className="border-white/20 bg-white/5 hover:bg-white/10 w-full sm:w-auto">
               {testing ? (
                 <>
                   <Loader2 className="mr-2 size-4 animate-spin" /> Testing Connection...
@@ -292,7 +291,7 @@ export function SettingsPage() {
               )}
             </Button>
 
-            <Button type="submit" size="lg" className="w-full sm:w-auto">
+            <Button type="submit" size="lg" className="bg-primary hover:bg-primary/90 font-bold shadow-glow w-full sm:w-auto">
               <Save className="mr-2 size-4" /> Save Configuration
             </Button>
           </div>

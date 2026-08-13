@@ -62,8 +62,8 @@ function StudyPlanPage() {
   const totalMinutes = planItems.reduce((acc, item) => acc + item.time, 0);
 
   return (
-    <div className="min-h-screen bg-background pb-20 text-foreground">
-      <header className="border-b border-border bg-card/50 backdrop-blur-xl">
+    <div className="min-h-screen text-foreground selection:bg-primary/30 pb-20">
+      <header className="sticky top-0 z-40 glass-header">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <EchoLogo />
           <HeaderNav />
@@ -73,42 +73,42 @@ function StudyPlanPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-6 pt-8 space-y-6">
+      <main className="mx-auto max-w-3xl px-6 pt-10 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-primary">Personalized Study Plan</span>
-            <h1 className="text-2xl font-bold tracking-tight mt-1">Tonight's ECHO Plan</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <h1 className="text-3xl font-extrabold tracking-tight text-white mt-1">Tonight's ECHO Plan</h1>
+            <p className="text-xs sm:text-sm text-slate-300 mt-1">
               Prioritized repair slots generated strictly from your diagnosed conceptual gaps and tomorrow's timetable.
             </p>
           </div>
 
           {planItems.length < INITIAL_ITEMS.length && (
-            <Button size="sm" variant="outline" onClick={resetPlan} className="text-xs">
+            <Button size="sm" variant="outline" onClick={resetPlan} className="text-xs border-white/20 bg-white/5 hover:bg-white/10">
               <RotateCcw className="size-3.5 mr-1" /> Restore Default Items
             </Button>
           )}
         </div>
 
         {/* Study Time Budget Selector */}
-        <div className="rounded-2xl border border-border bg-card p-6 card-shadow space-y-3">
+        <div className="glass-card p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
               How much time can you study tonight?
             </label>
             <span className="font-mono text-sm font-bold text-primary">{selectedBudget} minutes ({totalMinutes}m allocated)</span>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             {TIME_BUDGET_OPTIONS.map((mins) => (
               <button
                 key={mins}
                 type="button"
                 onClick={() => setSelectedBudget(mins)}
-                className={`flex-1 rounded-xl border py-2 text-xs font-mono font-bold transition-all ${
+                className={`flex-1 rounded-xl border py-2.5 text-xs font-mono font-bold transition-all ${
                   selectedBudget === mins
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border bg-background/50 hover:border-border/80 text-muted-foreground"
+                    ? "border-primary bg-primary/20 text-white shadow-glow"
+                    : "border-white/10 bg-black/20 hover:border-white/30 text-slate-400"
                 }`}
               >
                 {mins}m
@@ -119,24 +119,24 @@ function StudyPlanPage() {
 
         {/* Tomorrow-Aware Priority Banner */}
         {isBinarySearchTomorrow && planItems.some((i) => i.concept === "Binary Search") && (
-          <div className="rounded-2xl border border-warning/50 bg-warning/10 p-5 space-y-2">
+          <div className="glass-card p-6 border-warning/50 bg-warning/10 space-y-2">
             <div className="flex items-center gap-2 text-warning">
               <ShieldAlert className="size-5 shrink-0" />
               <h2 className="text-sm font-bold uppercase tracking-wider">Tomorrow-Aware Priority Alert</h2>
             </div>
-            <p className="text-xs leading-relaxed text-foreground">
+            <p className="text-xs sm:text-sm leading-relaxed text-slate-200">
               Binary Search is being taught again in tomorrow's 9:00 AM class. Your verified stability is currently <strong>50% (Fragile Understanding)</strong>, so ECHO recommends repairing this gap tonight.
             </p>
           </div>
         )}
 
         {/* Prioritized Repair Slots */}
-        <div className="space-y-4">
+        <div className="space-y-5">
           {planItems.length === 0 ? (
-            <div className="rounded-2xl border border-border bg-card p-10 text-center space-y-3 card-shadow">
-              <CheckCircle2 className="size-8 text-success mx-auto" />
-              <h3 className="font-bold text-base">All Study Plan Items Cleared!</h3>
-              <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+            <div className="glass-card p-12 text-center space-y-4">
+              <CheckCircle2 className="size-10 text-success mx-auto" />
+              <h3 className="font-bold text-lg text-white">All Study Plan Items Cleared!</h3>
+              <p className="text-xs sm:text-sm text-slate-300 max-w-sm mx-auto">
                 You have completed or removed all tonight's study plan items. Complete another class reflection when ready.
               </p>
               <div className="pt-2">
@@ -147,19 +147,19 @@ function StudyPlanPage() {
             </div>
           ) : (
             planItems.map((item) => (
-              <div key={item.id} className="rounded-2xl border border-border bg-card p-6 card-shadow space-y-3">
+              <div key={item.id} className="glass-card glass-card-hover p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="text-xs font-bold uppercase tracking-wider text-primary">{item.priority}</span>
-                    <h3 className="text-base font-bold text-foreground">{item.concept}</h3>
+                    <h3 className="text-lg font-bold text-white">{item.concept}</h3>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="flex items-center gap-1 font-mono text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1 font-mono text-xs text-slate-300">
                       <Clock className="size-3.5 text-primary" /> {item.time} min
                     </span>
                     <button
                       onClick={() => removeItem(item.id, item.concept)}
-                      className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10"
+                      className="p-2 text-slate-400 hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10"
                       title="Remove from study plan"
                     >
                       <Trash2 className="size-4" />
@@ -167,36 +167,36 @@ function StudyPlanPage() {
                   </div>
                 </div>
 
-                <div className="grid gap-2 text-xs rounded-xl bg-background/60 p-3 border border-border/50 font-mono">
+                <div className="grid gap-2 text-xs rounded-xl bg-black/40 p-4 border border-white/10 font-mono">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Stability Score:</span>
+                    <span className="text-slate-400">Stability Score:</span>
                     <span className={`font-bold ${item.stability < 60 ? "text-warning" : "text-primary"}`}>
                       {item.stability} ({item.stabilityBand})
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Confidence Gap:</span>
+                    <span className="text-slate-400">Confidence Gap:</span>
                     <span className="font-bold text-destructive">{item.confidenceGap}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Diagnosed Gap:</span>
-                    <span className="text-foreground">{item.diagnosedGap}</span>
+                    <span className="text-slate-400">Diagnosed Gap:</span>
+                    <span className="text-white">{item.diagnosedGap}</span>
                   </div>
                 </div>
 
-                <p className="text-xs leading-relaxed text-muted-foreground pt-1">
+                <p className="text-xs text-slate-300 leading-relaxed pt-1">
                   Step-by-step repair breakdown: {item.breakdown}
                 </p>
 
                 <div className="pt-2 flex items-center justify-between gap-3">
                   <button
                     onClick={() => removeItem(item.id, item.concept)}
-                    className="text-xs text-muted-foreground hover:text-destructive transition-colors font-semibold"
+                    className="text-xs text-slate-400 hover:text-destructive transition-colors font-semibold"
                   >
                     Remove from plan
                   </button>
 
-                  <Button asChild size="sm">
+                  <Button asChild size="sm" className="bg-primary hover:bg-primary/90 font-bold shadow-glow">
                     <Link to="/repair" search={{ concept: item.concept }}>
                       Start Repair <ArrowRight className="size-3.5 ml-1" />
                     </Link>

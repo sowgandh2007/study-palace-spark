@@ -58,42 +58,42 @@ function RepairPage() {
   const stepItem = REPAIR_STEPS[currentStep]!;
 
   return (
-    <div className="min-h-screen bg-background pb-20 text-foreground">
-      <header className="border-b border-border bg-card/50 backdrop-blur-xl">
+    <div className="min-h-screen text-foreground selection:bg-primary/30 pb-20">
+      <header className="sticky top-0 z-40 glass-header">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
           <EchoLogo />
           <ThemeSelect />
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-6 pt-8 space-y-6">
+      <main className="mx-auto max-w-3xl px-6 pt-10 space-y-6">
         <div>
           <span className="text-xs font-bold uppercase tracking-wider text-primary">Targeted Gap Repair</span>
-          <h1 className="text-2xl font-bold tracking-tight mt-1">{conceptName} Repair Activity</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">15-minute step-by-step exercise targeting your diagnosed conceptual gap.</p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-white mt-1">{conceptName} Repair Activity</h1>
+          <p className="text-xs sm:text-sm text-slate-300 mt-1">15-minute step-by-step exercise targeting your diagnosed conceptual gap.</p>
         </div>
 
         {/* Progress Bar */}
         <div className="space-y-2">
-          <div className="flex justify-between text-xs font-mono text-muted-foreground">
+          <div className="flex justify-between text-xs font-mono text-slate-400">
             <span>Step {currentStep + 1} of {REPAIR_STEPS.length}</span>
             <span>{stepItem.title}</span>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-secondary">
+          <div className="h-2 overflow-hidden rounded-full bg-white/10">
             <div
-              className="h-full bg-primary transition-all duration-300"
+              className="h-full bg-primary transition-all duration-300 shadow-glow"
               style={{ width: `${((currentStep + 1) / REPAIR_STEPS.length) * 100}%` }}
             />
           </div>
         </div>
 
         {/* Step Card */}
-        <div className="rounded-2xl border border-border bg-card p-6 card-shadow space-y-5 sm:p-8">
+        <div className="glass-card p-6 sm:p-8 space-y-5">
           <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
             <Clock className="size-4" /> {stepItem.title}
           </div>
 
-          <p className="text-sm sm:text-base font-medium leading-relaxed">{stepItem.instruction}</p>
+          <p className="text-sm sm:text-base font-medium leading-relaxed text-slate-200">{stepItem.instruction}</p>
 
           {currentStep === 1 && (
             <Textarea
@@ -101,7 +101,7 @@ function RepairPage() {
               placeholder="Write your explanation here..."
               value={explanationText}
               onChange={(e) => setExplanationText(e.target.value)}
-              className="bg-background/60 text-xs"
+              className="bg-black/40 border-white/10 text-xs text-white"
             />
           )}
 
@@ -111,12 +111,12 @@ function RepairPage() {
               placeholder="Explain how boundary pointers shift when duplicates exist..."
               value={explanationText}
               onChange={(e) => setExplanationText(e.target.value)}
-              className="bg-background/60 text-xs"
+              className="bg-black/40 border-white/10 text-xs text-white"
             />
           )}
 
           <div className="pt-4 flex justify-end">
-            <Button size="lg" onClick={handleNextStep}>
+            <Button size="lg" onClick={handleNextStep} className="bg-primary hover:bg-primary/90 font-bold shadow-glow">
               {currentStep < REPAIR_STEPS.length - 1 ? (
                 <>
                   Continue to Step {currentStep + 2} <ArrowRight className="ml-1.5 size-4" />
