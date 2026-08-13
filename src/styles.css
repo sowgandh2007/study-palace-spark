@@ -5,18 +5,18 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * ECHO design system — Uploaded Gradient Aesthetics
- * Asset 1 (Dark Navy to Royal Blue): Dark Navy #020721 -> Deep Royal #061959 -> Electric Blue #0047ff (Used for Study Plan, Hero, Assessment)
- * Asset 2 (Light Sky Blue to White): Electric Royal #0047ff -> Sky Blue #3e7bfa -> Ice Sky #93c5fd -> Soft White #e2ecff (Used for Dashboard & Timetable)
+ * ECHO Bento Grid Design System — Ocean & Sky Visual Identity
+ * Palette: Deep Ocean Navy (#020721 / #06133d), Royal Azure (#0052ff), Sky Blue (#38bdf8), Ice Cyan (#e0f2fe).
+ * Bento Card Proportions: rounded-3xl, translucent ocean glass panels, high-contrast typography.
  */
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 3px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-3xl: calc(var(--radius) + 14px);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -44,19 +44,19 @@
 }
 
 :root {
-  --radius: 1rem;
+  --radius: 1.25rem;
 
-  /* Base background: Deep Midnight Navy (from Uploaded Gradient Asset 1) */
+  /* Base Background: Deep Ocean Navy */
   --background: #020721;
-  --foreground: #f0f6ff;
+  --foreground: #f0f9ff;
 
-  /* Translucent card surface over gradients */
-  --card: rgba(8, 18, 54, 0.65);
-  --card-foreground: #f0f6ff;
-  --popover: rgba(8, 18, 54, 0.9);
-  --popover-foreground: #f0f6ff;
+  /* Translucent Dark Ocean Card */
+  --card: rgba(6, 19, 58, 0.72);
+  --card-foreground: #f0f9ff;
+  --popover: rgba(6, 19, 58, 0.95);
+  --popover-foreground: #f0f9ff;
 
-  /* Primary accent: Electric Royal Blue (from Uploaded Gradient Assets) */
+  /* Primary Accent: Azure Royal Blue */
   --primary: #0052ff;
   --primary-foreground: #ffffff;
 
@@ -64,42 +64,41 @@
   --brand-2: #38bdf8;
 
   --secondary: rgba(255, 255, 255, 0.08);
-  --secondary-foreground: #f0f6ff;
+  --secondary-foreground: #f0f9ff;
 
   --muted: rgba(255, 255, 255, 0.06);
   --muted-foreground: #94a3b8;
 
-  --accent: rgba(0, 82, 255, 0.18);
-  --accent-foreground: #60a5fa;
+  --accent: rgba(56, 189, 248, 0.15);
+  --accent-foreground: #38bdf8;
 
   /* Diagnostic Stability Status Colors */
-  --destructive: #ef4444; /* 0-39 Surface Knowledge (Red) */
+  --destructive: #f43f5e; /* Surface Knowledge (Rose) */
   --destructive-foreground: #ffffff;
+  --warning: #f59e0b; /* Fragile Understanding (Amber) */
+  --info: #0284c7; /* Developing Understanding (Sky) */
+  --success: #10b981; /* Stable Understanding (Emerald) */
 
-  --warning: #d97706; /* 40-59 Fragile Understanding (Orange) */
-  --info: #2563eb; /* 60-79 Developing Understanding (Blue) */
-  --success: #059669; /* 80-100 Stable Understanding (Green) */
-
-  --border: rgba(255, 255, 255, 0.12);
-  --input: rgba(255, 255, 255, 0.12);
+  --border: rgba(56, 189, 248, 0.18);
+  --input: rgba(56, 189, 248, 0.18);
   --ring: #0052ff;
 
-  /* Uploaded Gradient Assets definitions */
-  --gradient-dark-navy: linear-gradient(180deg, #020721 0%, #061959 50%, #0047ff 100%);
-  --gradient-royal-ice: linear-gradient(180deg, #0047ff 0%, #3e7bfa 35%, #93c5fd 70%, #e2ecff 100%);
-  --gradient-hero: linear-gradient(180deg, #020721 0%, #051447 35%, #0047ff 80%, #020721 100%);
-  --gradient-brand: linear-gradient(135deg, #0052ff 0%, #38bdf8 100%);
-  --gradient-fire: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
-  --shadow-glow: 0 0 25px rgba(0, 82, 255, 0.35);
-  --shadow-card: 0 12px 32px -8px rgba(0, 0, 0, 0.5);
+  /* Gradients */
+  --gradient-ocean-deep: linear-gradient(180deg, #020721 0%, #061852 45%, #0047ff 100%);
+  --gradient-sky-white: linear-gradient(180deg, #0052ff 0%, #0284c7 35%, #7dd3fc 70%, #f0f9ff 100%);
+  --gradient-bento-hero: linear-gradient(135deg, rgba(6, 24, 75, 0.85) 0%, rgba(2, 10, 36, 0.9) 100%);
+  --gradient-accent-card: linear-gradient(135deg, rgba(245, 158, 11, 0.18) 0%, rgba(244, 63, 94, 0.12) 100%);
+
+  --shadow-glow: 0 0 30px rgba(0, 82, 255, 0.35);
+  --shadow-bento: 0 16px 40px -12px rgba(0, 0, 0, 0.5);
 }
 
 .light, [data-theme="light"] {
-  --background: #f0f6ff;
+  --background: #f0f9ff;
   --foreground: #020721;
-  --card: rgba(255, 255, 255, 0.88);
+  --card: rgba(255, 255, 255, 0.90);
   --card-foreground: #020721;
-  --popover: rgba(255, 255, 255, 0.95);
+  --popover: rgba(255, 255, 255, 0.98);
   --popover-foreground: #020721;
   --primary: #0052ff;
   --primary-foreground: #ffffff;
@@ -111,10 +110,10 @@
   --muted-foreground: #64748b;
   --accent: rgba(0, 82, 255, 0.12);
   --accent-foreground: #0052ff;
-  --border: rgba(0, 82, 255, 0.15);
-  --input: rgba(0, 82, 255, 0.15);
+  --border: rgba(0, 82, 255, 0.18);
+  --input: rgba(0, 82, 255, 0.18);
   --ring: #0052ff;
-  --shadow-card: 0 8px 24px -6px rgba(0, 82, 255, 0.12);
+  --shadow-bento: 0 12px 32px -8px rgba(0, 82, 255, 0.15);
 }
 
 @layer base {
@@ -127,7 +126,7 @@
   body {
     font-family: var(--font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
     -webkit-font-smoothing: antialiased;
-    background-image: var(--gradient-dark-navy);
+    background-image: var(--gradient-ocean-deep);
     background-attachment: fixed;
   }
   h1, h2, h3, h4, h5, h6 {
@@ -135,72 +134,60 @@
   }
 }
 
-@utility gradient-dark-navy { background-image: var(--gradient-dark-navy); }
-@utility gradient-royal-ice { background-image: var(--gradient-royal-ice); }
-@utility gradient-hero { background-image: var(--gradient-hero); }
-@utility gradient-brand { background-image: var(--gradient-brand); }
-@utility gradient-fire { background-image: var(--gradient-fire); }
-@utility glow { box-shadow: var(--shadow-glow); }
-@utility card-shadow { box-shadow: var(--shadow-card); }
-@utility text-gradient {
-  background: linear-gradient(135deg, #ffffff 0%, #93c5fd 60%, #38bdf8 100%);
+@utility text-gradient-sky {
+  background: linear-gradient(135deg, #ffffff 0%, #bae6fd 50%, #38bdf8 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
-/* Translucent Dark Glass Card */
-.glass-card {
-  background: rgba(8, 18, 54, 0.65);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.5);
-  border-radius: var(--radius);
-}
-
-.glass-card-hover {
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.glass-card-hover:hover {
-  border-color: rgba(0, 82, 255, 0.5);
-  box-shadow: 0 0 25px rgba(0, 82, 255, 0.35);
-  transform: translateY(-2px);
-}
-
-.glass-header {
-  background: rgba(2, 7, 33, 0.65);
+/* Bento Card Base Class */
+.bento-card {
+  background: rgba(6, 19, 58, 0.72);
   backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* Light Sky Blue & White Gradient Page Utilities (Gradient Asset 2) */
-.bg-gradient-royal-ice-page {
-  background: linear-gradient(180deg, #0047ff 0%, #3e7bfa 30%, #93c5fd 60%, #e2ecff 85%, #f8fafc 100%);
-  background-attachment: fixed;
-  color: #020721;
-}
-
-.glass-card-light {
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(0, 71, 255, 0.18);
-  box-shadow: 0 12px 32px -8px rgba(0, 71, 255, 0.15);
-  border-radius: var(--radius);
-  color: #020721;
-}
-
-.glass-card-light-hover {
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 1.5rem; /* 24px rounded-3xl */
+  box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.5);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.glass-card-light-hover:hover {
+
+.bento-card:hover {
+  border-color: rgba(56, 189, 248, 0.45);
+  box-shadow: 0 0 30px rgba(0, 82, 255, 0.3);
+}
+
+.bento-card-light {
+  background: rgba(255, 255, 255, 0.90);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 82, 255, 0.2);
+  border-radius: 1.5rem;
+  box-shadow: 0 12px 32px -8px rgba(0, 82, 255, 0.15);
+  color: #020721;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bento-card-light:hover {
   border-color: rgba(0, 82, 255, 0.5);
   box-shadow: 0 0 25px rgba(0, 82, 255, 0.25);
-  transform: translateY(-2px);
+}
+
+/* Header Glass styling */
+.glass-header {
+  background: rgba(2, 7, 33, 0.75);
+  backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.15);
 }
 
 .glass-header-light {
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(0, 71, 255, 0.15);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(0, 82, 255, 0.15);
+  color: #020721;
+}
+
+/* Ocean Sky Page Background for Dashboard & Timetable */
+.bg-gradient-royal-ice-page {
+  background: linear-gradient(180deg, #0047ff 0%, #0284c7 30%, #7dd3fc 60%, #e0f2fe 85%, #f8fafc 100%);
+  background-attachment: fixed;
   color: #020721;
 }
