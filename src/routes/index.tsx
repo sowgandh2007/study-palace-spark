@@ -32,11 +32,11 @@ export const Route = createFileRoute("/")({
 });
 
 const FIVE_STEP_LOOP = [
-  { step: "01", name: "Learn", detail: "Attend class or engage with study material from your timetable." },
-  { step: "02", name: "Reflect", detail: "Complete a 10-second post-class check-in (Confidence slider + What didn't you understand?)." },
-  { step: "03", name: "Verify", detail: "ECHO diagnoses your conceptual gap and runs a targeted 3-dimension check." },
-  { step: "04", name: "Repair", detail: "Execute a gap-specific repair exercise fitted within your evening study time budget." },
-  { step: "05", name: "Improve", detail: "Re-check understanding post-repair and track verified score increases." },
+  { step: "01", name: "Academic Context", detail: "Connects with tomorrow's scheduled topics from your class timetable." },
+  { step: "02", name: "Confidence Check", detail: "Student self-reports perceived confidence immediately following class lectures." },
+  { step: "03", name: "Evidence Probe", detail: "ECHO collects demonstrated evidence through targeted diagnostic probes." },
+  { step: "04", name: "Fragility Detection", detail: "ECHO compares confidence vs evidence to detect conceptual fragility." },
+  { step: "05", name: "Contextual Action", detail: "Prioritizes the next best learning action and updates your persistent knowledge state." },
 ];
 
 const BAND_COLORS: Record<string, string> = {
@@ -91,7 +91,7 @@ function LandingPage() {
 
         <div className="relative z-10 mx-auto max-w-5xl space-y-6 sm:space-y-8">
           <Badge variant="outline" className="border-primary/50 bg-primary/10 text-primary px-3 sm:px-4 py-1.5 text-[11px] sm:text-xs font-bold tracking-wide shadow-glow">
-            <Sparkles className="mr-2 size-3.5" /> Evidence-Based Conceptual Honesty Engine
+            <Sparkles className="mr-2 size-3.5" /> Continuous Learning Intelligence System
           </Badge>
 
           {/* FoldText applied to full headline */}
@@ -113,11 +113,19 @@ function LandingPage() {
           </div>
 
           <p className="mx-auto max-w-2xl text-xs sm:text-base leading-relaxed text-slate-300">
-            ECHO verifies whether a student's understanding of a concept is real, not just memorized or lucky. It probes whether your reasoning survives under structural variation, hidden assumptions, and unfamiliar transfer problems.
+            ECHO is a continuous learning intelligence system that compares a student's perceived understanding with demonstrated evidence, detects conceptual fragility, and uses academic context to recommend the next best learning action.
           </p>
 
+          {/* Core Product Distinction Callout */}
+          <div className="mx-auto max-w-3xl rounded-2xl border border-primary/40 bg-primary/10 p-5 sm:p-6 text-center space-y-2 backdrop-blur-md">
+            <span className="text-[11px] font-extrabold uppercase tracking-widest text-primary">Core Product System</span>
+            <p className="text-xs sm:text-sm leading-relaxed text-slate-200 font-medium">
+              "Chat-based AI answers questions when asked. ECHO continuously tracks the relationship between perceived understanding, demonstrated evidence, and academic context to decide what should happen next."
+            </p>
+          </div>
+
           {/* GPU-Friendly Scale/Brightness CTA Buttons */}
-          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button asChild size="lg" className="w-full sm:w-auto px-8 font-bold cta-btn-gradient text-white text-base min-h-[48px]">
               <Link to="/reflection">
                 Enter the Demo <ArrowRight className="ml-2 size-5" />
@@ -136,10 +144,10 @@ function LandingPage() {
       <section className="border-t border-white/10 bg-black/20 backdrop-blur-md py-16 sm:py-20 px-4 sm:px-6">
         <div className="mx-auto max-w-6xl space-y-10 sm:space-y-12">
           <div className="text-center space-y-2 sm:space-y-3">
-            <span className="text-xs font-bold uppercase tracking-widest text-primary">Continuous Verification Protocol</span>
-            <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white">The Five-Step ECHO Workflow</h2>
+            <span className="text-xs font-bold uppercase tracking-widest text-primary">Intelligence Loop</span>
+            <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white">The Central ECHO Learning Loop</h2>
             <p className="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto">
-              How students build verifiable, bulletproof conceptual understanding every single day.
+              How ECHO maintains a persistent knowledge state and converts evidence into context-aware next actions.
             </p>
           </div>
 
@@ -165,10 +173,10 @@ function LandingPage() {
       <section className="border-t border-white/10 py-16 sm:py-20 px-4 sm:px-6">
         <div className="mx-auto max-w-6xl space-y-10 sm:space-y-12">
           <div className="text-center space-y-2 sm:space-y-3">
-            <span className="text-xs font-bold uppercase tracking-widest text-primary">Diagnostic Architecture</span>
+            <span className="text-xs font-bold uppercase tracking-widest text-primary">Demonstrated Evidence</span>
             <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white">The Six-Dimension Framework</h2>
             <p className="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto">
-              ECHO probes understanding across 6 rigorous dimensions (currently evaluating 3 core probe dimensions in active assessments).
+              ECHO probes understanding across 6 rigorous dimensions to test whether student reasoning survives structural variation.
             </p>
           </div>
 
@@ -198,10 +206,10 @@ function LandingPage() {
       <section className="border-t border-white/10 bg-black/20 backdrop-blur-md py-16 sm:py-20 px-4 sm:px-6">
         <div className="mx-auto max-w-6xl space-y-10 sm:space-y-12">
           <div className="text-center space-y-2 sm:space-y-3">
-            <span className="text-xs font-bold uppercase tracking-widest text-primary">Scoring Engine</span>
+            <span className="text-xs font-bold uppercase tracking-widest text-primary">Stability Index</span>
             <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white">Understanding Stability Score Bands</h2>
             <p className="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto">
-              Single centralized score bands based strictly on weighted performance: round(Direct × 20% + Explain × 40% + Transfer × 40%).
+              Centralized score bands evaluating weighted performance across demonstrated evidence dimensions.
             </p>
           </div>
 
