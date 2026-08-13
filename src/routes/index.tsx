@@ -23,6 +23,7 @@ import { FRAMEWORK_DIMENSIONS } from "@/lib/echo/types";
 import { BANDS } from "@/lib/echo/scoring";
 import { FoldText } from "@/components/ui/FoldText";
 import { EchoNavbar, EchoLogo } from "@/components/EchoNavbar";
+import { Prism } from "@/components/ui/Prism";
 
 export { EchoLogo };
 
@@ -46,7 +47,7 @@ const BAND_COLORS: Record<string, string> = {
 };
 
 function LandingPage() {
-  // Scroll Reveal via IntersectionObserver (NOT onscroll listener)
+  // Scroll Reveal via IntersectionObserver
   useEffect(() => {
     const elements = document.querySelectorAll(".reveal-card");
     if (!elements.length) return;
@@ -71,14 +72,29 @@ function LandingPage() {
       {/* High-performance scroll navbar */}
       <EchoNavbar variant="dark" />
 
-      {/* Hero Section with CSS Keyframe Gradient Animation */}
+      {/* Hero Section with React Bits 3D Prism WebGL Background & FoldText */}
       <section className="hero-gradient-bg relative overflow-hidden px-4 sm:px-6 pt-16 sm:pt-20 pb-20 sm:pb-24 md:pt-28 md:pb-32 text-center border-b border-white/10">
+        {/* React Bits 3D Prism WebGL Background */}
+        <div className="absolute inset-0 pointer-events-none z-0 opacity-45">
+          <Prism
+            animationType="rotate"
+            timeScale={0.5}
+            height={3.5}
+            baseWidth={5.5}
+            scale={3.6}
+            hueShift={0}
+            colorFrequency={1}
+            noise={0.5}
+            glow={1}
+          />
+        </div>
+
         <div className="relative z-10 mx-auto max-w-5xl space-y-6 sm:space-y-8">
           <Badge variant="outline" className="border-primary/50 bg-primary/10 text-primary px-3 sm:px-4 py-1.5 text-[11px] sm:text-xs font-bold tracking-wide shadow-glow">
             <Sparkles className="mr-2 size-3.5" /> Evidence-Based Conceptual Honesty Engine
           </Badge>
 
-          {/* 1. FoldText applied to full headline with color="#60a5fa" */}
+          {/* FoldText applied to full headline */}
           <div className="flex flex-col items-center justify-center">
             <FoldText
               text="The Answer Is Correct. But Is the Understanding Real?"
