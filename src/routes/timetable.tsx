@@ -39,14 +39,15 @@ function TimetablePage() {
   const latestClass = timetable[0];
 
   return (
-    <div className="min-h-screen text-foreground selection:bg-primary/30 pb-20">
-      <header className="sticky top-0 z-40 glass-header">
+    <div className="min-h-screen bg-gradient-royal-ice-page selection:bg-primary/30 pb-20">
+      {/* Header with light glass styling */}
+      <header className="sticky top-0 z-40 glass-header-light">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <EchoLogo />
           <HeaderNav />
           <div className="flex items-center gap-3">
             <ThemeSelect />
-            <Link to="/settings" className="p-2 text-muted-foreground hover:text-foreground transition-colors" title="API Settings">
+            <Link to="/settings" className="p-2 text-slate-700 hover:text-primary transition-colors" title="API Settings">
               <Settings className="size-4" />
             </Link>
           </div>
@@ -55,26 +56,26 @@ function TimetablePage() {
 
       <main className="mx-auto max-w-3xl px-6 pt-10 space-y-8">
         <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-primary">Post-Class Starting Point</span>
-          <h1 className="text-3xl font-extrabold tracking-tight text-white mt-1">Tomorrow's Class Schedule</h1>
-          <p className="text-xs sm:text-sm text-slate-300 mt-1">
+          <span className="text-xs font-extrabold uppercase tracking-wider text-primary">Post-Class Starting Point</span>
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 mt-1">Tomorrow's Class Schedule</h1>
+          <p className="text-xs sm:text-sm text-slate-700 font-medium mt-1">
             Enter tomorrow's scheduled classes to enable post-class reflection check-ins and tomorrow-aware study prioritization.
           </p>
         </div>
 
         {/* Post-Class Reminder Prompt Banner */}
         {latestClass && (
-          <div className="glass-card p-6 space-y-3 border-primary/40 bg-primary/10">
+          <div className="glass-card-light p-6 space-y-3 border-primary/40 bg-white/95">
             <span className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
               <Sparkles className="size-4" /> Post-Class ECHO Prompt
             </span>
-            <h2 className="text-lg font-bold text-white">
+            <h2 className="text-lg font-bold text-slate-900">
               You just finished <span className="text-primary">{latestClass.subject} — {latestClass.topic}</span>.
             </h2>
-            <p className="text-xs text-slate-300">How much did you actually understand today? Take 10 seconds to reflect.</p>
+            <p className="text-xs text-slate-700 font-medium">How much did you actually understand today? Take 10 seconds to reflect.</p>
 
             <div className="pt-1">
-              <Button asChild size="sm" className="bg-primary hover:bg-primary/90 font-bold shadow-glow">
+              <Button asChild size="sm" className="bg-primary hover:bg-primary/90 text-white font-bold shadow-glow">
                 <Link to="/reflection" search={{ concept: latestClass.topic }}>
                   Reflect on {latestClass.topic} <ArrowRight className="ml-1.5 size-3.5" />
                 </Link>
@@ -84,78 +85,78 @@ function TimetablePage() {
         )}
 
         {/* Add Class Form */}
-        <form onSubmit={handleAdd} className="glass-card p-6 space-y-4">
-          <h2 className="text-sm font-bold text-white flex items-center gap-2">
+        <form onSubmit={handleAdd} className="glass-card-light p-6 space-y-4">
+          <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
             <Plus className="size-4 text-primary" /> Add Scheduled Class for Tomorrow
           </h2>
 
           <div className="grid gap-3 sm:grid-cols-3">
             <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Time</label>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-700">Time</label>
               <Input
                 placeholder="e.g. 9:00 AM"
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
-                className="mt-1 bg-black/40 border-white/10 text-xs text-white"
+                className="mt-1 bg-white border-slate-300 text-xs text-slate-900"
               />
             </div>
             <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Subject</label>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-700">Subject</label>
               <Input
                 required
                 placeholder="e.g. Data Structures"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                className="mt-1 bg-black/40 border-white/10 text-xs text-white"
+                className="mt-1 bg-white border-slate-300 text-xs text-slate-900"
               />
             </div>
             <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Topic</label>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-700">Topic</label>
               <Input
                 required
                 placeholder="e.g. Binary Search"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
-                className="mt-1 bg-black/40 border-white/10 text-xs text-white"
+                className="mt-1 bg-white border-slate-300 text-xs text-slate-900"
               />
             </div>
           </div>
 
-          <Button type="submit" size="sm" className="bg-primary hover:bg-primary/90 font-bold shadow-glow w-full sm:w-auto">
+          <Button type="submit" size="sm" className="bg-primary hover:bg-primary/90 text-white font-bold shadow-glow w-full sm:w-auto">
             Add to Schedule
           </Button>
         </form>
 
         {/* Timetable List */}
         <div className="space-y-3">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">Scheduled Tomorrow ({timetable.length})</h2>
+          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700">Scheduled Tomorrow ({timetable.length})</h2>
 
           {timetable.length === 0 ? (
-            <div className="glass-card p-8 text-center text-xs text-slate-400">
+            <div className="glass-card-light p-8 text-center text-xs text-slate-600 font-medium">
               No classes entered for tomorrow yet.
             </div>
           ) : (
             <div className="space-y-3">
               {timetable.map((t) => (
-                <div key={t.id} className="glass-card glass-card-hover p-4 flex items-center justify-between gap-4">
+                <div key={t.id} className="glass-card-light glass-card-light-hover p-4 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/20 border border-primary/40 text-primary">
+                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 border border-primary/30 text-primary">
                       <Clock className="size-4" />
                     </div>
                     <div>
                       <span className="font-mono text-xs text-primary font-bold">{t.time}</span>
-                      <h3 className="font-bold text-sm text-white">{t.topic}</h3>
-                      <p className="text-xs text-slate-400">{t.subject}</p>
+                      <h3 className="font-bold text-sm text-slate-900">{t.topic}</h3>
+                      <p className="text-xs text-slate-600 font-medium">{t.subject}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Button asChild size="sm" variant="outline" className="text-xs border-white/20 bg-white/5 hover:bg-white/10">
+                    <Button asChild size="sm" variant="outline" className="text-xs border-slate-300 bg-white hover:bg-slate-50 text-slate-900">
                       <Link to="/reflection" search={{ concept: t.topic }}>Reflect <ArrowRight className="ml-1 size-3" /></Link>
                     </Button>
                     <button
                       onClick={() => deleteTimetableEntry(t.id)}
-                      className="p-2 text-slate-400 hover:text-destructive transition-colors"
+                      className="p-2 text-slate-500 hover:text-rose-600 transition-colors"
                       title="Delete class"
                     >
                       <Trash2 className="size-4" />
