@@ -24,18 +24,16 @@ type EchoStoreCtx = EchoStoreState & {
 
 const EchoContext = createContext<EchoStoreCtx | null>(null);
 
-const STORAGE_KEY = "echo_app_state_v2";
+const STORAGE_KEY = "echo_app_state_v3";
 
 export function EchoProvider({ children }: { children: ReactNode }) {
-  const [timetable, setTimetable] = useState<TimetableEntry[]>(SAMPLE_TIMETABLE);
+  const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
   const [reflections, setReflections] = useState<Reflection[]>([]);
   const [latestResult, setLatestResult] = useState<StabilityResult | null>(null);
   const [activeRepair, setActiveRepair] = useState<RepairActivity | null>(null);
   const [recheckHistory, setRecheckHistory] = useState<
     { concept: string; beforeScore: number; afterScore: number; date: string }[]
-  >([
-    { concept: "Binary Search", beforeScore: 72, afterScore: 91, date: "Today" },
-  ]);
+  >([]);
   const [apiConfig, setApiConfigState] = useState<ApiConfig>(getApiConfig());
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Clock, AlertTriangle, CheckCircle2, ShieldAlert, Sparkles, Trash2, RotateCcw } from "lucide-react";
+import { ArrowRight, Clock, AlertTriangle, CheckCircle2, ShieldAlert, Sparkles, Trash2, RotateCcw, Plus } from "lucide-react";
 import { EchoNavbar } from "@/components/EchoNavbar";
 import { ThemeSelect } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
@@ -13,37 +13,13 @@ export const Route = createFileRoute("/study-plan")({
 
 const TIME_BUDGET_OPTIONS = [20, 30, 45, 60];
 
-const INITIAL_ITEMS = [
-  {
-    id: "sp-1",
-    concept: "Binary Search",
-    priority: "High Priority Repair",
-    priorityLevel: "high",
-    time: 15,
-    stability: 50,
-    stabilityBand: "Fragile",
-    confidenceGap: "You felt 90% · Evidence was 50% (+40 Gap)",
-    diagnosedGap: "Elimination condition breaks under non-standard setup",
-    breakdown: "4m review invariant → 5m explain in own words → 4m apply variations → 2m re-check.",
-  },
-  {
-    id: "sp-2",
-    concept: "Database Normalization (3NF)",
-    priority: "Medium Priority Repair",
-    priorityLevel: "medium",
-    time: 10,
-    stability: 66,
-    stabilityBand: "Developing",
-    confidenceGap: "You felt 80% · Evidence was 66% (+14 Gap)",
-    diagnosedGap: "Transitive dependency vs candidate key decomposition",
-    breakdown: "List functional dependencies from scratch and verify lossless join decomposition.",
-  },
-];
+// Initial items empty by default so no sample courses are pre-displayed
+const INITIAL_ITEMS: any[] = [];
 
 function StudyPlanPage() {
   const { timetable } = useEcho();
   const [selectedBudget, setSelectedBudget] = useState(35);
-  const [planItems, setPlanItems] = useState(INITIAL_ITEMS);
+  const [planItems, setPlanItems] = useState<any[]>(INITIAL_ITEMS);
 
   const isBinarySearchTomorrow = timetable.some((t) =>
     t.topic.toLowerCase().includes("binary search")
@@ -52,11 +28,6 @@ function StudyPlanPage() {
   function removeItem(id: string, conceptName: string) {
     setPlanItems((prev) => prev.filter((item) => item.id !== id));
     toast.success(`Removed ${conceptName} from study plan`);
-  }
-
-  function resetPlan() {
-    setPlanItems(INITIAL_ITEMS);
-    toast.info("Reset study plan items");
   }
 
   const totalMinutes = planItems.reduce((acc, item) => acc + item.time, 0);
@@ -74,12 +45,6 @@ function StudyPlanPage() {
               Prioritized repair slots generated strictly from your diagnosed conceptual gaps and tomorrow's timetable.
             </p>
           </div>
-
-          {planItems.length < INITIAL_ITEMS.length && (
-            <Button size="sm" variant="outline" onClick={resetPlan} className="text-xs border-white/20 bg-white/5 hover:bg-white/10 w-fit min-h-[44px]">
-              <RotateCcw className="size-3.5 mr-1" /> Restore Default Items
-            </Button>
-          )}
         </div>
 
         {/* Study Time Budget Selector */}
@@ -109,31 +74,21 @@ function StudyPlanPage() {
           </div>
         </div>
 
-        {/* Tomorrow-Aware Priority Banner */}
-        {isBinarySearchTomorrow && planItems.some((i) => i.concept === "Binary Search") && (
-          <div className="glass-card p-6 border-warning/50 bg-warning/10 space-y-2">
-            <div className="flex items-center gap-2 text-warning">
-              <ShieldAlert className="size-5 shrink-0" />
-              <h2 className="text-sm font-bold uppercase tracking-wider">Tomorrow-Aware Priority Alert</h2>
-            </div>
-            <p className="text-xs sm:text-sm leading-relaxed text-slate-200">
-              Binary Search is being taught again in tomorrow's 9:00 AM class. Your verified stability is currently <strong>50% (Fragile Understanding)</strong>, so ECHO recommends repairing this gap tonight.
-            </p>
-          </div>
-        )}
-
-        {/* Prioritized Repair Slots */}
+        {/* Prioritized Repair Slots Empty State */}
         <div className="space-y-5">
           {planItems.length === 0 ? (
             <div className="glass-card p-10 sm:p-12 text-center space-y-4">
-              <CheckCircle2 className="size-10 text-success mx-auto" />
-              <h3 className="font-bold text-lg text-white">All Study Plan Items Cleared!</h3>
+              <Sparkles className="size-10 text-primary mx-auto" />
+              <h3 className="font-bold text-lg text-white">No Courses or Study Plan Items Yet</h3>
               <p className="text-xs sm:text-sm text-slate-300 max-w-sm mx-auto">
-                You have completed or removed all tonight's study plan items. Complete another class reflection when ready.
+                Complete a 10-second post-class reflection or diagnostic probe to automatically add target repair courses to your study plan.
               </p>
-              <div className="pt-2">
-                <Button size="sm" variant="outline" onClick={resetPlan} className="min-h-[44px]">
-                  Restore Plan Items
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Button asChild size="sm" className="bg-primary hover:bg-primary/90 text-white font-bold shadow-glow min-h-[44px]">
+                  <Link to="/reflection">Start 10s Reflection <ArrowRight className="ml-1 size-3.5" /></Link>
+                </Button>
+                <Button asChild size="sm" variant="outline" className="border-white/20 bg-white/5 hover:bg-white/10 text-white min-h-[44px]">
+                  <Link to="/timetable">Add Scheduled Class</Link>
                 </Button>
               </div>
             </div>

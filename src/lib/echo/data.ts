@@ -1,28 +1,6 @@
 import type { TimetableEntry } from "./types";
 
-export const SAMPLE_TIMETABLE: TimetableEntry[] = [
-  {
-    id: "tt-1",
-    time: "9:00 AM",
-    subject: "Data Structures & Algorithms",
-    topic: "Binary Search",
-    date: "Tomorrow",
-  },
-  {
-    id: "tt-2",
-    time: "11:30 AM",
-    subject: "Database Management Systems",
-    topic: "Database Normalization (3NF)",
-    date: "Tomorrow",
-  },
-  {
-    id: "tt-3",
-    time: "2:00 PM",
-    subject: "Computer Networks",
-    topic: "TCP Flow Control",
-    date: "Tomorrow",
-  },
-];
+export const SAMPLE_TIMETABLE: TimetableEntry[] = [];
 
 export const DEMO_BINARY_SEARCH_DATA = {
   concept: "Binary Search",
@@ -50,40 +28,15 @@ export const DEMO_BINARY_SEARCH_DATA = {
     },
   ],
   expectedScores: { direct: 100, explain: 55, transfer: 20 },
-  expectedStabilityScore: 50, // round(100*0.2 + 55*0.4 + 20*0.4) = 50
+  expectedStabilityScore: 50,
   expectedConfidence: 90,
-  expectedConfidenceGap: 40, // 90 - 50 = +40 gap
+  expectedConfidenceGap: 40,
   isConfidentButFragile: true,
   expectedBandLabel: "Fragile Understanding",
   recommendation: "Practice adapting Binary Search to boundary-finding variants (first/last occurrence, insertion point).",
 };
 
-export const PRIORITY_REPAIRS = [
-  {
-    conceptId: "binary-search",
-    name: "Binary Search",
-    stability: 50,
-    weakest: "Transfer",
-    repairActivity: "Practice boundary-finding variants (first/last occurrence, insertion index).",
-    estimatedMinutes: 20,
-  },
-  {
-    conceptId: "tcp-flow",
-    name: "TCP Flow Control",
-    stability: 38,
-    weakest: "Assumption",
-    repairActivity: "Differentiate flow control sliding windows from congestion control windows.",
-    estimatedMinutes: 15,
-  },
-  {
-    conceptId: "hash-collisions",
-    name: "Hash Collision Resolution",
-    stability: 47,
-    weakest: "Transfer",
-    repairActivity: "Compare open addressing vs separate chaining performance under high load factors.",
-    estimatedMinutes: 25,
-  },
-];
+export const PRIORITY_REPAIRS: any[] = [];
 
 export const FACULTY_CLASS = {
   cohort: "CSE — Semester 4 · Section B",
@@ -103,30 +56,6 @@ export const FACULTY_CLASS = {
         { text: "Cannot state the sortedness precondition unprompted", share: 47 },
         { text: "Recites 'divide by 2' without connecting halving to log₂n", share: 39 },
         { text: "Blames the overflow bug for an infinite loop caused by lo = mid", share: 33 },
-      ],
-    },
-    {
-      conceptId: "normalization",
-      name: "Database Normalization (3NF)",
-      assessed: 38,
-      avgStability: 66,
-      confidentButFragile: 11,
-      dimensions: { direct: 88, explain: 71, variation: 60, assumption: 55, error: 58, transfer: 64 },
-      misconceptions: [
-        { text: "Treats 3NF as 'no repeated data' rather than removing transitive dependency", share: 44 },
-        { text: "Assumes decomposition is always lossless", share: 29 },
-      ],
-    },
-    {
-      conceptId: "tcp-flow",
-      name: "TCP Flow Control",
-      assessed: 35,
-      avgStability: 49,
-      confidentButFragile: 21,
-      dimensions: { direct: 79, explain: 55, variation: 41, assumption: 36, error: 40, transfer: 43 },
-      misconceptions: [
-        { text: "Conflates flow control with congestion control", share: 61 },
-        { text: "Thinks a zero window permanently stalls the connection", share: 35 },
       ],
     },
   ],
