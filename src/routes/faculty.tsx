@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ShieldAlert, Users, Settings } from "lucide-react";
-import { EchoLogo, HeaderNav } from "@/routes/index";
+import { EchoNavbar } from "@/components/EchoNavbar";
 import { ThemeSelect } from "@/lib/theme";
 import { FACULTY_CLASS } from "@/lib/echo/data";
 import { Link } from "@tanstack/react-router";
@@ -11,30 +11,19 @@ export const Route = createFileRoute("/faculty")({
 
 function FacultyPage() {
   return (
-    <div className="min-h-screen text-foreground selection:bg-primary/30 pb-20">
-      <header className="sticky top-0 z-40 glass-header">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <EchoLogo />
-          <HeaderNav />
-          <div className="flex items-center gap-3">
-            <ThemeSelect />
-            <Link to="/settings" className="p-2 text-muted-foreground hover:text-foreground transition-colors" title="API Settings">
-              <Settings className="size-4" />
-            </Link>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen text-foreground selection:bg-primary/30 pb-28 md:pb-20">
+      <EchoNavbar variant="dark" />
 
-      <main className="mx-auto max-w-6xl px-6 pt-10 space-y-8">
+      <main className="mx-auto max-w-6xl px-4 sm:px-6 pt-6 sm:pt-10 space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-primary">Faculty Cohort Telemetry Portal</span>
-            <h1 className="text-3xl font-extrabold tracking-tight text-white mt-1">{FACULTY_CLASS.cohort}</h1>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mt-1">{FACULTY_CLASS.cohort}</h1>
             <p className="text-xs sm:text-sm text-slate-300 mt-1">{FACULTY_CLASS.students} Enrolled Students · Overall Class Stability: {FACULTY_CLASS.avgStability}%</p>
           </div>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-5 grid-cols-1 md:grid-cols-3">
           {FACULTY_CLASS.concepts.map((c) => (
             <div key={c.conceptId} className="glass-card glass-card-hover p-6 space-y-4">
               <div className="flex items-start justify-between">

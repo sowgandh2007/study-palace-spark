@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Clock, AlertTriangle, CheckCircle2, ShieldAlert, Sparkles, Trash2, RotateCcw } from "lucide-react";
-import { EchoLogo, HeaderNav } from "@/routes/index";
+import { EchoNavbar } from "@/components/EchoNavbar";
 import { ThemeSelect } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { useEcho } from "@/lib/echo/store";
@@ -62,29 +62,21 @@ function StudyPlanPage() {
   const totalMinutes = planItems.reduce((acc, item) => acc + item.time, 0);
 
   return (
-    <div className="min-h-screen text-foreground selection:bg-primary/30 pb-20">
-      <header className="sticky top-0 z-40 glass-header">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <EchoLogo />
-          <HeaderNav />
-          <div className="flex items-center gap-3">
-            <ThemeSelect />
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen text-foreground selection:bg-primary/30 pb-28 md:pb-20">
+      <EchoNavbar variant="dark" />
 
-      <main className="mx-auto max-w-3xl px-6 pt-10 space-y-6">
+      <main className="mx-auto max-w-3xl px-4 sm:px-6 pt-6 sm:pt-10 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-primary">Personalized Study Plan</span>
-            <h1 className="text-3xl font-extrabold tracking-tight text-white mt-1">Tonight's ECHO Plan</h1>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mt-1">Tonight's ECHO Plan</h1>
             <p className="text-xs sm:text-sm text-slate-300 mt-1">
               Prioritized repair slots generated strictly from your diagnosed conceptual gaps and tomorrow's timetable.
             </p>
           </div>
 
           {planItems.length < INITIAL_ITEMS.length && (
-            <Button size="sm" variant="outline" onClick={resetPlan} className="text-xs border-white/20 bg-white/5 hover:bg-white/10">
+            <Button size="sm" variant="outline" onClick={resetPlan} className="text-xs border-white/20 bg-white/5 hover:bg-white/10 w-fit min-h-[44px]">
               <RotateCcw className="size-3.5 mr-1" /> Restore Default Items
             </Button>
           )}
@@ -92,20 +84,20 @@ function StudyPlanPage() {
 
         {/* Study Time Budget Selector */}
         <div className="glass-card p-6 space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
               How much time can you study tonight?
             </label>
-            <span className="font-mono text-sm font-bold text-primary">{selectedBudget} minutes ({totalMinutes}m allocated)</span>
+            <span className="font-mono text-xs sm:text-sm font-bold text-primary">{selectedBudget} minutes ({totalMinutes}m allocated)</span>
           </div>
 
-          <div className="flex gap-3">
+          <div className="grid grid-cols-4 gap-2 sm:gap-3">
             {TIME_BUDGET_OPTIONS.map((mins) => (
               <button
                 key={mins}
                 type="button"
                 onClick={() => setSelectedBudget(mins)}
-                className={`flex-1 rounded-xl border py-2.5 text-xs font-mono font-bold transition-all ${
+                className={`rounded-xl border py-3 text-xs font-mono font-bold transition-all min-h-[44px] ${
                   selectedBudget === mins
                     ? "border-primary bg-primary/20 text-white shadow-glow"
                     : "border-white/10 bg-black/20 hover:border-white/30 text-slate-400"
@@ -133,14 +125,14 @@ function StudyPlanPage() {
         {/* Prioritized Repair Slots */}
         <div className="space-y-5">
           {planItems.length === 0 ? (
-            <div className="glass-card p-12 text-center space-y-4">
+            <div className="glass-card p-10 sm:p-12 text-center space-y-4">
               <CheckCircle2 className="size-10 text-success mx-auto" />
               <h3 className="font-bold text-lg text-white">All Study Plan Items Cleared!</h3>
               <p className="text-xs sm:text-sm text-slate-300 max-w-sm mx-auto">
                 You have completed or removed all tonight's study plan items. Complete another class reflection when ready.
               </p>
               <div className="pt-2">
-                <Button size="sm" variant="outline" onClick={resetPlan}>
+                <Button size="sm" variant="outline" onClick={resetPlan} className="min-h-[44px]">
                   Restore Plan Items
                 </Button>
               </div>
@@ -148,18 +140,18 @@ function StudyPlanPage() {
           ) : (
             planItems.map((item) => (
               <div key={item.id} className="glass-card glass-card-hover p-6 space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <span className="text-xs font-bold uppercase tracking-wider text-primary">{item.priority}</span>
-                    <h3 className="text-lg font-bold text-white">{item.concept}</h3>
+                    <h3 className="text-base sm:text-lg font-bold text-white">{item.concept}</h3>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 pt-2 sm:pt-0">
                     <span className="flex items-center gap-1 font-mono text-xs text-slate-300">
                       <Clock className="size-3.5 text-primary" /> {item.time} min
                     </span>
                     <button
                       onClick={() => removeItem(item.id, item.concept)}
-                      className="p-2 text-slate-400 hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10"
+                      className="p-2.5 text-slate-400 hover:text-destructive transition-colors rounded-xl border border-white/10 min-h-[44px] min-w-[44px] flex items-center justify-center"
                       title="Remove from study plan"
                     >
                       <Trash2 className="size-4" />
@@ -196,7 +188,7 @@ function StudyPlanPage() {
                     Remove from plan
                   </button>
 
-                  <Button asChild size="sm" className="bg-primary hover:bg-primary/90 font-bold shadow-glow">
+                  <Button asChild size="sm" className="bg-primary hover:bg-primary/90 font-bold shadow-glow min-h-[44px]">
                     <Link to="/repair" search={{ concept: item.concept }}>
                       Start Repair <ArrowRight className="size-3.5 ml-1" />
                     </Link>

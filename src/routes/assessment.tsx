@@ -18,15 +18,16 @@ import {
   HelpCircle,
   TrendingUp,
 } from "lucide-react";
-import { EchoLogo, HeaderNav } from "@/routes/index";
+import { EchoNavbar } from "@/components/EchoNavbar";
 import { ThemeSelect } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { generateLocalEchoCheck, type DiagnosticMCQ, type EchoCheckResult } from "@/lib/echo/localAi";
 import { calculateStabilityScore, calculateConfidenceGap, bandFor } from "@/lib/echo/scoring";
 import type { ProbeEvaluation, StabilityResult } from "@/lib/echo/types";
 import { useEcho } from "@/lib/echo/store";
-import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/assessment")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -34,16 +35,6 @@ export const Route = createFileRoute("/assessment")({
     gap: typeof search["gap"] === "string" ? (search["gap"] as string) : undefined,
     confidence: typeof search["confidence"] === "string" ? (search["confidence"] as string) : undefined,
     demo: search["demo"] === "true" || search["demo"] === true,
-  }),
-  head: () => ({
-    meta: [
-      { title: "ECHO Diagnostic Check — 3-Question Probe" },
-      {
-        name: "description",
-        content:
-          "ECHO 3-question diagnostic check: Direct, Explain, and Transfer MCQ evaluation with instant understanding map and personalized study plan generation.",
-      },
-    ],
   }),
   component: AssessmentPage,
 });
@@ -174,46 +165,35 @@ function AssessmentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20 text-foreground selection:bg-primary/20">
-      <header className="sticky top-0 z-40 border-b border-border bg-card/60 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <EchoLogo />
-          <HeaderNav />
-          <div className="flex items-center gap-3">
-            <ThemeSelect />
-            <Badge variant="outline" className="border-primary/40 bg-primary/10 text-primary text-[10px]">
-              Built-in Engine (Offline Mode)
-            </Badge>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 pb-28 md:pb-20">
+      <EchoNavbar variant="dark" />
 
-      <main className="mx-auto max-w-3xl px-6 pt-8">
+      <main className="mx-auto max-w-3xl px-4 sm:px-6 pt-6 sm:pt-8">
         {/* STEP 1: INPUT STEP */}
         {step === "input" && (
-          <div className="rounded-2xl border border-border bg-card p-6 card-shadow sm:p-8 space-y-6">
+          <div className="glass-card p-6 sm:p-8 space-y-6">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-primary">Diagnostic Check</span>
-              <h1 className="text-2xl font-bold tracking-tight mt-1">Start 3-Question ECHO Check</h1>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <h1 className="text-2xl font-bold tracking-tight text-white mt-1">Start 3-Question ECHO Check</h1>
+              <p className="text-xs text-slate-300 mt-0.5">
                 Evaluate your verified understanding across 3 core dimensions: Direct Definition, Under-The-Hood Reasoning, and Unfamiliar Transfer.
               </p>
             </div>
 
             <form onSubmit={handleStartCheck} className="space-y-5">
               <div>
-                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Today's Concept Name</label>
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-300">Today's Concept Name</label>
                 <Input
                   required
                   value={conceptInput}
                   onChange={(e) => setConceptInput(e.target.value)}
                   placeholder="e.g. SQL, Binary Search, DBMS Normalization"
-                  className="mt-1 bg-background/60"
+                  className="mt-1 bg-black/40 border-white/10 text-white min-h-[44px]"
                 />
               </div>
 
               <div>
-                <div className="flex justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-slate-300">
                   <span>Self-Reported Confidence</span>
                   <span className="font-mono text-primary font-bold">{confidenceInput}%</span>
                 </div>
@@ -223,12 +203,12 @@ function AssessmentPage() {
                   max="100"
                   value={confidenceInput}
                   onChange={(e) => setConfidenceInput(Number(e.target.value))}
-                  className="mt-2 h-2 w-full cursor-pointer appearance-none rounded-lg bg-secondary accent-primary"
+                  className="mt-2 h-2.5 w-full cursor-pointer appearance-none rounded-lg bg-white/10 accent-primary"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
                   What part didn't you understand? (Optional)
                 </label>
                 <Textarea
@@ -236,11 +216,11 @@ function AssessmentPage() {
                   value={notUnderstoodText}
                   onChange={(e) => setNotUnderstoodText(e.target.value)}
                   placeholder="e.g. I struggle with spatial halving or inner vs outer joins..."
-                  className="mt-1 bg-background/60 text-xs"
+                  className="mt-1 bg-black/40 border-white/10 text-xs text-white"
                 />
               </div>
 
-              <Button type="submit" size="lg" className="w-full">
+              <Button type="submit" size="lg" className="w-full bg-primary hover:bg-primary/90 font-bold shadow-glow min-h-[48px]">
                 Begin 3-Question ECHO Check <ArrowRight className="ml-2 size-4" />
               </Button>
             </form>
@@ -250,35 +230,32 @@ function AssessmentPage() {
         {/* STEP 2: ANSWERING DIAGNOSTIC MCQs */}
         {step === "answering" && questions.length > 0 && (
           <div className="space-y-6">
-            {/* Progress */}
-            <div className="flex items-center justify-between text-xs font-mono text-muted-foreground">
+            <div className="flex items-center justify-between text-xs font-mono text-slate-300">
               <span>Question {index + 1} of {questions.length}</span>
               <span className="uppercase text-primary font-bold">{questions[index]?.dimensionLabel}</span>
             </div>
 
-            <div className="h-2 overflow-hidden rounded-full bg-secondary">
+            <div className="h-2 overflow-hidden rounded-full bg-white/10">
               <div
-                className="h-full bg-primary transition-all duration-300"
+                className="h-full bg-primary transition-all duration-300 shadow-glow"
                 style={{ width: `${((index + 1) / questions.length) * 100}%` }}
               />
             </div>
 
-            {/* Question Card */}
-            <div className="rounded-2xl border border-border bg-card p-6 card-shadow space-y-6 sm:p-8">
+            <div className="glass-card p-6 sm:p-8 space-y-6">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-primary">
                   {questions[index]!.dimensionLabel}
                 </span>
-                <span className="text-xs text-muted-foreground font-mono">
+                <span className="text-xs text-slate-400 font-mono">
                   {questions[index]!.dimension === "direct" ? "20% Weight" : "40% Weight"}
                 </span>
               </div>
 
-              <h2 className="text-base sm:text-lg font-bold leading-relaxed">
+              <h2 className="text-base sm:text-lg font-bold leading-relaxed text-white">
                 {questions[index]!.question}
               </h2>
 
-              {/* Options */}
               <div className="space-y-3">
                 {questions[index]!.options.map((opt, optIdx) => {
                   const isSelected = selectedOptions[index] === optIdx;
@@ -287,15 +264,15 @@ function AssessmentPage() {
                       key={optIdx}
                       type="button"
                       onClick={() => handleSelectOption(index, optIdx)}
-                      className={`w-full rounded-xl border p-4 text-left text-xs sm:text-sm font-medium transition-all ${
+                      className={`w-full rounded-xl border p-4 text-left text-xs sm:text-sm font-medium transition-all min-h-[52px] ${
                         isSelected
-                          ? "border-primary bg-primary/10 text-foreground ring-1 ring-primary"
-                          : "border-border bg-background/50 hover:border-border/80 text-muted-foreground"
+                          ? "border-primary bg-primary/20 text-white ring-1 ring-primary shadow-glow"
+                          : "border-white/10 bg-black/20 hover:border-white/30 text-slate-300"
                       }`}
                     >
                       <div className="flex items-start gap-3">
                         <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-lg border font-mono text-xs font-bold ${
-                          isSelected ? "border-primary bg-primary text-primary-foreground" : "border-border"
+                          isSelected ? "border-primary bg-primary text-white" : "border-white/20 text-slate-400"
                         }`}>
                           {String.fromCharCode(65 + optIdx)}
                         </span>
@@ -311,6 +288,7 @@ function AssessmentPage() {
                   size="lg"
                   disabled={selectedOptions[index] === undefined}
                   onClick={handleNextQuestion}
+                  className="w-full sm:w-auto bg-primary hover:bg-primary/90 font-bold shadow-glow min-h-[44px]"
                 >
                   {index < questions.length - 1 ? (
                     <>
@@ -330,18 +308,17 @@ function AssessmentPage() {
         {/* STEP 3: UNDERSTANDING MAP & RESULTS */}
         {step === "results" && (
           <div className="space-y-6">
-            <div className="rounded-2xl border border-border bg-card p-6 card-shadow sm:p-8 space-y-6">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-border pb-5">
+            <div className="glass-card p-6 sm:p-8 space-y-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-5">
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-primary">Diagnostic Analysis Complete</span>
-                  <h1 className="text-2xl font-bold tracking-tight mt-1">{conceptInput} Understanding Map</h1>
+                  <h1 className="text-2xl font-bold tracking-tight text-white mt-1">{conceptInput} Understanding Map</h1>
                 </div>
-                <Button size="sm" variant="outline" onClick={handleReset}>
+                <Button size="sm" variant="outline" onClick={handleReset} className="border-white/20 bg-white/5 hover:bg-white/10 min-h-[40px]">
                   <RotateCcw className="mr-1.5 size-3.5" /> Re-Check Concept
                 </Button>
               </div>
 
-              {/* Centralized Score Output */}
               {(() => {
                 const directEval = evaluations.find((e) => e.dimension === "direct");
                 const explainEval = evaluations.find((e) => e.dimension === "explain");
@@ -358,70 +335,56 @@ function AssessmentPage() {
 
                 return (
                   <div className="space-y-6">
-                    {/* Score Cards */}
-                    <div className="grid gap-4 sm:grid-cols-3">
-                      <div className="rounded-xl border border-border bg-background/60 p-4 text-center space-y-1">
-                        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Self-Reported Confidence</span>
-                        <p className="font-mono text-3xl font-bold text-foreground">{confidenceInput}%</p>
+                    <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
+                      <div className="rounded-xl border border-white/10 bg-black/40 p-4 text-center space-y-1">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Self-Reported Confidence</span>
+                        <p className="font-mono text-3xl font-bold text-white">{confidenceInput}%</p>
                       </div>
 
-                      <div className="rounded-xl border border-border bg-background/60 p-4 text-center space-y-1">
-                        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">ECHO Stability Score</span>
+                      <div className="rounded-xl border border-primary/40 bg-primary/10 p-4 text-center space-y-1">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-300">ECHO Stability Score</span>
                         <p className="font-mono text-3xl font-extrabold text-primary">{stScore}%</p>
-                        <span className="text-[11px] font-semibold text-primary block">{band.label}</span>
+                        <span className="text-[11px] font-bold text-primary block">{band.label}</span>
                       </div>
 
-                      <div className="rounded-xl border border-border bg-background/60 p-4 text-center space-y-1">
-                        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Confidence Gap</span>
+                      <div className="rounded-xl border border-white/10 bg-black/40 p-4 text-center space-y-1">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Confidence Gap</span>
                         <p className={`font-mono text-3xl font-extrabold ${gap > 0 ? "text-destructive" : "text-success"}`}>
                           {gap > 0 ? `+${gap}%` : `${gap}%`}
                         </p>
-                        <span className="text-[11px] text-muted-foreground block">{gap > 0 ? "Overconfident" : "Calibrated"}</span>
+                        <span className="text-[11px] text-slate-400 block">{gap > 0 ? "Overconfident" : "Calibrated"}</span>
                       </div>
                     </div>
 
-                    {/* Confident But Fragile Warning Callout */}
                     {isTrap && (
                       <div className="rounded-2xl border border-warning/50 bg-warning/10 p-5 space-y-2">
                         <div className="flex items-center gap-2 text-warning font-bold text-sm uppercase tracking-wider">
                           <ShieldAlert className="size-5 shrink-0" />
                           <span>Confident but Fragile Warning</span>
                         </div>
-                        <p className="text-xs leading-relaxed text-foreground">
+                        <p className="text-xs leading-relaxed text-slate-200">
                           You felt <strong>{confidenceInput}% confident</strong> in {conceptInput}, but verified evidence stability is <strong>{stScore}% ({band.label})</strong>. ECHO recommends targeted repair.
                         </p>
                       </div>
                     )}
 
-                    {/* Understanding Map Dimension Breakdown */}
                     <div className="space-y-3">
-                      <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">3-Dimension Understanding Map</h2>
-                      <div className="grid gap-3 sm:grid-cols-3">
+                      <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">3-Dimension Understanding Map</h2>
+                      <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
                         {evaluations.map((ev) => (
-                          <div key={ev.dimension} className="rounded-xl border border-border bg-background/50 p-4 space-y-2">
+                          <div key={ev.dimension} className="rounded-xl border border-white/10 bg-black/30 p-4 space-y-2">
                             <div className="flex items-center justify-between">
                               <span className="text-xs font-bold uppercase text-primary">{ev.dimension}</span>
-                              <span className="font-mono text-base font-bold">{ev.score}/100</span>
+                              <span className="font-mono text-base font-bold text-white">{ev.score}/100</span>
                             </div>
-                            <p className="text-xs text-muted-foreground leading-relaxed">{ev.reasoning}</p>
+                            <p className="text-xs text-slate-300 leading-relaxed">{ev.reasoning}</p>
                           </div>
                         ))}
                       </div>
                     </div>
 
-                    {/* Diagnosed Weak Areas */}
-                    <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-2">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-primary">Identified Weak Areas & Recommended Repair</span>
-                      <p className="text-xs text-foreground leading-relaxed font-medium">
-                        {gapDiagnosisText || `Focus on strengthening your reasoning in the ${
-                          eScore <= dScore && eScore <= tScore ? "Explain (under-the-hood)" : "Transfer (unfamiliar scenario)"
-                        } dimension before tomorrow's class.`}
-                      </p>
-                    </div>
-
-                    {/* Action button */}
                     <div className="pt-2 flex flex-col sm:flex-row items-center justify-end gap-3">
-                      <Button asChild size="lg" className="w-full sm:w-auto">
+                      <Button asChild size="lg" className="w-full sm:w-auto bg-primary hover:bg-primary/90 font-bold shadow-glow min-h-[48px]">
                         <Link to="/study-plan">View Personalized Study Plan <ArrowRight className="ml-1.5 size-4" /></Link>
                       </Button>
                     </div>

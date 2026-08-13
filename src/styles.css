@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * ECHO design system — Uploaded Gradient Aesthetics
+ * ECHO design system — Uploaded Gradient Aesthetics & Responsive Mobile-First Foundation
  * Asset 1 (Dark Navy to Royal Blue): Dark Navy #020721 -> Deep Royal #061959 -> Electric Blue #0047ff (Used for Study Plan, Hero, Assessment)
  * Asset 2 (Light Sky Blue to White): Electric Royal #0047ff -> Sky Blue #3e7bfa -> Ice Sky #93c5fd -> Soft White #e2ecff (Used for Dashboard & Timetable)
  */
@@ -203,4 +203,10 @@
   backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(0, 71, 255, 0.15);
   color: #020721;
+}
+
+/* Mobile Touch & Navigation Utilities */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
 }

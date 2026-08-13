@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Calendar, Plus, Trash2, ArrowRight, Clock, Settings, Sparkles } from "lucide-react";
-import { EchoLogo, HeaderNav } from "@/routes/index";
+import { EchoNavbar } from "@/components/EchoNavbar";
 import { ThemeSelect } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,25 +39,13 @@ function TimetablePage() {
   const latestClass = timetable[0];
 
   return (
-    <div className="min-h-screen bg-gradient-royal-ice-page selection:bg-primary/30 pb-20">
-      {/* Header with light glass styling */}
-      <header className="sticky top-0 z-40 glass-header-light">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <EchoLogo />
-          <HeaderNav />
-          <div className="flex items-center gap-3">
-            <ThemeSelect />
-            <Link to="/settings" className="p-2 text-slate-700 hover:text-primary transition-colors" title="API Settings">
-              <Settings className="size-4" />
-            </Link>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-royal-ice-page selection:bg-primary/30 pb-28 md:pb-20">
+      <EchoNavbar variant="light" />
 
-      <main className="mx-auto max-w-3xl px-6 pt-10 space-y-8">
+      <main className="mx-auto max-w-3xl px-4 sm:px-6 pt-6 sm:pt-10 space-y-8">
         <div>
           <span className="text-xs font-extrabold uppercase tracking-wider text-primary">Post-Class Starting Point</span>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 mt-1">Tomorrow's Class Schedule</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 mt-1">Tomorrow's Class Schedule</h1>
           <p className="text-xs sm:text-sm text-slate-700 font-medium mt-1">
             Enter tomorrow's scheduled classes to enable post-class reflection check-ins and tomorrow-aware study prioritization.
           </p>
@@ -69,13 +57,13 @@ function TimetablePage() {
             <span className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
               <Sparkles className="size-4" /> Post-Class ECHO Prompt
             </span>
-            <h2 className="text-lg font-bold text-slate-900">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 leading-snug">
               You just finished <span className="text-primary">{latestClass.subject} — {latestClass.topic}</span>.
             </h2>
             <p className="text-xs text-slate-700 font-medium">How much did you actually understand today? Take 10 seconds to reflect.</p>
 
             <div className="pt-1">
-              <Button asChild size="sm" className="bg-primary hover:bg-primary/90 text-white font-bold shadow-glow">
+              <Button asChild size="sm" className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white font-bold shadow-glow min-h-[44px]">
                 <Link to="/reflection" search={{ concept: latestClass.topic }}>
                   Reflect on {latestClass.topic} <ArrowRight className="ml-1.5 size-3.5" />
                 </Link>
@@ -90,14 +78,14 @@ function TimetablePage() {
             <Plus className="size-4 text-primary" /> Add Scheduled Class for Tomorrow
           </h2>
 
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
             <div>
               <label className="text-[11px] font-bold uppercase tracking-wider text-slate-700">Time</label>
               <Input
                 placeholder="e.g. 9:00 AM"
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
-                className="mt-1 bg-white border-slate-300 text-xs text-slate-900"
+                className="mt-1 bg-white border-slate-300 text-xs text-slate-900 min-h-[44px]"
               />
             </div>
             <div>
@@ -107,7 +95,7 @@ function TimetablePage() {
                 placeholder="e.g. Data Structures"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                className="mt-1 bg-white border-slate-300 text-xs text-slate-900"
+                className="mt-1 bg-white border-slate-300 text-xs text-slate-900 min-h-[44px]"
               />
             </div>
             <div>
@@ -117,12 +105,12 @@ function TimetablePage() {
                 placeholder="e.g. Binary Search"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
-                className="mt-1 bg-white border-slate-300 text-xs text-slate-900"
+                className="mt-1 bg-white border-slate-300 text-xs text-slate-900 min-h-[44px]"
               />
             </div>
           </div>
 
-          <Button type="submit" size="sm" className="bg-primary hover:bg-primary/90 text-white font-bold shadow-glow w-full sm:w-auto">
+          <Button type="submit" size="sm" className="bg-primary hover:bg-primary/90 text-white font-bold shadow-glow w-full sm:w-auto min-h-[44px]">
             Add to Schedule
           </Button>
         </form>
@@ -138,7 +126,7 @@ function TimetablePage() {
           ) : (
             <div className="space-y-3">
               {timetable.map((t) => (
-                <div key={t.id} className="glass-card-light glass-card-light-hover p-4 flex items-center justify-between gap-4">
+                <div key={t.id} className="glass-card-light glass-card-light-hover p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 border border-primary/30 text-primary">
                       <Clock className="size-4" />
@@ -150,13 +138,13 @@ function TimetablePage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <Button asChild size="sm" variant="outline" className="text-xs border-slate-300 bg-white hover:bg-slate-50 text-slate-900">
+                  <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 pt-2 sm:pt-0">
+                    <Button asChild size="sm" variant="outline" className="text-xs border-slate-300 bg-white hover:bg-slate-50 text-slate-900 min-h-[40px]">
                       <Link to="/reflection" search={{ concept: t.topic }}>Reflect <ArrowRight className="ml-1 size-3" /></Link>
                     </Button>
                     <button
                       onClick={() => deleteTimetableEntry(t.id)}
-                      className="p-2 text-slate-500 hover:text-rose-600 transition-colors"
+                      className="p-2.5 text-slate-500 hover:text-rose-600 transition-colors rounded-xl border border-slate-200 min-h-[44px] min-w-[44px] flex items-center justify-center"
                       title="Delete class"
                     >
                       <Trash2 className="size-4" />

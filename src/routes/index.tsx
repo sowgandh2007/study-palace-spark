@@ -21,34 +21,13 @@ import { ThemeSelect } from "@/lib/theme";
 import { FRAMEWORK_DIMENSIONS } from "@/lib/echo/types";
 import { BANDS } from "@/lib/echo/scoring";
 import { FoldText } from "@/components/ui/FoldText";
+import { EchoNavbar, EchoLogo } from "@/components/EchoNavbar";
+
+export { EchoLogo };
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
 });
-
-export function EchoLogo() {
-  return (
-    <Link to="/" className="flex items-center gap-2.5 font-bold text-foreground group">
-      <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary/20 border border-primary/40 text-primary shadow-glow group-hover:scale-105 transition-transform">
-        <BrainCircuit className="h-5 w-5" />
-      </div>
-      <span className="tracking-tight text-lg font-extrabold font-mono bg-gradient-to-r from-white via-blue-100 to-primary bg-clip-text text-transparent">
-        ECHO
-      </span>
-    </Link>
-  );
-}
-
-export function HeaderNav() {
-  return (
-    <nav className="hidden md:flex items-center gap-6 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-      <Link to="/timetable" className="hover:text-foreground transition-colors">TIMETABLE</Link>
-      <Link to="/dashboard" className="hover:text-foreground transition-colors">DASHBOARD</Link>
-      <Link to="/study-plan" className="hover:text-foreground transition-colors">STUDY PLAN</Link>
-      <Link to="/faculty" className="hover:text-foreground transition-colors">FACULTY</Link>
-    </nav>
-  );
-}
 
 const FIVE_STEP_LOOP = [
   { step: "01", name: "Learn", detail: "Attend class or engage with study material from your timetable." },
@@ -60,31 +39,17 @@ const FIVE_STEP_LOOP = [
 
 function LandingPage() {
   return (
-    <div className="min-h-screen text-foreground selection:bg-primary/30">
-      {/* Header */}
-      <header className="sticky top-0 z-40 glass-header">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <EchoLogo />
-          <HeaderNav />
-          <div className="flex items-center gap-3">
-            <ThemeSelect />
-            <Link to="/settings" className="p-2 text-muted-foreground hover:text-foreground transition-colors" title="API Settings">
-              <Settings className="size-4" />
-            </Link>
-            <Button asChild size="sm" variant="outline" className="border-white/20 bg-white/5 hover:bg-white/10">
-              <Link to="/login">Sign In</Link>
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen text-foreground selection:bg-primary/30 pb-28 md:pb-20">
+      {/* Responsive Unified Navbar */}
+      <EchoNavbar variant="dark" />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden px-6 pt-20 pb-24 md:pt-32 md:pb-36 text-center">
+      <section className="relative overflow-hidden px-4 sm:px-6 pt-16 sm:pt-20 pb-20 sm:pb-24 md:pt-28 md:pb-32 text-center">
         {/* Subtle Ambient Radial Glow */}
-        <div className="pointer-events-none absolute left-1/2 top-1/4 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-primary/20 blur-[120px]" />
+        <div className="pointer-events-none absolute left-1/2 top-1/4 -translate-x-1/2 -translate-y-1/2 h-[400px] sm:h-[500px] w-[400px] sm:w-[500px] rounded-full bg-primary/20 blur-[120px]" />
 
-        <div className="relative z-10 mx-auto max-w-5xl space-y-8">
-          <Badge variant="outline" className="border-primary/50 bg-primary/10 text-primary px-4 py-1.5 text-xs font-bold tracking-wide shadow-glow">
+        <div className="relative z-10 mx-auto max-w-5xl space-y-6 sm:space-y-8">
+          <Badge variant="outline" className="border-primary/50 bg-primary/10 text-primary px-3 sm:px-4 py-1.5 text-[11px] sm:text-xs font-bold tracking-wide shadow-glow">
             <Sparkles className="mr-2 size-3.5" /> Evidence-Based Conceptual Honesty Engine
           </Badge>
 
@@ -100,7 +65,7 @@ function LandingPage() {
               ease="power3.out"
               perspective={700}
               creaseShading={0.55}
-              fontSize="clamp(2.2rem, 5.5vw, 4.5rem)"
+              fontSize="clamp(2rem, 5.5vw, 4.5rem)"
               fontWeight={800}
               color="#ffffff"
             />
@@ -114,23 +79,23 @@ function LandingPage() {
               ease="power3.out"
               perspective={700}
               creaseShading={0.55}
-              fontSize="clamp(2.2rem, 5.5vw, 4.5rem)"
+              fontSize="clamp(2rem, 5.5vw, 4.5rem)"
               fontWeight={800}
               color="#38bdf8"
             />
           </div>
 
-          <p className="mx-auto max-w-2xl text-sm sm:text-base leading-relaxed text-slate-300">
+          <p className="mx-auto max-w-2xl text-xs sm:text-base leading-relaxed text-slate-300">
             ECHO verifies whether a student's understanding of a concept is real, not just memorized or lucky. It probes whether your reasoning survives under structural variation, hidden assumptions, and unfamiliar transfer problems.
           </p>
 
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button asChild size="lg" className="w-full sm:w-auto px-8 font-bold bg-primary hover:bg-primary/90 shadow-glow text-base">
+            <Button asChild size="lg" className="w-full sm:w-auto px-8 font-bold bg-primary hover:bg-primary/90 shadow-glow text-base min-h-[48px]">
               <Link to="/reflection">
                 Check My Understanding <ArrowRight className="ml-2 size-5" />
               </Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="w-full sm:w-auto px-8 border-white/20 bg-white/5 hover:bg-white/10 text-base">
+            <Button asChild size="lg" variant="outline" className="w-full sm:w-auto px-8 border-white/20 bg-white/5 hover:bg-white/10 text-base min-h-[48px]">
               <Link to="/assessment" search={{ concept: "binary-search", demo: "true" }}>
                 <Zap className="mr-2 size-4 text-warning" /> Try a Binary Search Probe
               </Link>
@@ -140,17 +105,17 @@ function LandingPage() {
       </section>
 
       {/* 5-Step ECHO Workflow Loop Section */}
-      <section className="border-t border-white/10 bg-black/20 backdrop-blur-md py-20 px-6">
-        <div className="mx-auto max-w-6xl space-y-12">
-          <div className="text-center space-y-3">
+      <section className="border-t border-white/10 bg-black/20 backdrop-blur-md py-16 sm:py-20 px-4 sm:px-6">
+        <div className="mx-auto max-w-6xl space-y-10 sm:space-y-12">
+          <div className="text-center space-y-2 sm:space-y-3">
             <span className="text-xs font-bold uppercase tracking-widest text-primary">Continuous Verification Protocol</span>
-            <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl text-white">The Five-Step ECHO Workflow</h2>
+            <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white">The Five-Step ECHO Workflow</h2>
             <p className="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto">
               How students build verifiable, bulletproof conceptual understanding every single day.
             </p>
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-5">
+          <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
             {FIVE_STEP_LOOP.map((item) => (
               <div key={item.step} className="glass-card glass-card-hover p-6 space-y-3 flex flex-col justify-between">
                 <div>
@@ -165,17 +130,17 @@ function LandingPage() {
       </section>
 
       {/* 6-Dimension Framework Section */}
-      <section className="border-t border-white/10 py-20 px-6">
-        <div className="mx-auto max-w-6xl space-y-12">
-          <div className="text-center space-y-3">
+      <section className="border-t border-white/10 py-16 sm:py-20 px-4 sm:px-6">
+        <div className="mx-auto max-w-6xl space-y-10 sm:space-y-12">
+          <div className="text-center space-y-2 sm:space-y-3">
             <span className="text-xs font-bold uppercase tracking-widest text-primary">Diagnostic Architecture</span>
-            <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl text-white">The Six-Dimension Framework</h2>
+            <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white">The Six-Dimension Framework</h2>
             <p className="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto">
               ECHO probes understanding across 6 rigorous dimensions (currently evaluating 3 core probe dimensions in active assessments).
             </p>
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3">
+          <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
             {FRAMEWORK_DIMENSIONS.map((dim) => (
               <div key={dim.id} className="glass-card glass-card-hover p-6 space-y-3">
                 <div className="flex items-center justify-between">
@@ -194,17 +159,17 @@ function LandingPage() {
       </section>
 
       {/* Stability Score Bands Section */}
-      <section className="border-t border-white/10 bg-black/20 backdrop-blur-md py-20 px-6">
-        <div className="mx-auto max-w-6xl space-y-12">
-          <div className="text-center space-y-3">
+      <section className="border-t border-white/10 bg-black/20 backdrop-blur-md py-16 sm:py-20 px-4 sm:px-6">
+        <div className="mx-auto max-w-6xl space-y-10 sm:space-y-12">
+          <div className="text-center space-y-2 sm:space-y-3">
             <span className="text-xs font-bold uppercase tracking-widest text-primary">Scoring Engine</span>
-            <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl text-white">Understanding Stability Score Bands</h2>
+            <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white">Understanding Stability Score Bands</h2>
             <p className="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto">
               Single centralized score bands based strictly on weighted performance: round(Direct × 20% + Explain × 40% + Transfer × 40%).
             </p>
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             {BANDS.map((band) => (
               <div key={band.id} className="glass-card glass-card-hover p-6 space-y-3">
                 <div className="flex items-center justify-between">
@@ -217,7 +182,7 @@ function LandingPage() {
           </div>
 
           <div className="pt-6 text-center">
-            <Button asChild size="lg" className="px-10 font-bold bg-primary hover:bg-primary/90 shadow-glow text-base">
+            <Button asChild size="lg" className="px-10 font-bold bg-primary hover:bg-primary/90 shadow-glow text-base min-h-[48px]">
               <Link to="/reflection">Check My Understanding <ArrowRight className="ml-2 size-5" /></Link>
             </Button>
           </div>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { ArrowRight, CheckCircle2, Clock, Sparkles, BookOpen } from "lucide-react";
-import { EchoLogo } from "@/routes/index";
+import { EchoNavbar } from "@/components/EchoNavbar";
 import { ThemeSelect } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -58,18 +58,13 @@ function RepairPage() {
   const stepItem = REPAIR_STEPS[currentStep]!;
 
   return (
-    <div className="min-h-screen text-foreground selection:bg-primary/30 pb-20">
-      <header className="sticky top-0 z-40 glass-header">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
-          <EchoLogo />
-          <ThemeSelect />
-        </div>
-      </header>
+    <div className="min-h-screen text-foreground selection:bg-primary/30 pb-28 md:pb-20">
+      <EchoNavbar variant="dark" />
 
-      <main className="mx-auto max-w-3xl px-6 pt-10 space-y-6">
+      <main className="mx-auto max-w-3xl px-4 sm:px-6 pt-6 sm:pt-10 space-y-6">
         <div>
           <span className="text-xs font-bold uppercase tracking-wider text-primary">Targeted Gap Repair</span>
-          <h1 className="text-3xl font-extrabold tracking-tight text-white mt-1">{conceptName} Repair Activity</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mt-1">{conceptName} Repair Activity</h1>
           <p className="text-xs sm:text-sm text-slate-300 mt-1">15-minute step-by-step exercise targeting your diagnosed conceptual gap.</p>
         </div>
 
@@ -116,7 +111,7 @@ function RepairPage() {
           )}
 
           <div className="pt-4 flex justify-end">
-            <Button size="lg" onClick={handleNextStep} className="bg-primary hover:bg-primary/90 font-bold shadow-glow">
+            <Button size="lg" onClick={handleNextStep} className="w-full sm:w-auto bg-primary hover:bg-primary/90 font-bold shadow-glow min-h-[48px]">
               {currentStep < REPAIR_STEPS.length - 1 ? (
                 <>
                   Continue to Step {currentStep + 2} <ArrowRight className="ml-1.5 size-4" />

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Save, CheckCircle2, AlertTriangle, Loader2, Activity, RefreshCw } from "lucide-react";
-import { EchoLogo, HeaderNav } from "@/routes/index";
+import { EchoNavbar } from "@/components/EchoNavbar";
 import { ThemeSelect } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,21 +63,13 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen text-foreground selection:bg-primary/30 pb-20">
-      <header className="sticky top-0 z-40 glass-header">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <EchoLogo />
-          <HeaderNav />
-          <div className="flex items-center gap-3">
-            <ThemeSelect />
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen text-foreground selection:bg-primary/30 pb-28 md:pb-20">
+      <EchoNavbar variant="dark" />
 
-      <main className="mx-auto max-w-3xl px-6 pt-10 space-y-6">
+      <main className="mx-auto max-w-3xl px-4 sm:px-6 pt-6 sm:pt-10 space-y-6">
         <div>
           <span className="text-xs font-bold uppercase tracking-wider text-primary">System Configuration</span>
-          <h1 className="text-3xl font-extrabold tracking-tight text-white mt-1">AI API Settings</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mt-1">AI API Settings</h1>
           <p className="text-xs sm:text-sm text-slate-300 mt-1">
             Configure your AI provider keys or choose the Built-in ECHO Engine (Offline Mode) for diagnostic checks and study plan recommendations.
           </p>
@@ -89,7 +81,7 @@ export function SettingsPage() {
             <label className="text-xs font-bold uppercase tracking-wider text-slate-400">
               Select Active AI Provider Mode
             </label>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
               {(
                 [
                   { id: "gemini", name: "Google Gemini", badge: "Live API" },
@@ -102,7 +94,7 @@ export function SettingsPage() {
                   type="button"
                   key={p.id}
                   onClick={() => setConfig({ ...config, activeProvider: p.id })}
-                  className={`flex items-center justify-between rounded-xl border p-4 text-left transition-all ${
+                  className={`flex items-center justify-between rounded-xl border p-4 text-left transition-all min-h-[52px] ${
                     config.activeProvider === p.id
                       ? "border-primary bg-primary/20 text-white shadow-glow"
                       : "border-white/10 bg-black/20 hover:border-white/30 text-slate-400"
@@ -152,7 +144,7 @@ export function SettingsPage() {
                   placeholder="AIzaSy..."
                   value={config.geminiApiKey}
                   onChange={(e) => setConfig({ ...config, geminiApiKey: e.target.value })}
-                  className="mt-1 bg-black/50 border-white/10 font-mono text-xs text-white"
+                  className="mt-1 bg-black/50 border-white/10 font-mono text-xs text-white min-h-[44px]"
                 />
               </div>
               <div>
@@ -160,7 +152,7 @@ export function SettingsPage() {
                 <select
                   value={config.geminiModel || "gemini-1.5-flash"}
                   onChange={(e) => setConfig({ ...config, geminiModel: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-black/50 px-3 py-2 text-xs font-mono font-medium text-white focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-black/50 px-3 py-2 text-xs font-mono font-medium text-white focus:outline-none focus:ring-1 focus:ring-primary min-h-[44px]"
                 >
                   <option value="gemini-1.5-flash">gemini-1.5-flash (Fast & Recommended)</option>
                   <option value="gemini-1.5-pro">gemini-1.5-pro (Deep Reasoning)</option>
@@ -173,89 +165,6 @@ export function SettingsPage() {
                       </option>
                     ))}
                 </select>
-              </div>
-            </div>
-          )}
-
-          {/* OpenAI Settings */}
-          {config.activeProvider === "openai" && (
-            <div className="rounded-xl border border-white/10 bg-black/40 p-5 space-y-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-primary">OpenAI Settings</h3>
-              <div>
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">OpenAI API Key</label>
-                <Input
-                  type="password"
-                  placeholder="sk-proj-..."
-                  value={config.openaiApiKey}
-                  onChange={(e) => setConfig({ ...config, openaiApiKey: e.target.value })}
-                  className="mt-1 bg-black/50 border-white/10 font-mono text-xs text-white"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Model Selection</label>
-                <select
-                  value={config.openaiModel || "gpt-4o-mini"}
-                  onChange={(e) => setConfig({ ...config, openaiModel: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-black/50 px-3 py-2 text-xs font-mono font-medium text-white focus:outline-none focus:ring-1 focus:ring-primary"
-                >
-                  <option value="gpt-4o-mini">gpt-4o-mini (Fast & Recommended)</option>
-                  <option value="gpt-4o">gpt-4o (High Intelligence)</option>
-                </select>
-              </div>
-            </div>
-          )}
-
-          {/* Anthropic Settings */}
-          {config.activeProvider === "anthropic" && (
-            <div className="rounded-xl border border-white/10 bg-black/40 p-5 space-y-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-primary">Anthropic Claude Settings</h3>
-              <div>
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Anthropic API Key</label>
-                <Input
-                  type="password"
-                  placeholder="sk-ant-..."
-                  value={config.anthropicApiKey}
-                  onChange={(e) => setConfig({ ...config, anthropicApiKey: e.target.value })}
-                  className="mt-1 bg-black/50 border-white/10 font-mono text-xs text-white"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Model Selection</label>
-                <select
-                  value={config.anthropicModel || "claude-3-5-sonnet-20240620"}
-                  onChange={(e) => setConfig({ ...config, anthropicModel: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-black/50 px-3 py-2 text-xs font-mono font-medium text-white focus:outline-none focus:ring-1 focus:ring-primary"
-                >
-                  <option value="claude-3-5-sonnet-20240620">claude-3-5-sonnet-20240620 (Recommended)</option>
-                  <option value="claude-3-haiku-20240307">claude-3-haiku-20240307 (Fast)</option>
-                </select>
-              </div>
-            </div>
-          )}
-
-          {/* Custom Endpoint Settings */}
-          {config.activeProvider === "custom" && (
-            <div className="rounded-xl border border-white/10 bg-black/40 p-5 space-y-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-primary">Custom LLM Endpoint</h3>
-              <div>
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Endpoint URL</label>
-                <Input
-                  type="text"
-                  placeholder="https://api.openai.com/v1/chat/completions"
-                  value={config.customEndpoint}
-                  onChange={(e) => setConfig({ ...config, customEndpoint: e.target.value })}
-                  className="mt-1 bg-black/50 border-white/10 font-mono text-xs text-white"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Model Name</label>
-                <Input
-                  type="text"
-                  placeholder="gpt-4o-mini"
-                  value={config.customModel}
-                  onChange={(e) => setConfig({ ...config, customModel: e.target.value })}
-                  className="mt-1 bg-black/50 border-white/10 font-mono text-xs text-white"
-                />
               </div>
             </div>
           )}
@@ -279,7 +188,7 @@ export function SettingsPage() {
 
           {/* Action Buttons */}
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <Button type="button" variant="outline" onClick={handleTestConnection} disabled={testing} className="border-white/20 bg-white/5 hover:bg-white/10 w-full sm:w-auto">
+            <Button type="button" variant="outline" onClick={handleTestConnection} disabled={testing} className="border-white/20 bg-white/5 hover:bg-white/10 w-full sm:w-auto min-h-[44px]">
               {testing ? (
                 <>
                   <Loader2 className="mr-2 size-4 animate-spin" /> Testing Connection...
@@ -291,7 +200,7 @@ export function SettingsPage() {
               )}
             </Button>
 
-            <Button type="submit" size="lg" className="bg-primary hover:bg-primary/90 font-bold shadow-glow w-full sm:w-auto">
+            <Button type="submit" size="lg" className="bg-primary hover:bg-primary/90 font-bold shadow-glow w-full sm:w-auto min-h-[44px]">
               <Save className="mr-2 size-4" /> Save Configuration
             </Button>
           </div>
