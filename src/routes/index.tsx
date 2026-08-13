@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { ThemeSelect } from "@/lib/theme";
 import { FRAMEWORK_DIMENSIONS } from "@/lib/echo/types";
 import { BANDS } from "@/lib/echo/scoring";
+import { FoldText } from "@/components/ui/FoldText";
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
@@ -82,17 +83,42 @@ function LandingPage() {
         {/* Subtle Ambient Radial Glow */}
         <div className="pointer-events-none absolute left-1/2 top-1/4 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-primary/20 blur-[120px]" />
 
-        <div className="relative z-10 mx-auto max-w-4xl space-y-8">
+        <div className="relative z-10 mx-auto max-w-5xl space-y-8">
           <Badge variant="outline" className="border-primary/50 bg-primary/10 text-primary px-4 py-1.5 text-xs font-bold tracking-wide shadow-glow">
             <Sparkles className="mr-2 size-3.5" /> Evidence-Based Conceptual Honesty Engine
           </Badge>
 
-          <h1 className="text-4xl font-extrabold tracking-tight sm:text-6xl md:text-7xl leading-[1.08] text-white">
-            The Answer Is Correct. <br className="hidden sm:inline" />
-            <span className="bg-gradient-to-r from-blue-200 via-sky-300 to-primary bg-clip-text text-transparent">
-              But Is the Understanding Real?
-            </span>
-          </h1>
+          {/* Headline featuring React Bits <FoldText /> unfolding animation */}
+          <div className="flex flex-col items-center justify-center space-y-2">
+            <FoldText
+              text="The Answer Is Correct."
+              splitBy="char"
+              hinge="top"
+              trigger="mount"
+              duration={0.65}
+              stagger={0.035}
+              ease="power3.out"
+              perspective={700}
+              creaseShading={0.55}
+              fontSize="clamp(2.2rem, 5.5vw, 4.5rem)"
+              fontWeight={800}
+              color="#ffffff"
+            />
+            <FoldText
+              text="But Is the Understanding Real?"
+              splitBy="char"
+              hinge="top"
+              trigger="mount"
+              duration={0.75}
+              stagger={0.03}
+              ease="power3.out"
+              perspective={700}
+              creaseShading={0.55}
+              fontSize="clamp(2.2rem, 5.5vw, 4.5rem)"
+              fontWeight={800}
+              color="#38bdf8"
+            />
+          </div>
 
           <p className="mx-auto max-w-2xl text-sm sm:text-base leading-relaxed text-slate-300">
             ECHO verifies whether a student's understanding of a concept is real, not just memorized or lucky. It probes whether your reasoning survives under structural variation, hidden assumptions, and unfamiliar transfer problems.
