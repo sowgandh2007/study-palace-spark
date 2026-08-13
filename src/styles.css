@@ -5,9 +5,9 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * ECHO design system — Mobile Light Sky Blue & White Gradient Aesthetics
- * Mobile (< 768px): Light Sky Blue & White gradient background (#0047ff -> #3e7bfa -> #93c5fd -> #e0f2fe -> #f8fafc)
- * Desktop (>= 768px): Deep Midnight Navy to Royal Blue gradient
+ * ECHO design system — Uploaded Gradient Aesthetics & Responsive Mobile-First Foundation
+ * Asset 1 (Dark Navy to Royal Blue): Dark Navy #020721 -> Deep Royal #061959 -> Electric Blue #0047ff (Used for Study Plan, Hero, Assessment)
+ * Asset 2 (Light Sky Blue to White): Electric Royal #0047ff -> Sky Blue #3e7bfa -> Ice Sky #93c5fd -> Soft White #e2ecff (Used for Dashboard & Timetable)
  */
 
 @theme inline {
@@ -46,15 +46,17 @@
 :root {
   --radius: 1rem;
 
-  /* Base background */
+  /* Base background: Deep Midnight Navy (from Uploaded Gradient Asset 1) */
   --background: #020721;
   --foreground: #f0f6ff;
 
+  /* Translucent card surface over gradients */
   --card: rgba(8, 18, 54, 0.65);
   --card-foreground: #f0f6ff;
   --popover: rgba(8, 18, 54, 0.9);
   --popover-foreground: #f0f6ff;
 
+  /* Primary accent: Electric Royal Blue (from Uploaded Gradient Assets) */
   --primary: #0052ff;
   --primary-foreground: #ffffff;
 
@@ -70,18 +72,21 @@
   --accent: rgba(0, 82, 255, 0.18);
   --accent-foreground: #60a5fa;
 
-  --destructive: #ef4444;
+  /* Diagnostic Stability Status Colors */
+  --destructive: #ef4444; /* 0-39 Surface Knowledge (Red) */
   --destructive-foreground: #ffffff;
-  --warning: #d97706;
-  --info: #2563eb;
-  --success: #059669;
+
+  --warning: #d97706; /* 40-59 Fragile Understanding (Orange) */
+  --info: #2563eb; /* 60-79 Developing Understanding (Blue) */
+  --success: #059669; /* 80-100 Stable Understanding (Green) */
 
   --border: rgba(255, 255, 255, 0.12);
   --input: rgba(255, 255, 255, 0.12);
   --ring: #0052ff;
 
+  /* Uploaded Gradient Assets definitions */
   --gradient-dark-navy: linear-gradient(180deg, #020721 0%, #061959 50%, #0047ff 100%);
-  --gradient-royal-ice: linear-gradient(180deg, #0047ff 0%, #3e7bfa 30%, #93c5fd 60%, #e0f2fe 85%, #f8fafc 100%);
+  --gradient-royal-ice: linear-gradient(180deg, #0047ff 0%, #3e7bfa 35%, #93c5fd 70%, #e2ecff 100%);
   --gradient-hero: linear-gradient(180deg, #020721 0%, #051447 35%, #0047ff 80%, #020721 100%);
   --gradient-brand: linear-gradient(135deg, #0052ff 0%, #38bdf8 100%);
   --gradient-fire: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
@@ -122,16 +127,8 @@
   body {
     font-family: var(--font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
     -webkit-font-smoothing: antialiased;
-    /* Mobile (<768px): Light Sky Blue & White Gradient */
-    background-image: var(--gradient-royal-ice);
+    background-image: var(--gradient-dark-navy);
     background-attachment: fixed;
-    color: #020721;
-  }
-  @media (min-width: 768px) {
-    body {
-      background-image: var(--gradient-dark-navy);
-      color: #f0f6ff;
-    }
   }
   h1, h2, h3, h4, h5, h6 {
     letter-spacing: -0.025em;
@@ -154,21 +151,11 @@
 
 /* Translucent Dark Glass Card */
 .glass-card {
-  background: rgba(255, 255, 255, 0.90);
+  background: rgba(8, 18, 54, 0.65);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(0, 71, 255, 0.18);
-  box-shadow: 0 12px 32px -8px rgba(0, 71, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.5);
   border-radius: var(--radius);
-  color: #020721;
-}
-
-@media (min-width: 768px) {
-  .glass-card {
-    background: rgba(8, 18, 54, 0.65);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.5);
-    color: #f0f6ff;
-  }
 }
 
 .glass-card-hover {
@@ -181,18 +168,9 @@
 }
 
 .glass-header {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(2, 7, 33, 0.65);
   backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(0, 71, 255, 0.15);
-  color: #020721;
-}
-
-@media (min-width: 768px) {
-  .glass-header {
-    background: rgba(2, 7, 33, 0.65);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    color: #f0f6ff;
-  }
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Light Sky Blue & White Gradient Page Utilities (Gradient Asset 2) */
@@ -203,7 +181,7 @@
 }
 
 .glass-card-light {
-  background: rgba(255, 255, 255, 0.90);
+  background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(16px);
   border: 1px solid rgba(0, 71, 255, 0.18);
   box-shadow: 0 12px 32px -8px rgba(0, 71, 255, 0.15);
@@ -221,7 +199,7 @@
 }
 
 .glass-header-light {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.82);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(0, 71, 255, 0.15);
   color: #020721;

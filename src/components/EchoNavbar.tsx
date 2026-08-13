@@ -27,11 +27,11 @@ interface EchoNavbarProps {
 
 export function EchoLogo() {
   return (
-    <Link to="/" className="flex items-center gap-2 font-bold text-foreground group shrink-0">
-      <div className="grid h-8 w-8 sm:h-9 sm:w-9 place-items-center rounded-xl bg-primary/20 border border-primary/40 text-primary shadow-glow group-hover:scale-105 transition-transform">
-        <BrainCircuit className="h-4 w-4 sm:h-5 sm:w-5" />
+    <Link to="/" className="flex items-center gap-2.5 font-bold text-foreground group shrink-0">
+      <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary/20 border border-primary/40 text-primary shadow-glow group-hover:scale-105 transition-transform">
+        <BrainCircuit className="h-5 w-5" />
       </div>
-      <span className="tracking-tight text-base sm:text-lg font-extrabold font-mono bg-gradient-to-r from-blue-600 via-sky-500 to-primary bg-clip-text text-transparent">
+      <span className="tracking-tight text-lg font-extrabold font-mono bg-gradient-to-r from-blue-400 via-sky-300 to-primary bg-clip-text text-transparent">
         ECHO
       </span>
     </Link>
@@ -70,11 +70,11 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
           isLight ? "glass-header-light" : "glass-header"
         )}
       >
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-3.5 sm:px-6 py-3">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 py-3.5">
           <EchoLogo />
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-5 lg:gap-6 text-[11px] lg:text-xs font-bold uppercase tracking-wider">
+          <nav className="hidden md:flex items-center gap-6 text-xs font-bold uppercase tracking-wider">
             {navLinks.map((link) => {
               const isActive = currentPath === link.to;
               return (
@@ -82,10 +82,10 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
                   key={link.to}
                   to={link.to}
                   className={cn(
-                    "transition-colors hover:text-primary py-1 border-b-2 font-mono whitespace-nowrap",
+                    "transition-colors hover:text-primary py-1 border-b-2 font-mono",
                     isActive
                       ? "border-primary text-primary font-extrabold"
-                      : "border-transparent text-slate-600 md:text-muted-foreground"
+                      : "border-transparent text-muted-foreground"
                   )}
                 >
                   {link.label}
@@ -114,7 +114,7 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
               size="sm"
               variant="outline"
               className={cn(
-                "font-bold text-xs whitespace-nowrap",
+                "font-bold text-xs",
                 isLight ? "border-slate-300 text-slate-900 bg-white hover:bg-slate-50" : "border-white/20 bg-white/5 hover:bg-white/10 text-white"
               )}
             >
@@ -129,10 +129,10 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className={cn(
-                "p-2 rounded-xl border min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors shadow-sm",
+                "p-2.5 rounded-xl border min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors",
                 isLight
                   ? "border-slate-300 bg-white text-slate-900 hover:bg-slate-50"
-                  : "border-slate-300 md:border-white/20 bg-white text-slate-900 md:text-white hover:bg-slate-50"
+                  : "border-white/20 bg-white/10 text-white hover:bg-white/20"
               )}
               aria-label="Toggle Navigation Menu"
             >
@@ -144,21 +144,21 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
 
       {/* Mobile Slide-Over Drawer / Full Feature Navigation Modal */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 md:hidden flex flex-col bg-slate-50/98 text-slate-900 animate-in fade-in duration-200">
-          <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-white">
+        <div className="fixed inset-0 z-50 md:hidden flex flex-col bg-background/95 backdrop-blur-2xl text-foreground animate-in fade-in duration-200">
+          <div className="flex items-center justify-between p-4 border-b border-border">
             <EchoLogo />
             <button
               onClick={() => setMobileMenuOpen(false)}
-              className="p-2.5 rounded-xl border border-slate-300 bg-white min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-700 hover:text-slate-900"
+              className="p-2.5 rounded-xl border border-border min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-foreground hover:text-foreground"
             >
               <X className="size-5" />
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-5 space-y-5">
-            <div className="space-y-0.5">
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-primary">All Features Navigation</span>
-              <h2 className="text-lg font-bold tracking-tight text-slate-900">ECHO Application</h2>
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="space-y-1">
+              <span className="text-[11px] font-bold uppercase tracking-widest text-primary">All Features Navigation</span>
+              <h2 className="text-xl font-bold tracking-tight text-white">ECHO Application</h2>
             </div>
 
             <nav className="space-y-2">
@@ -181,22 +181,22 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
                     to={item.to}
                     onClick={() => setMobileMenuOpen(false)}
                     className={cn(
-                      "flex items-center justify-between p-3.5 rounded-2xl border transition-all min-h-[52px]",
+                      "flex items-center justify-between p-4 rounded-2xl border transition-all min-h-[56px]",
                       isActive
-                        ? "border-primary bg-primary/10 text-primary font-bold shadow-sm"
-                        : "border-slate-200 bg-white hover:bg-slate-100 text-slate-900"
+                        ? "border-primary bg-primary/20 text-white font-bold"
+                        : "border-border bg-card/60 hover:bg-card text-foreground"
                     )}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-primary/10 border border-primary/30 text-primary">
+                    <div className="flex items-center gap-3.5">
+                      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 border border-primary/30 text-primary">
                         <IconComponent className="size-4" />
                       </div>
                       <div>
-                        <p className="text-xs sm:text-sm font-bold leading-tight">{item.label}</p>
-                        <p className="text-[10px] sm:text-[11px] text-slate-600 mt-0.5">{item.desc}</p>
+                        <p className="text-sm font-bold leading-tight">{item.label}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{item.desc}</p>
                       </div>
                     </div>
-                    <ChevronRight className="size-4 text-slate-400" />
+                    <ChevronRight className="size-4 text-muted-foreground" />
                   </Link>
                 );
               })}
@@ -206,7 +206,7 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
       )}
 
       {/* Sticky Mobile Bottom Navigation Bar (Visible on screens < 768px) */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 glass-header-light border-t border-slate-300/80 px-2 py-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-2xl">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 glass-header border-t border-border px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-2xl">
         <div className="flex items-center justify-around">
           {bottomNavItems.map((item) => {
             const isActive = currentPath === item.to;
@@ -216,14 +216,14 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
                 key={item.to}
                 to={item.to}
                 className={cn(
-                  "flex flex-col items-center justify-center min-h-[46px] min-w-[52px] px-1.5 py-1 rounded-xl transition-all",
+                  "flex flex-col items-center justify-center min-h-[48px] min-w-[56px] px-2 py-1 rounded-xl transition-all",
                   isActive
                     ? "text-primary font-bold bg-primary/15"
-                    : "text-slate-700 hover:text-slate-900"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <IconComponent className={cn("size-4 sm:size-5", isActive && "scale-110")} />
-                <span className="text-[9px] sm:text-[10px] font-bold tracking-tight mt-0.5 whitespace-nowrap">{item.label}</span>
+                <IconComponent className={cn("size-5", isActive && "scale-110")} />
+                <span className="text-[10px] font-medium tracking-tight mt-1">{item.label}</span>
               </Link>
             );
           })}
@@ -231,10 +231,10 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
           <button
             type="button"
             onClick={() => setMobileMenuOpen(true)}
-            className="flex flex-col items-center justify-center min-h-[46px] min-w-[52px] px-1.5 py-1 rounded-xl text-slate-700 hover:text-slate-900 transition-all"
+            className="flex flex-col items-center justify-center min-h-[48px] min-w-[56px] px-2 py-1 rounded-xl text-muted-foreground hover:text-foreground transition-all"
           >
-            <Sliders className="size-4 sm:size-5" />
-            <span className="text-[9px] sm:text-[10px] font-bold tracking-tight mt-0.5 whitespace-nowrap">More</span>
+            <Sliders className="size-5" />
+            <span className="text-[10px] font-medium tracking-tight mt-1">More</span>
           </button>
         </div>
       </div>
