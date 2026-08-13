@@ -46,7 +46,7 @@ const BAND_COLORS: Record<string, string> = {
 };
 
 function LandingPage() {
-  // 4. Scroll Reveal via IntersectionObserver (NOT onscroll listener)
+  // Scroll Reveal via IntersectionObserver (NOT onscroll listener)
   useEffect(() => {
     const elements = document.querySelectorAll(".reveal-card");
     if (!elements.length) return;
@@ -68,20 +68,20 @@ function LandingPage() {
 
   return (
     <div className="min-h-screen text-foreground selection:bg-primary/30 pb-28 md:pb-20">
-      {/* 6. High-performance scroll navbar */}
+      {/* High-performance scroll navbar */}
       <EchoNavbar variant="dark" />
 
-      {/* 1. Hero Section with CSS Keyframe Gradient Animation */}
+      {/* Hero Section with CSS Keyframe Gradient Animation */}
       <section className="hero-gradient-bg relative overflow-hidden px-4 sm:px-6 pt-16 sm:pt-20 pb-20 sm:pb-24 md:pt-28 md:pb-32 text-center border-b border-white/10">
         <div className="relative z-10 mx-auto max-w-5xl space-y-6 sm:space-y-8">
           <Badge variant="outline" className="border-primary/50 bg-primary/10 text-primary px-3 sm:px-4 py-1.5 text-[11px] sm:text-xs font-bold tracking-wide shadow-glow">
             <Sparkles className="mr-2 size-3.5" /> Evidence-Based Conceptual Honesty Engine
           </Badge>
 
-          {/* 2. Gradient Headline Text & 3D FoldText */}
-          <div className="flex flex-col items-center justify-center space-y-2">
+          {/* 1. FoldText applied to full headline with color="#60a5fa" */}
+          <div className="flex flex-col items-center justify-center">
             <FoldText
-              text="The Answer Is Correct."
+              text="The Answer Is Correct. But Is the Understanding Real?"
               splitBy="char"
               hinge="top"
               trigger="mount"
@@ -90,20 +90,17 @@ function LandingPage() {
               ease="power3.out"
               perspective={700}
               creaseShading={0.55}
-              fontSize="clamp(1.8rem, 5vw, 4rem)"
+              fontSize="clamp(1.8rem, 4.8vw, 3.8rem)"
               fontWeight={800}
-              color="#ffffff"
+              color="#60a5fa"
             />
-            <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight">
-              <span className="gradient-text">Is the Understanding Real?</span>
-            </h1>
           </div>
 
           <p className="mx-auto max-w-2xl text-xs sm:text-base leading-relaxed text-slate-300">
             ECHO verifies whether a student's understanding of a concept is real, not just memorized or lucky. It probes whether your reasoning survives under structural variation, hidden assumptions, and unfamiliar transfer problems.
           </p>
 
-          {/* 3. GPU-Friendly Scale/Brightness CTA Buttons */}
+          {/* GPU-Friendly Scale/Brightness CTA Buttons */}
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button asChild size="lg" className="w-full sm:w-auto px-8 font-bold cta-btn-gradient text-white text-base min-h-[48px]">
               <Link to="/reflection">
@@ -119,7 +116,7 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* 4. 5-Step ECHO Workflow Loop Section with Scroll Reveal */}
+      {/* 5-Step ECHO Workflow Loop Section with Scroll Reveal */}
       <section className="border-t border-white/10 bg-black/20 backdrop-blur-md py-16 sm:py-20 px-4 sm:px-6">
         <div className="mx-auto max-w-6xl space-y-10 sm:space-y-12">
           <div className="text-center space-y-2 sm:space-y-3">
@@ -148,7 +145,7 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* 4. 6-Dimension Framework Section with Scroll Reveal */}
+      {/* 6-Dimension Framework Section with Scroll Reveal */}
       <section className="border-t border-white/10 py-16 sm:py-20 px-4 sm:px-6">
         <div className="mx-auto max-w-6xl space-y-10 sm:space-y-12">
           <div className="text-center space-y-2 sm:space-y-3">
@@ -181,7 +178,7 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* 5. Score Band Cards (0-39 → 80-100) with Color-Coded Left Border */}
+      {/* Score Band Cards (0-39 → 80-100) with Color-Coded Left Border */}
       <section className="border-t border-white/10 bg-black/20 backdrop-blur-md py-16 sm:py-20 px-4 sm:px-6">
         <div className="mx-auto max-w-6xl space-y-10 sm:space-y-12">
           <div className="text-center space-y-2 sm:space-y-3">

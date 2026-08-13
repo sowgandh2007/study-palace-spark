@@ -27,17 +27,13 @@ export const Route = createFileRoute("/dashboard")({
 function DashboardPage() {
   const { timetable, reflections, latestResult } = useEcho();
 
-  const confidentButFragileCount = latestResult?.isConfidentButFragile ? 1 : 0;
-  const currentStability = latestResult ? latestResult.stabilityScore : 68;
-  const currentBand = latestResult?.bandLabel || "Developing Stability";
-
   return (
     <div className="min-h-screen bg-gradient-royal-ice-page text-slate-900 selection:bg-primary/30 pb-28 md:pb-20">
       {/* Unified Mobile & Desktop Responsive Navbar */}
       <EchoNavbar variant="light" />
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 pt-6 sm:pt-8 space-y-6">
-        {/* FIGMA BENTO TOP BANNER: Ocean/Sky Cloud Header + Date Pill */}
+        {/* TOP BANNER: Ocean/Sky Cloud Header */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-700 via-sky-600 to-indigo-800 p-6 sm:p-8 text-white shadow-xl">
           {/* Subtle cloud backdrop glow */}
           <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-white/20 blur-3xl" />
@@ -45,19 +41,11 @@ function DashboardPage() {
 
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="outline" className="border-white/30 bg-white/15 text-white font-mono text-xs backdrop-blur-md px-3 py-1">
-                  <Calendar className="mr-1.5 size-3.5" /> 13 August, 2026
-                </Badge>
-                <Badge variant="outline" className="border-white/30 bg-white/15 text-white font-mono text-xs backdrop-blur-md px-3 py-1">
-                  Cohort: CS-2026 · Section B
-                </Badge>
-              </div>
               <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-4xl">
-                ECHO Student Telemetry Dashboard
+                Student Dashboard
               </h1>
               <p className="text-xs sm:text-sm text-sky-100 max-w-2xl">
-                Real-time verified conceptual stability index, post-class reflection check-ins, and tomorrow-aware study plan prioritization.
+                Your reflection check-ins and study plan, in one place.
               </p>
             </div>
 
@@ -71,88 +59,9 @@ function DashboardPage() {
           </div>
         </div>
 
-        {/* UNIFIED BENTO GRID CONTAINER (1 Col Mobile, 2 Col Tablet, 3 Col Desktop) */}
+        {/* UNIFIED BENTO GRID CONTAINER */}
         <div className="grid gap-5 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {/* 1. LARGE PRIMARY HERO CARD (Spans 2 Columns on Desktop) */}
-          <div className="bento-card-light p-6 sm:p-8 md:col-span-2 space-y-6 flex flex-col justify-between">
-            <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
-                <div>
-                  <span className="text-xs font-extrabold uppercase tracking-wider text-primary">Core Diagnostic Metric</span>
-                  <h2 className="text-xl font-extrabold text-slate-900 mt-0.5">Overall Understanding Stability Index</h2>
-                </div>
-                <Badge variant="outline" className="w-fit border-primary/40 bg-primary/10 text-primary font-bold px-3.5 py-1 text-xs">
-                  <ShieldCheck className="mr-1.5 size-4" /> {currentBand}
-                </Badge>
-              </div>
-
-              {/* Main Score & Calibrated Metrics */}
-              <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-3 items-center pt-2">
-                <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 text-center space-y-1">
-                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-600">Verified Stability Score</span>
-                  <p className="font-mono text-4xl sm:text-5xl font-extrabold text-primary">{currentStability}%</p>
-                  <span className="text-[11px] font-bold text-slate-700 block">Weighted Evidence Score</span>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 bg-white p-5 text-center space-y-1">
-                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-600">Self-Reported Confidence</span>
-                  <p className="font-mono text-4xl sm:text-5xl font-extrabold text-slate-900">75%</p>
-                  <span className="text-[11px] font-bold text-slate-600 block">Post-Class Reflection</span>
-                </div>
-
-                <div className="rounded-2xl border border-amber-300 bg-amber-50 p-5 text-center space-y-1">
-                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-800">Confidence Gap</span>
-                  <p className="font-mono text-4xl sm:text-5xl font-extrabold text-amber-700">+7%</p>
-                  <span className="text-[11px] font-bold text-amber-800 block">Calibrated Calibration</span>
-                </div>
-              </div>
-
-              {/* 3-Dimension Score Meters */}
-              <div className="space-y-3 pt-3">
-                <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-700">Verified 3-Dimension Evidence Breakdown</h3>
-                <div className="grid gap-3 grid-cols-1 sm:grid-cols-3 text-xs font-mono font-bold">
-                  <div className="rounded-xl bg-slate-100 p-3.5 border border-slate-200 space-y-1">
-                    <div className="flex justify-between text-slate-800">
-                      <span>Direct Definition</span>
-                      <span className="text-primary">80%</span>
-                    </div>
-                    <div className="h-2 w-full rounded-full bg-slate-200">
-                      <div className="h-full rounded-full bg-primary" style={{ width: "80%" }} />
-                    </div>
-                  </div>
-
-                  <div className="rounded-xl bg-slate-100 p-3.5 border border-slate-200 space-y-1">
-                    <div className="flex justify-between text-slate-800">
-                      <span>Under-The-Hood</span>
-                      <span className="text-amber-600">55%</span>
-                    </div>
-                    <div className="h-2 w-full rounded-full bg-slate-200">
-                      <div className="h-full rounded-full bg-amber-500" style={{ width: "55%" }} />
-                    </div>
-                  </div>
-
-                  <div className="rounded-xl bg-slate-100 p-3.5 border border-slate-200 space-y-1">
-                    <div className="flex justify-between text-slate-800">
-                      <span>Unfamiliar Transfer</span>
-                      <span className="text-primary">60%</span>
-                    </div>
-                    <div className="h-2 w-full rounded-full bg-slate-200">
-                      <div className="h-full rounded-full bg-primary" style={{ width: "60%" }} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-slate-200">
-              <span className="text-xs text-slate-600 font-medium">Assessed Concepts: <strong className="text-slate-900">12</strong> · Pending Re-Probes: <strong className="text-amber-700">3</strong></span>
-              <Button asChild size="sm" variant="outline" className="w-full sm:w-auto border-primary/40 text-primary hover:bg-primary/5 font-bold min-h-[44px]">
-                <Link to="/assessment">Launch Diagnostic Probe <ArrowRight className="ml-1 size-3.5" /></Link>
-              </Button>
-            </div>
-          </div>
-
-          {/* 2. TOP RIGHT ACCENT CARD (Tomorrow-Aware Alert) */}
+          {/* 1. TOP LEFT ACCENT CARD (Tomorrow-Aware Alert) */}
           <div className="bento-card-light p-6 sm:p-7 bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 text-white space-y-5 flex flex-col justify-between shadow-xl">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -193,8 +102,8 @@ function DashboardPage() {
             </div>
           </div>
 
-          {/* 3. BOTTOM LEFT WIDE CARD (7-Day Stability Trend) */}
-          <div className="bento-card-light p-6 sm:p-7 md:col-span-2 space-y-5 flex flex-col justify-between">
+          {/* 2. 7-DAY STABILITY TREND CARD */}
+          <div className="bento-card-light p-6 sm:p-7 md:col-span-1 lg:col-span-2 space-y-5 flex flex-col justify-between">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
               <div className="flex items-center gap-2">
                 <TrendingUp className="size-5 text-primary" />
@@ -220,7 +129,7 @@ function DashboardPage() {
             </div>
           </div>
 
-          {/* 4. BOTTOM MIDDLE SMALL ACTION CARD (10s Reflection) */}
+          {/* 3. 10s REFLECTION ACTION CARD */}
           <div className="bento-card-light p-6 sm:p-7 space-y-4 flex flex-col justify-between bg-gradient-to-br from-sky-50 via-indigo-50 to-blue-100 border-primary/30">
             <div className="space-y-2">
               <span className="text-xs font-extrabold uppercase tracking-wider text-primary flex items-center gap-1.5">
@@ -237,8 +146,8 @@ function DashboardPage() {
             </Button>
           </div>
 
-          {/* 5. TALL RIGHT COLUMN CARD (Priority Concept Repairs) */}
-          <div className="bento-card-light p-6 sm:p-7 md:col-span-2 lg:col-span-1 space-y-5 flex flex-col justify-between">
+          {/* 4. PRIORITY CONCEPT REPAIRS CARD (Explicit Light White Buttons to fix dark text issue) */}
+          <div className="bento-card-light p-6 sm:p-7 md:col-span-2 space-y-5 flex flex-col justify-between">
             <div className="space-y-4">
               <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                 <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-900">Priority Concept Repairs</h2>
@@ -247,15 +156,16 @@ function DashboardPage() {
                 </Badge>
               </div>
 
-              <div className="space-y-3">
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
                 {PRIORITY_REPAIRS.map((c) => (
-                  <div key={c.conceptId} className="rounded-2xl border border-slate-200 bg-white p-4 space-y-2 hover:border-primary/40 transition-all shadow-sm">
+                  <div key={c.conceptId} className="rounded-2xl border border-slate-200 bg-white p-4 space-y-2.5 hover:border-primary/40 transition-all shadow-sm">
                     <div className="flex items-start justify-between">
                       <h4 className="text-sm font-bold text-slate-900">{c.name}</h4>
                       <span className="font-mono text-xs font-extrabold text-primary">{c.stability}%</span>
                     </div>
                     <p className="text-[11px] text-rose-600 font-bold">Weakest: {c.weakest}</p>
-                    <Button asChild size="sm" variant="outline" className="w-full text-xs font-bold border-slate-300 hover:bg-slate-50 min-h-[40px]">
+                    {/* Fixed button styling: Explicit white background with crisp dark text */}
+                    <Button asChild size="sm" className="w-full text-xs font-bold bg-white text-slate-900 border border-slate-300 hover:bg-slate-50 min-h-[40px] shadow-sm">
                       <Link to="/repair" search={{ concept: c.name }}>Repair Gap</Link>
                     </Button>
                   </div>
@@ -264,7 +174,7 @@ function DashboardPage() {
             </div>
 
             <div className="pt-2">
-              <Button asChild size="sm" variant="ghost" className="w-full text-xs font-bold text-slate-700 hover:text-primary">
+              <Button asChild size="sm" className="w-full text-xs font-bold bg-white text-slate-800 border border-slate-300 hover:bg-slate-50 min-h-[38px] shadow-sm">
                 <Link to="/study-plan">Full Study Plan Queue →</Link>
               </Button>
             </div>
