@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight,
   BrainCircuit,
@@ -18,15 +18,36 @@ import {
   BookOpen,
   TrendingUp,
   FileText,
+  Upload,
+  Loader2,
+  AlertCircle,
+  BadgeAlert,
+  Clock,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { ThemeSelect } from "@/lib/theme";
 import { FRAMEWORK_DIMENSIONS } from "@/lib/echo/types";
 import { BANDS } from "@/lib/echo/scoring";
 import { FoldText } from "@/components/ui/FoldText";
 import { EchoNavbar, EchoLogo } from "@/components/EchoNavbar";
 import { Prism } from "@/components/ui/Prism";
+import { ScrollStack, type ScrollStackItem } from "@/components/ui/ScrollStack";
+import { extractTextFromPdf, type PdfExtractResult } from "@/lib/echo/pdf";
+import {
+  generatePdfSummary,
+  analyzeExplanationWithAI,
+  generateAiExam,
+  type LearningSummary,
+  type ExplanationAnalysis,
+  type ExamQuestion,
+} from "@/lib/echo/llm";
+import { STABILITY_TREND, PRIORITY_REPAIRS } from "@/lib/echo/data";
+import { useEcho } from "@/lib/echo/store";
+import { toast } from "sonner";
 
 // ECHO — 5-Stage Intelligence Loop Redesign (Plan -> Learn -> Reflect -> Verify -> Adapt) v2
 export { EchoLogo };
@@ -35,63 +56,9 @@ export const Route = createFileRoute("/")({
   component: LandingPage,
 });
 
-// The 5 ECHO Core Stage Gateways
-const STAGE_GATEWAYS = [
-  {
-    stage: "01",
-    name: "PLAN",
-    title: "Academic Context & Schedule",
-    to: "/plan",
-    icon: Calendar,
-    desc: "Align your evening study time budget with tomorrow's class schedule and verified conceptual gaps.",
-    features: ["Tonight's Study Plan", "Class Timetable", "Learning Roadmap & Goals"],
-  },
-  {
-    stage: "02",
-    name: "LEARN",
-    title: "AI PDF Summary Generator",
-    to: "/learn",
-    icon: BookOpen,
-    desc: "Generate structured, high-yield study summaries from topics or uploaded PDFs designed for deep learning.",
-    features: ["Topic Overview & Key Concepts", "Uploaded PDF Processing", "Core Principles & Formulas"],
-  },
-  {
-    stage: "03",
-    name: "REFLECT",
-    title: "Self-Explanation & AI Analysis",
-    to: "/reflection",
-    icon: Sparkles,
-    desc: "Explain concepts in your own words. AI evaluates your reasoning to detect superficial rote memorization.",
-    features: ["Free-form Explanation Box", "AI Rote Flagging", "Missing Connection Analysis"],
-  },
-  {
-    stage: "04",
-    name: "VERIFY",
-    title: "AI Exam Generator & Probes",
-    to: "/assessment",
-    icon: Zap,
-    desc: "Generate custom AI exams from topics or PDFs testing Direct, Explain, and Transfer dimensions.",
-    features: ["Topic & PDF Exam Generator", "3-Dimension Diagnostic Probes", "Detailed Accuracy Analysis"],
-  },
-  {
-    stage: "05",
-    name: "ADAPT",
-    title: "Understanding Stability Index",
-    to: "/dashboard",
-    icon: TrendingUp,
-    desc: "Track score trajectory over time and receive context-aware learning actions based on demonstrated evidence.",
-    features: ["7-Day Score Trajectory", "Weak-Area Recommendations", "Persistent State Update"],
-  },
-];
-
-const BAND_COLORS: Record<string, string> = {
-  surface: "score-band-red",
-  fragile: "score-band-amber",
-  developing: "score-band-blue",
-  stable: "score-band-green",
-};
-
 function LandingPage() {
+  const navigate = useNavigate();
+  const { timetable } = useEcho();
   const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
@@ -103,25 +70,313 @@ function LandingPage() {
     return () => window.removeEventListener("resize", checkViewport);
   }, []);
 
-  // Scroll Reveal
-  useEffect(() => {
-    const elements = document.querySelectorAll(".reveal-card");
-    if (!elements.length) return;
+  // Inline State for Learn Stage Card (AI PDF Summary Generator)
+  const [learnTopic, setLearnTopic] = useState("Binary Search");
+  const [learnPdfFile, setLearnPdfFile] = useState<File | null>(null);
+  const [learnPdfData, setLearnPdfData] = useState<PdfExtractResult | null>(null);
+  const [learnExtracting, setLearnExtracting] = useState(false);
+  const [learnLoading, setLearnLoading] = useState(false);
+  const [learnSummary, setLearnSummary] = useState<LearningSummary | null>(null);
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("in-view");
-          }
-        });
-      },
-      { threshold: 0.12 }
-    );
+  async function handleLearnPdfUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLearnExtracting(true);
+    try {
+      const res = await extractTextFromPdf(file);
+      setLearnPdfFile(file);
+      setLearnPdfData(res);
+      setLearnTopic(file.name.replace(/\.pdf$/i, ""));
+      toast.success(`PDF extracted: ${file.name}`);
+    } catch (err: any) {
+      toast.error(err.message || "PDF read error");
+    } finally {
+      setLearnExtracting(false);
+    }
+  }
 
-    elements.forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
-  }, []);
+  async function handleGenerateLearnSummary(e: React.FormEvent) {
+    e.preventDefault();
+    if (!learnTopic.trim() && !learnPdfData) return;
+    setLearnLoading(true);
+    try {
+      const res = await generatePdfSummary(learnTopic.trim(), learnPdfData?.text);
+      setLearnSummary(res);
+      toast.success("Generated AI Summary!");
+    } catch {
+      toast.error("Summary generation failed.");
+    } finally {
+      setLearnLoading(false);
+    }
+  }
+
+  // Inline State for Reflect Stage Card (Free-form explanation)
+  const [reflectConcept, setReflectConcept] = useState("Binary Search");
+  const [reflectConfidence, setReflectConfidence] = useState(75);
+  const [reflectExplanation, setReflectExplanation] = useState(
+    "Binary Search repeatedly divides a sorted array in half by comparing the search target with the mid element."
+  );
+  const [reflectLoading, setReflectLoading] = useState(false);
+  const [reflectAnalysis, setReflectAnalysis] = useState<ExplanationAnalysis | null>(null);
+
+  async function handleAnalyzeReflect(e: React.FormEvent) {
+    e.preventDefault();
+    if (!reflectConcept.trim() || !reflectExplanation.trim()) return;
+    setReflectLoading(true);
+    try {
+      const res = await analyzeExplanationWithAI(reflectConcept.trim(), reflectExplanation.trim(), reflectConfidence);
+      setReflectAnalysis(res);
+      toast.success("AI Analysis Complete!");
+    } catch {
+      toast.error("Analysis failed.");
+    } finally {
+      setReflectLoading(false);
+    }
+  }
+
+  // Inline State for Verify Stage Card (AI Exam Generator)
+  const [verifyTopic, setVerifyTopic] = useState("Binary Search");
+  const [verifyQuestionCount, setVerifyQuestionCount] = useState(3);
+  const [verifyLoading, setVerifyLoading] = useState(false);
+
+  function handleStartVerifyExam(e: React.FormEvent) {
+    e.preventDefault();
+    navigate({
+      to: "/assessment",
+      search: { concept: verifyTopic.trim() || "Binary Search" },
+    });
+  }
+
+  // Scroll Stack Items Definition
+  const stackItems: ScrollStackItem[] = [
+    {
+      id: "plan",
+      stageNumber: "01",
+      stageName: "PLAN",
+      stageTitle: "Academic Context & Schedule",
+      badgeLabel: "Study Plan & Timetable",
+      icon: Calendar,
+      accentColor: "bg-blue-500/20 border-blue-400/40 text-blue-400",
+      description: "Align your evening study time budget with tomorrow's class timetable and diagnosed conceptual gaps.",
+      content: (
+        <div className="space-y-5">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-2xl bg-black/30 border border-white/10 p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-primary">Tonight's Allocated Repairs</span>
+                <Badge variant="outline" className="border-primary/40 text-primary text-[10px]">2 Pending</Badge>
+              </div>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Binary Search (15m repair) & Database Normalization 3NF (10m repair).
+              </p>
+              <Button asChild size="sm" className="bg-primary hover:bg-primary/90 font-bold min-h-[38px]">
+                <Link to="/study-plan">View Full Study Plan →</Link>
+              </Button>
+            </div>
+
+            <div className="rounded-2xl bg-black/30 border border-white/10 p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-sky-400">Tomorrow's Timetable Context</span>
+                <Badge variant="outline" className="border-sky-400/40 text-sky-300 text-[10px]">9:00 AM Class</Badge>
+              </div>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Binary Search is scheduled in tomorrow's lecture. Complete repair tonight!
+              </p>
+              <Button asChild size="sm" variant="outline" className="border-white/20 text-white min-h-[38px]">
+                <Link to="/timetable">View Timetable Schedule →</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "learn",
+      stageNumber: "02",
+      stageName: "LEARN",
+      stageTitle: "AI PDF Summary Generator",
+      badgeLabel: "PDF Summarizer & Topics",
+      icon: BookOpen,
+      accentColor: "bg-sky-500/20 border-sky-400/40 text-sky-400",
+      description: "Generate structured, high-yield learning summaries from topics or uploaded PDFs designed for deep understanding.",
+      content: (
+        <div className="space-y-6">
+          <form onSubmit={handleGenerateLearnSummary} className="space-y-4 rounded-2xl bg-black/30 border border-white/10 p-5">
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                What do you want to learn?
+              </label>
+              <Input
+                value={learnTopic}
+                onChange={(e) => setLearnTopic(e.target.value)}
+                placeholder="Enter topic..."
+                className="mt-1 bg-black/40 border-white/10 text-xs text-white min-h-[42px]"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                <FileText className="size-3.5 text-primary" /> Upload PDF Material (Optional)
+              </label>
+              {!learnPdfFile ? (
+                <div className="relative rounded-xl border border-dashed border-white/20 bg-black/20 p-4 text-center space-y-1">
+                  <Upload className="size-5 text-primary mx-auto" />
+                  <p className="text-[11px] text-slate-300 font-bold">Click to select PDF document</p>
+                  <input
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    onChange={handleLearnPdfUpload}
+                    disabled={learnExtracting}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                  />
+                </div>
+              ) : (
+                <div className="rounded-xl bg-primary/10 border border-primary/30 p-3 flex items-center justify-between text-xs text-white">
+                  <span className="font-bold truncate max-w-xs">{learnPdfFile.name}</span>
+                  <button type="button" onClick={() => setLearnPdfFile(null)} className="text-slate-400 hover:text-destructive">
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <Button type="submit" disabled={learnLoading} size="sm" className="w-full bg-primary hover:bg-primary/90 font-bold min-h-[42px]">
+              {learnLoading ? <Loader2 className="size-4 animate-spin mr-2" /> : <Sparkles className="size-4 mr-2" />}
+              Generate AI PDF Study Summary
+            </Button>
+          </form>
+
+          {learnSummary && (
+            <div className="rounded-2xl bg-black/40 border border-primary/40 p-5 space-y-3 text-xs">
+              <h4 className="font-bold text-white text-sm">{learnSummary.topic} Summary</h4>
+              <p className="text-slate-300 leading-relaxed">{learnSummary.overview}</p>
+              <div className="pt-2 flex justify-end">
+                <Button asChild size="sm" variant="outline" className="border-white/20 text-white min-h-[38px]">
+                  <Link to="/learn" search={{ topic: learnSummary.topic }}>Open Full Learn Page →</Link>
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: "reflect",
+      stageNumber: "03",
+      stageName: "REFLECT",
+      stageTitle: "Self-Explanation & AI Analysis",
+      badgeLabel: "Free-Form Explanation",
+      icon: Sparkles,
+      accentColor: "bg-indigo-500/20 border-indigo-400/40 text-indigo-400",
+      description: "Explain concepts in your own words. AI evaluates your reasoning to detect superficial rote memorization.",
+      content: (
+        <div className="space-y-6">
+          <form onSubmit={handleAnalyzeReflect} className="space-y-4 rounded-2xl bg-black/30 border border-white/10 p-5">
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-300">Topic / Concept</label>
+              <Input
+                value={reflectConcept}
+                onChange={(e) => setReflectConcept(e.target.value)}
+                className="mt-1 bg-black/40 border-white/10 text-xs text-white min-h-[42px]"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-300">Explain the concept in your own words</label>
+              <Textarea
+                rows={4}
+                value={reflectExplanation}
+                onChange={(e) => setReflectExplanation(e.target.value)}
+                placeholder="Write your explanation here..."
+                className="mt-1.5 bg-black/40 border-white/10 text-xs text-white p-3 leading-relaxed"
+              />
+            </div>
+
+            <Button type="submit" disabled={reflectLoading} size="sm" className="w-full bg-primary hover:bg-primary/90 font-bold min-h-[42px]">
+              {reflectLoading ? <Loader2 className="size-4 animate-spin mr-2" /> : <Sparkles className="size-4 mr-2" />}
+              Analyze My Understanding
+            </Button>
+          </form>
+
+          {reflectAnalysis && (
+            <div className="rounded-2xl bg-black/40 border border-indigo-500/40 p-5 space-y-3 text-xs">
+              <span className="font-bold text-indigo-400 uppercase tracking-wider">AI Evaluation Verdict</span>
+              <p className="text-slate-200 leading-relaxed">{reflectAnalysis.overallVerdict}</p>
+              <div className="pt-2 flex justify-end">
+                <Button asChild size="sm" className="bg-primary hover:bg-primary/90 font-bold min-h-[38px]">
+                  <Link to="/reflection" search={{ concept: reflectAnalysis.concept }}>Open Full Reflect View →</Link>
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: "verify",
+      stageNumber: "04",
+      stageName: "VERIFY",
+      stageTitle: "AI Exam Generator & Probes",
+      badgeLabel: "Exam Generator & Probes",
+      icon: Zap,
+      accentColor: "bg-amber-500/20 border-amber-400/40 text-amber-400",
+      description: "Generate custom AI exams from topics or PDFs testing Direct, Explain, and Transfer dimensions.",
+      content: (
+        <div className="space-y-6">
+          <form onSubmit={handleStartVerifyExam} className="space-y-4 rounded-2xl bg-black/30 border border-white/10 p-5">
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-300">Exam Topic</label>
+              <Input
+                value={verifyTopic}
+                onChange={(e) => setVerifyTopic(e.target.value)}
+                className="mt-1 bg-black/40 border-white/10 text-xs text-white min-h-[42px]"
+              />
+            </div>
+
+            <Button type="submit" size="sm" className="w-full bg-primary hover:bg-primary/90 font-bold min-h-[42px]">
+              <Zap className="size-4 mr-2 text-warning" /> Launch AI Verification Exam
+            </Button>
+          </form>
+        </div>
+      ),
+    },
+    {
+      id: "adapt",
+      stageNumber: "05",
+      stageName: "ADAPT",
+      stageTitle: "Understanding Stability Index",
+      badgeLabel: "7-Day Score Trajectory",
+      icon: TrendingUp,
+      accentColor: "bg-emerald-500/20 border-emerald-400/40 text-emerald-400",
+      description: "Track score trajectory over time and receive context-aware learning actions based on demonstrated evidence.",
+      content: (
+        <div className="space-y-5">
+          <div className="rounded-2xl bg-black/30 border border-white/10 p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">7-Day Score Trajectory</span>
+              <span className="font-mono text-xs text-emerald-400 font-bold">+27% Score Increase</span>
+            </div>
+            <div className="flex items-end justify-between gap-2 h-32 pt-2">
+              {STABILITY_TREND.map((d) => (
+                <div key={d.day} className="flex flex-1 flex-col items-center gap-1.5">
+                  <div className="w-full flex items-end h-24">
+                    <div
+                      className="w-full rounded-lg bg-gradient-to-t from-primary/70 via-sky-500 to-primary"
+                      style={{ height: `${d.stability}%` }}
+                    />
+                  </div>
+                  <span className="font-mono text-[10px] text-slate-400">{d.day}</span>
+                </div>
+              ))}
+            </div>
+            <Button asChild size="sm" className="w-full bg-primary hover:bg-primary/90 font-bold min-h-[38px]">
+              <Link to="/dashboard">Open Full Dashboard →</Link>
+            </Button>
+          </div>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="min-h-screen text-foreground selection:bg-primary/30 pb-28 md:pb-20">
@@ -129,7 +384,7 @@ function LandingPage() {
       <EchoNavbar variant="dark" />
 
       {/* Hero Section */}
-      <section className="hero-gradient-bg relative overflow-hidden px-4 sm:px-6 pt-16 sm:pt-20 pb-20 sm:pb-24 md:pt-24 md:pb-28 text-center border-b border-white/10">
+      <section className="hero-gradient-bg relative overflow-hidden px-4 sm:px-6 pt-16 sm:pt-20 pb-16 sm:pb-20 text-center border-b border-white/10">
         {isDesktop && (
           <div className="absolute inset-0 pointer-events-none z-0 opacity-40">
             <Prism
@@ -147,7 +402,7 @@ function LandingPage() {
           </div>
         )}
 
-        <div className="relative z-10 mx-auto max-w-5xl space-y-6 sm:space-y-8">
+        <div className="relative z-10 mx-auto max-w-5xl space-y-6">
           <Badge variant="outline" className="border-primary/50 bg-primary/10 text-primary px-3 sm:px-4 py-1.5 text-[11px] sm:text-xs font-bold tracking-wide shadow-glow">
             <Sparkles className="mr-2 size-3.5" /> Continuous Learning Intelligence System
           </Badge>
@@ -185,84 +440,32 @@ function LandingPage() {
           </div>
 
           <p className="mx-auto max-w-2xl text-xs sm:text-base leading-relaxed text-slate-300">
-            ECHO is a continuous learning intelligence system that compares a student's perceived understanding with demonstrated evidence, detects conceptual fragility, and uses academic context to recommend the next best learning action.
+            ECHO compares a student's perceived understanding with demonstrated evidence, detects conceptual fragility, and uses academic context to recommend the next best learning action.
           </p>
 
           {/* Core Distinction Callout */}
-          <div className="mx-auto max-w-3xl rounded-2xl border border-primary/40 bg-primary/10 p-5 sm:p-6 text-center space-y-2 backdrop-blur-md">
+          <div className="mx-auto max-w-3xl rounded-2xl border border-primary/40 bg-primary/10 p-4 sm:p-5 text-center space-y-1.5 backdrop-blur-md">
             <span className="text-[11px] font-extrabold uppercase tracking-widest text-primary font-mono">Core Product Difference</span>
             <p className="text-xs sm:text-sm leading-relaxed text-slate-200 font-medium">
               "Chat-based AI answers questions when asked. ECHO continuously tracks the relationship between perceived understanding, demonstrated evidence, and academic context to decide what should happen next."
             </p>
           </div>
-
-          {/* Core CTA */}
-          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button asChild size="lg" className="w-full sm:w-auto px-8 font-bold cta-btn-gradient text-white text-base min-h-[48px]">
-              <Link to="/plan">
-                Start Learning Loop <ArrowRight className="ml-2 size-5" />
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="outline" className="w-full sm:w-auto px-8 border-white/20 bg-white/5 hover:bg-white/10 text-white text-base min-h-[48px] cta-btn-outline">
-              <Link to="/learn">
-                <BookOpen className="mr-2 size-4 text-sky-400" /> AI PDF Summarizer
-              </Link>
-            </Button>
-          </div>
         </div>
       </section>
 
-      {/* THE 5 CORE ECHO STAGES (PRIMARY HOME WORKFLOW GATEWAYS) */}
-      <section className="border-t border-white/10 bg-black/20 backdrop-blur-md py-16 sm:py-20 px-4 sm:px-6">
-        <div className="mx-auto max-w-6xl space-y-10 sm:space-y-12">
-          <div className="text-center space-y-2 sm:space-y-3">
-            <span className="text-xs font-bold uppercase tracking-widest text-primary font-mono">Five-Stage Intelligence Loop</span>
-            <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white">The ECHO Core Flow</h2>
+      {/* REACT BITS SCROLL STACK CARD DECK (STAGE CARDS DECK) */}
+      <section className="py-16 px-4 sm:px-6">
+        <div className="mx-auto max-w-5xl space-y-10">
+          <div className="text-center space-y-2">
+            <span className="text-xs font-bold uppercase tracking-widest text-primary font-mono">Interactive Stage Deck</span>
+            <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white">The ECHO Scroll Stack</h2>
             <p className="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto">
-              Plan → Learn → Reflect → Verify → Adapt. Select any stage to access its dedicated tools.
+              Scroll down to stack stage cards. Click any card to expand and open its new AI tools and existing features!
             </p>
           </div>
 
-          <div className="grid gap-5 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {STAGE_GATEWAYS.map((gate, idx) => {
-              const IconComp = gate.icon;
-              return (
-                <div
-                  key={gate.name}
-                  className="reveal-card glass-card glass-card-hover p-6 sm:p-7 space-y-5 flex flex-col justify-between"
-                  style={{ transitionDelay: `${idx * 60}ms` }}
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-xs font-extrabold text-primary flex items-center gap-1.5">
-                        STAGE {gate.stage} · {gate.name}
-                      </span>
-                      <div className="grid h-8 w-8 place-items-center rounded-xl bg-primary/10 border border-primary/30 text-primary">
-                        <IconComp className="size-4" />
-                      </div>
-                    </div>
-
-                    <h3 className="text-lg font-bold text-white">{gate.title}</h3>
-                    <p className="text-xs text-slate-300 leading-relaxed">{gate.desc}</p>
-
-                    <div className="pt-2 space-y-1.5 border-t border-white/10">
-                      {gate.features.map((feat, fIdx) => (
-                        <p key={fIdx} className="text-[11px] text-slate-400 flex items-center gap-2">
-                          <span className="text-primary font-bold">•</span> {feat}
-                        </p>
-                      ))}
-                    </div>
-                  </div>
-
-                  <Button asChild size="md" className="w-full bg-primary hover:bg-primary/90 font-bold min-h-[44px] shadow-glow mt-4">
-                    <Link to={gate.to}>
-                      Enter Stage {gate.stage} ({gate.name}) <ArrowRight className="ml-1.5 size-4" />
-                    </Link>
-                  </Button>
-                </div>
-              );
-            })}
-          </div>
+          {/* ScrollStack Component rendering 5 Stage Cards */}
+          <ScrollStack items={stackItems} defaultExpandedId="plan" />
         </div>
       </section>
 
