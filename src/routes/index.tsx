@@ -28,7 +28,7 @@ import { FoldText } from "@/components/ui/FoldText";
 import { EchoNavbar, EchoLogo } from "@/components/EchoNavbar";
 import { Prism } from "@/components/ui/Prism";
 
-// ECHO — 5-Stage Intelligence Loop (Plan -> Learn -> Reflect -> Verify -> Adapt)
+// ECHO — 5-Stage Intelligence Loop Redesign (Plan -> Learn -> Reflect -> Verify -> Adapt) v2
 export { EchoLogo };
 
 export const Route = createFileRoute("/")({
