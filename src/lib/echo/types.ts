@@ -39,6 +39,20 @@ export type Reflection = {
   createdAt: string;
 };
 
+export type LearnMaterial = {
+  id: string;
+  topic: string;
+  sourceType: "pdf" | "topic";
+  fileName?: string;
+  htmlContent: string;
+  summaryText: string;
+  keyConcepts: { concept: string; explanation: string }[];
+  importantPoints: string[];
+  createdAt: string;
+  pageCount?: number;
+  wordCount?: number;
+};
+
 export type DiagnosedGap = {
   gapText: string;
   severity: "low" | "medium" | "high";

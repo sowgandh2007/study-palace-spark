@@ -3,6 +3,9 @@ import { getApiConfig, discoverGeminiModels, cleanAndParseJSON, ECHOAIError } fr
 export interface ComprehensivePdfSummaryResult {
   title: string;
   htmlContent: string;
+  summaryText: string;
+  keyConcepts: { concept: string; explanation: string }[];
+  importantPoints: string[];
   pageCount?: number;
   wordCount?: number;
 }
@@ -61,6 +64,11 @@ RETURN FORMAT:
 Return strictly valid JSON matching this exact structure:
 {
   "title": "Document Title or Topic Name",
+  "summaryText": "Concise 2-3 sentence executive summary of what the document covers.",
+  "keyConcepts": [
+    { "concept": "Concept Name 1", "explanation": "Detailed explanation based strictly on the source text." }
+  ],
+  "importantPoints": ["Key takeaway point 1", "Key takeaway point 2"],
   "htmlContent": "<div class='echo-study-document'><header class='doc-header'><h1>...</h1><p class='doc-meta'>Comprehensive AI Study Document • ${pageCount || 1} Pages</p></header><section class='doc-section'><h2>1. Executive Overview</h2><p>...</p></section><section class='doc-section'><h2>2. Core Concepts & Subtopics</h2>...</section><section class='doc-section'><h2>3. Important Terminology & Definitions</h2>...</section><section class='doc-section'><h2>4. Algorithms, Processes & Formulas</h2>...</section><section class='doc-section'><h2>5. Key Examples & Applications</h2>...</section><section class='doc-section'><h2>6. Key Takeaways & Exam Points</h2>...</section><section class='doc-section'><h2>7. Concepts to Verify with ECHO</h2>...</section></div>"
 }`;
 
@@ -103,6 +111,9 @@ Return strictly valid JSON matching this exact structure:
       return {
         title: parsed.title || topic || "Uploaded Document Summary",
         htmlContent: parsed.htmlContent,
+        summaryText: parsed.summaryText || "Comprehensive AI study document generated from uploaded PDF.",
+        keyConcepts: parsed.keyConcepts || [{ concept: topic || "Core Concept", explanation: "Primary mechanism described in source document." }],
+        importantPoints: parsed.importantPoints || ["Key concept reviewed in study document."],
         pageCount,
         wordCount: words,
       };
@@ -135,7 +146,6 @@ export async function downloadHtmlAsPdf(elementId: string, filename: string): Pr
     await html2pdf().set(opt).from(element).save();
   } catch (err: any) {
     console.error("[PDF Export Error]", err);
-    // Fallback: Trigger print dialog for saving as PDF
     window.print();
   }
 }

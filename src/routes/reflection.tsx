@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, BrainCircuit, Loader2, Sparkles } from "lucide-react";
+import { ArrowRight, BrainCircuit, Loader2, Sparkles, BookOpen } from "lucide-react";
 import { EchoNavbar } from "@/components/EchoNavbar";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { analyzeReflectionAndDiagnoseGap } from "@/lib/echo/llm";
@@ -18,14 +19,24 @@ export const Route = createFileRoute("/reflection")({
 function ReflectionPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
-  const { saveReflection } = useEcho();
+  const { activeLearnMaterial, saveReflection } = useEcho();
 
-  const [concept, setConcept] = useState(search.concept || "Binary Search");
+  const initialTopic = search.concept || activeLearnMaterial?.topic || "Binary Search";
+
+  const [concept, setConcept] = useState(initialTopic);
   const [confidence, setConfidence] = useState(72);
   const [understoodText, setUnderstoodText] = useState("I know how to find the middle element and compare it.");
   const [notUnderstoodText, setNotUnderstoodText] = useState("I don't understand why we can safely discard half of the array.");
 
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (search.concept) {
+      setConcept(search.concept);
+    } else if (activeLearnMaterial?.topic) {
+      setConcept(activeLearnMaterial.topic);
+    }
+  }, [search.concept, activeLearnMaterial]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -73,14 +84,22 @@ function ReflectionPage() {
 
       <main className="mx-auto max-w-2xl px-4 sm:px-6 pt-6 sm:pt-10">
         <div className="glass-card-light p-6 sm:p-8 space-y-6 rounded-2xl bg-white/95 border border-slate-200 shadow-md">
-          <div className="flex items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-xl bg-primary/10 border border-primary/30 text-primary shrink-0">
-              <BrainCircuit className="size-6" />
+          <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="grid h-11 w-11 place-items-center rounded-xl bg-primary/10 border border-primary/30 text-primary shrink-0">
+                <BrainCircuit className="size-6" />
+              </div>
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-primary">STAGE 3: REFLECT</span>
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Explain in Your Own Words</h1>
+              </div>
             </div>
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-primary">Post-Class Self-Assessment</span>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Quick ECHO Reflection</h1>
-            </div>
+
+            {activeLearnMaterial && activeLearnMaterial.topic === concept && (
+              <Badge variant="outline" className="border-primary/40 text-primary text-xs font-mono">
+                <BookOpen className="size-3 mr-1" /> From Learn
+              </Badge>
+            )}
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -127,7 +146,7 @@ function ReflectionPage() {
                 rows={3}
                 value={understoodText}
                 onChange={(e) => setUnderstoodText(e.target.value)}
-                placeholder="Explain the mechanism in your own words..."
+                placeholder="Explain the underlying mechanism in your own words..."
                 className="mt-1.5 bg-white border-slate-300 text-slate-900 text-xs sm:text-sm p-3"
               />
             </div>
@@ -157,7 +176,7 @@ function ReflectionPage() {
                 </>
               ) : (
                 <>
-                  Generate Verification Check <ArrowRight className="ml-2 size-5" />
+                  Analyze Understanding & Diagnose Gaps <ArrowRight className="ml-2 size-5" />
                 </>
               )}
             </Button>

@@ -1,10 +1,12 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import type { ApiConfig, Reflection, RepairActivity, StabilityResult, TimetableEntry } from "./types";
+import type { ApiConfig, LearnMaterial, Reflection, RepairActivity, StabilityResult, TimetableEntry } from "./types";
 import { getApiConfig, saveApiConfig } from "./llm";
 
 type EchoStoreState = {
   timetable: TimetableEntry[];
   reflections: Reflection[];
+  activeLearnMaterial: LearnMaterial | null;
+  savedLearnMaterials: LearnMaterial[];
   latestResult: StabilityResult | null;
   activeRepair: RepairActivity | null;
   recheckHistory: { concept: string; beforeScore: number; afterScore: number; date: string }[];
@@ -16,6 +18,8 @@ type EchoStoreCtx = EchoStoreState & {
   deleteTimetableEntry: (id: string) => void;
   saveReflection: (reflection: Omit<Reflection, "id" | "createdAt">) => Reflection;
   deleteReflection: (id: string) => void;
+  saveLearnMaterial: (mat: Omit<LearnMaterial, "id" | "createdAt">) => LearnMaterial;
+  setActiveLearnMaterial: (mat: LearnMaterial | null) => void;
   setLatestResult: (result: StabilityResult) => void;
   setActiveRepair: (repair: RepairActivity | null) => void;
   completeRecheck: (concept: string, beforeScore: number, afterScore: number) => void;
@@ -24,11 +28,13 @@ type EchoStoreCtx = EchoStoreState & {
 
 const EchoContext = createContext<EchoStoreCtx | null>(null);
 
-const STORAGE_KEY = "echo_app_state_v3";
+const STORAGE_KEY = "echo_app_state_v4";
 
 export function EchoProvider({ children }: { children: ReactNode }) {
   const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
   const [reflections, setReflections] = useState<Reflection[]>([]);
+  const [activeLearnMaterial, setActiveLearnMaterial] = useState<LearnMaterial | null>(null);
+  const [savedLearnMaterials, setSavedLearnMaterials] = useState<LearnMaterial[]>([]);
   const [latestResult, setLatestResult] = useState<StabilityResult | null>(null);
   const [activeRepair, setActiveRepair] = useState<RepairActivity | null>(null);
   const [recheckHistory, setRecheckHistory] = useState<
@@ -44,6 +50,8 @@ export function EchoProvider({ children }: { children: ReactNode }) {
           const parsed = JSON.parse(raw);
           if (Array.isArray(parsed.timetable)) setTimetable(parsed.timetable);
           if (Array.isArray(parsed.reflections)) setReflections(parsed.reflections);
+          if (parsed.activeLearnMaterial) setActiveLearnMaterial(parsed.activeLearnMaterial);
+          if (Array.isArray(parsed.savedLearnMaterials)) setSavedLearnMaterials(parsed.savedLearnMaterials);
           if (parsed.latestResult) setLatestResult(parsed.latestResult);
           if (parsed.activeRepair) setActiveRepair(parsed.activeRepair);
           if (Array.isArray(parsed.recheckHistory)) setRecheckHistory(parsed.recheckHistory);
@@ -59,13 +67,21 @@ export function EchoProvider({ children }: { children: ReactNode }) {
       if (typeof window !== "undefined") {
         window.localStorage.setItem(
           STORAGE_KEY,
-          JSON.stringify({ timetable, reflections, latestResult, activeRepair, recheckHistory })
+          JSON.stringify({
+            timetable,
+            reflections,
+            activeLearnMaterial,
+            savedLearnMaterials,
+            latestResult,
+            activeRepair,
+            recheckHistory,
+          })
         );
       }
     } catch {
       /* ignore storage write errors */
     }
-  }, [timetable, reflections, latestResult, activeRepair, recheckHistory]);
+  }, [timetable, reflections, activeLearnMaterial, savedLearnMaterials, latestResult, activeRepair, recheckHistory]);
 
   function addTimetableEntry(entry: Omit<TimetableEntry, "id">) {
     const newEntry: TimetableEntry = { ...entry, id: "tt-" + Date.now() };
@@ -90,6 +106,17 @@ export function EchoProvider({ children }: { children: ReactNode }) {
     setReflections((prev) => prev.filter((r) => r.id !== id));
   }
 
+  function saveLearnMaterial(mat: Omit<LearnMaterial, "id" | "createdAt">): LearnMaterial {
+    const newMat: LearnMaterial = {
+      ...mat,
+      id: "lm-" + Date.now(),
+      createdAt: new Date().toISOString(),
+    };
+    setActiveLearnMaterial(newMat);
+    setSavedLearnMaterials((prev) => [newMat, ...prev.filter((item) => item.topic !== newMat.topic)]);
+    return newMat;
+  }
+
   function completeRecheck(concept: string, beforeScore: number, afterScore: number) {
     const item = { concept, beforeScore, afterScore, date: new Date().toLocaleTimeString() };
     setRecheckHistory((prev) => [item, ...prev]);
@@ -105,6 +132,8 @@ export function EchoProvider({ children }: { children: ReactNode }) {
       value={{
         timetable,
         reflections,
+        activeLearnMaterial,
+        savedLearnMaterials,
         latestResult,
         activeRepair,
         recheckHistory,
@@ -113,6 +142,8 @@ export function EchoProvider({ children }: { children: ReactNode }) {
         deleteTimetableEntry,
         saveReflection,
         deleteReflection,
+        saveLearnMaterial,
+        setActiveLearnMaterial,
         setLatestResult,
         setActiveRepair,
         completeRecheck,
