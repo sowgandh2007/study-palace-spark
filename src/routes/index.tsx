@@ -40,16 +40,13 @@ import { extractTextFromPdf, type PdfExtractResult } from "@/lib/echo/pdf";
 import {
   generatePdfSummary,
   analyzeExplanationWithAI,
-  generateAiExam,
   type LearningSummary,
   type ExplanationAnalysis,
-  type ExamQuestion,
 } from "@/lib/echo/llm";
 import { STABILITY_TREND, PRIORITY_REPAIRS } from "@/lib/echo/data";
 import { useEcho } from "@/lib/echo/store";
 import { toast } from "sonner";
 
-// ECHO — 5-Stage Intelligence Loop Redesign (Plan -> Learn -> Reflect -> Verify -> Adapt) v2
 export { EchoLogo };
 
 export const Route = createFileRoute("/")({
@@ -136,8 +133,6 @@ function LandingPage() {
 
   // Inline State for Verify Stage Card (AI Exam Generator)
   const [verifyTopic, setVerifyTopic] = useState("Binary Search");
-  const [verifyQuestionCount, setVerifyQuestionCount] = useState(3);
-  const [verifyLoading, setVerifyLoading] = useState(false);
 
   function handleStartVerifyExam(e: React.FormEvent) {
     e.preventDefault();
@@ -147,21 +142,19 @@ function LandingPage() {
     });
   }
 
-  // Scroll Stack Items Definition
+  // Exact 5 Stage Items conforming to Figma screenshot design & copy
   const stackItems: ScrollStackItem[] = [
     {
       id: "plan",
       stageNumber: "01",
-      stageName: "PLAN",
-      stageTitle: "Academic Context & Schedule",
-      badgeLabel: "Study Plan & Timetable",
+      stageTitle: "Plan",
       icon: Calendar,
-      accentColor: "bg-blue-500/20 border-blue-400/40 text-blue-400",
-      description: "Align your evening study time budget with tomorrow's class timetable and diagnosed conceptual gaps.",
+      description:
+        "ECHO reads your timetable and notes to build a focused plan around tomorrow's scheduled concepts — so study time is spent where evidence says it matters.",
       content: (
         <div className="space-y-5">
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-2xl bg-black/30 border border-white/10 p-5 space-y-3">
+            <div className="rounded-2xl bg-black/40 border border-blue-500/20 p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-primary">Tonight's Allocated Repairs</span>
                 <Badge variant="outline" className="border-primary/40 text-primary text-[10px]">2 Pending</Badge>
@@ -174,7 +167,7 @@ function LandingPage() {
               </Button>
             </div>
 
-            <div className="rounded-2xl bg-black/30 border border-white/10 p-5 space-y-3">
+            <div className="rounded-2xl bg-black/40 border border-blue-500/20 p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-sky-400">Tomorrow's Timetable Context</span>
                 <Badge variant="outline" className="border-sky-400/40 text-sky-300 text-[10px]">9:00 AM Class</Badge>
@@ -193,15 +186,13 @@ function LandingPage() {
     {
       id: "learn",
       stageNumber: "02",
-      stageName: "LEARN",
-      stageTitle: "AI PDF Summary Generator",
-      badgeLabel: "PDF Summarizer & Topics",
+      stageTitle: "Learn",
       icon: BookOpen,
-      accentColor: "bg-sky-500/20 border-sky-400/40 text-sky-400",
-      description: "Generate structured, high-yield learning summaries from topics or uploaded PDFs designed for deep understanding.",
+      description:
+        "You attend class and engage with the underlying concept. ECHO tracks the concept itself — the mechanism and its constraints — not a memorised answer.",
       content: (
         <div className="space-y-6">
-          <form onSubmit={handleGenerateLearnSummary} className="space-y-4 rounded-2xl bg-black/30 border border-white/10 p-5">
+          <form onSubmit={handleGenerateLearnSummary} className="space-y-4 rounded-2xl bg-black/40 border border-blue-500/20 p-5">
             <div>
               <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
                 What do you want to learn?
@@ -210,7 +201,7 @@ function LandingPage() {
                 value={learnTopic}
                 onChange={(e) => setLearnTopic(e.target.value)}
                 placeholder="Enter topic..."
-                className="mt-1 bg-black/40 border-white/10 text-xs text-white min-h-[42px]"
+                className="mt-1 bg-black/50 border-white/10 text-xs text-white min-h-[42px]"
               />
             </div>
 
@@ -263,21 +254,19 @@ function LandingPage() {
     {
       id: "reflect",
       stageNumber: "03",
-      stageName: "REFLECT",
-      stageTitle: "Self-Explanation & AI Analysis",
-      badgeLabel: "Free-Form Explanation",
+      stageTitle: "Reflect",
       icon: Sparkles,
-      accentColor: "bg-indigo-500/20 border-indigo-400/40 text-indigo-400",
-      description: "Explain concepts in your own words. AI evaluates your reasoning to detect superficial rote memorization.",
+      description:
+        "You self-report confidence and write what you understand in your own words. ECHO compares what you feel against demonstrated evidence.",
       content: (
         <div className="space-y-6">
-          <form onSubmit={handleAnalyzeReflect} className="space-y-4 rounded-2xl bg-black/30 border border-white/10 p-5">
+          <form onSubmit={handleAnalyzeReflect} className="space-y-4 rounded-2xl bg-black/40 border border-blue-500/20 p-5">
             <div>
               <label className="text-xs font-bold uppercase tracking-wider text-slate-300">Topic / Concept</label>
               <Input
                 value={reflectConcept}
                 onChange={(e) => setReflectConcept(e.target.value)}
-                className="mt-1 bg-black/40 border-white/10 text-xs text-white min-h-[42px]"
+                className="mt-1 bg-black/50 border-white/10 text-xs text-white min-h-[42px]"
               />
             </div>
 
@@ -288,7 +277,7 @@ function LandingPage() {
                 value={reflectExplanation}
                 onChange={(e) => setReflectExplanation(e.target.value)}
                 placeholder="Write your explanation here..."
-                className="mt-1.5 bg-black/40 border-white/10 text-xs text-white p-3 leading-relaxed"
+                className="mt-1.5 bg-black/50 border-white/10 text-xs text-white p-3 leading-relaxed"
               />
             </div>
 
@@ -315,21 +304,19 @@ function LandingPage() {
     {
       id: "verify",
       stageNumber: "04",
-      stageName: "VERIFY",
-      stageTitle: "AI Exam Generator & Probes",
-      badgeLabel: "Exam Generator & Probes",
+      stageTitle: "Verify",
       icon: Zap,
-      accentColor: "bg-amber-500/20 border-amber-400/40 text-amber-400",
-      description: "Generate custom AI exams from topics or PDFs testing Direct, Explain, and Transfer dimensions.",
+      description:
+        "ECHO tests your understanding across direct, explain, and transfer dimensions through targeted AI exams and diagnostic probes.",
       content: (
         <div className="space-y-6">
-          <form onSubmit={handleStartVerifyExam} className="space-y-4 rounded-2xl bg-black/30 border border-white/10 p-5">
+          <form onSubmit={handleStartVerifyExam} className="space-y-4 rounded-2xl bg-black/40 border border-blue-500/20 p-5">
             <div>
               <label className="text-xs font-bold uppercase tracking-wider text-slate-300">Exam Topic</label>
               <Input
                 value={verifyTopic}
                 onChange={(e) => setVerifyTopic(e.target.value)}
-                className="mt-1 bg-black/40 border-white/10 text-xs text-white min-h-[42px]"
+                className="mt-1 bg-black/50 border-white/10 text-xs text-white min-h-[42px]"
               />
             </div>
 
@@ -343,15 +330,13 @@ function LandingPage() {
     {
       id: "adapt",
       stageNumber: "05",
-      stageName: "ADAPT",
-      stageTitle: "Understanding Stability Index",
-      badgeLabel: "7-Day Score Trajectory",
+      stageTitle: "Adapt",
       icon: TrendingUp,
-      accentColor: "bg-emerald-500/20 border-emerald-400/40 text-emerald-400",
-      description: "Track score trajectory over time and receive context-aware learning actions based on demonstrated evidence.",
+      description:
+        "ECHO uses your stability trajectory to prioritize evening repair slots and recommend your next best learning action.",
       content: (
         <div className="space-y-5">
-          <div className="rounded-2xl bg-black/30 border border-white/10 p-5 space-y-4">
+          <div className="rounded-2xl bg-black/40 border border-blue-500/20 p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">7-Day Score Trajectory</span>
               <span className="font-mono text-xs text-emerald-400 font-bold">+27% Score Increase</span>
@@ -453,14 +438,14 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* REACT BITS SCROLL STACK CARD DECK (STAGE CARDS DECK) */}
+      {/* REACT BITS SCROLL STACK CARD DECK (EXACT FIGMA DESIGN MATCH) */}
       <section className="py-16 px-4 sm:px-6">
-        <div className="mx-auto max-w-5xl space-y-10">
+        <div className="mx-auto max-w-4xl space-y-10">
           <div className="text-center space-y-2">
             <span className="text-xs font-bold uppercase tracking-widest text-primary font-mono">Interactive Stage Deck</span>
             <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white">The ECHO Scroll Stack</h2>
             <p className="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto">
-              Scroll down to stack stage cards. Click any card to expand and open its new AI tools and existing features!
+              Scroll down to stack stage cards. Click OPEN MENU on any card to reveal its inline tools and features!
             </p>
           </div>
 
