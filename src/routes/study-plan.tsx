@@ -1,156 +1,129 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Clock, AlertTriangle, CheckCircle2, ShieldAlert, Sparkles, Trash2, RotateCcw, Plus } from "lucide-react";
+import { ArrowRight, Clock, Sparkles } from "lucide-react";
 import { EchoNavbar } from "@/components/EchoNavbar";
-import { ThemeSelect } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
-import { useEcho } from "@/lib/echo/store";
-import { toast } from "sonner";
 
 export const Route = createFileRoute("/study-plan")({
   component: StudyPlanPage,
 });
 
-const TIME_BUDGET_OPTIONS = [20, 30, 45, 60];
-
-// Initial items empty by default so no sample courses are pre-displayed
-const INITIAL_ITEMS: any[] = [];
+const DEFAULT_PLAN_ITEMS = [
+  {
+    id: "binary-search",
+    concept: "BINARY SEARCH",
+    time: 15,
+    diagnosedGap: "Transfer dimension deficit (scored 20/100) — why spatial halving requires order",
+    priority: "HIGH (Appears in tomorrow's 9:00 AM timetable)",
+    priorityLevel: "high",
+    activity: "Review invariant → Explain in own words → Apply to 2 variations → Re-check.",
+  },
+  {
+    id: "db-normalization",
+    concept: "DATABASE NORMALIZATION (3NF)",
+    time: 10,
+    diagnosedGap: "Assumption dimension deficit (scored 35/100) — transitive dependency vs candidate keys",
+    priority: "MEDIUM",
+    priorityLevel: "medium",
+    activity: "List all functional dependencies from scratch and verify lossless join decomposition.",
+  },
+];
 
 function StudyPlanPage() {
-  const { timetable } = useEcho();
-  const [selectedBudget, setSelectedBudget] = useState(35);
-  const [planItems, setPlanItems] = useState<any[]>(INITIAL_ITEMS);
+  const [items, setItems] = useState(DEFAULT_PLAN_ITEMS);
 
-  const isBinarySearchTomorrow = timetable.some((t) =>
-    t.topic.toLowerCase().includes("binary search")
-  );
+  const totalMinutes = items.reduce((acc, curr) => acc + curr.time, 0);
 
-  function removeItem(id: string, conceptName: string) {
-    setPlanItems((prev) => prev.filter((item) => item.id !== id));
-    toast.success(`Removed ${conceptName} from study plan`);
+  function handleRemove(id: string) {
+    setItems((prev) => prev.filter((i) => i.id !== id));
   }
 
-  const totalMinutes = planItems.reduce((acc, item) => acc + item.time, 0);
-
   return (
-    <div className="min-h-screen text-foreground selection:bg-primary/30 pb-28 md:pb-20">
+    <div className="min-h-screen bg-[#030919] text-foreground selection:bg-primary/30 pb-28 md:pb-20">
       <EchoNavbar variant="dark" />
 
-      <main className="mx-auto max-w-3xl px-4 sm:px-6 pt-6 sm:pt-10 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-primary">Personalized Study Plan</span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mt-1">Tonight's ECHO Plan</h1>
-            <p className="text-xs sm:text-sm text-slate-300 mt-1">
-              Prioritized repair slots generated strictly from your diagnosed conceptual gaps and tomorrow's timetable.
-            </p>
-          </div>
+      <main className="mx-auto max-w-3xl px-4 sm:px-6 pt-8 sm:pt-12 space-y-8">
+        {/* Header */}
+        <div className="space-y-1">
+          <span className="text-xs font-mono font-extrabold uppercase tracking-wider text-blue-400">
+            TOMORROW-AWARE STUDY PRIORITIZATION
+          </span>
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+            Tonight's ECHO Study Plan
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-300 font-medium pt-1">
+            Total Time: <strong className="text-white">{totalMinutes} minutes</strong> · {items.length} concepts requiring targeted repair
+          </p>
         </div>
 
-        {/* Study Time Budget Selector */}
-        <div className="glass-card p-6 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
-              How much time can you study tonight?
-            </label>
-            <span className="font-mono text-xs sm:text-sm font-bold text-primary">{selectedBudget} minutes ({totalMinutes}m allocated)</span>
-          </div>
-
-          <div className="grid grid-cols-4 gap-2 sm:gap-3">
-            {TIME_BUDGET_OPTIONS.map((mins) => (
-              <button
-                key={mins}
-                type="button"
-                onClick={() => setSelectedBudget(mins)}
-                className={`rounded-xl border py-3 text-xs font-mono font-bold transition-all min-h-[44px] ${
-                  selectedBudget === mins
-                    ? "border-primary bg-primary/20 text-white shadow-glow"
-                    : "border-white/10 bg-black/20 hover:border-white/30 text-slate-400"
-                }`}
-              >
-                {mins}m
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Prioritized Repair Slots Empty State */}
+        {/* Plan Cards List */}
         <div className="space-y-5">
-          {planItems.length === 0 ? (
-            <div className="glass-card p-10 sm:p-12 text-center space-y-4">
-              <Sparkles className="size-10 text-primary mx-auto" />
-              <h3 className="font-bold text-lg text-white">No Courses or Study Plan Items Yet</h3>
-              <p className="text-xs sm:text-sm text-slate-300 max-w-sm mx-auto">
-                Complete a 10-second post-class reflection or diagnostic probe to automatically add target repair courses to your study plan.
+          {items.map((item) => (
+            <div
+              key={item.id}
+              className="rounded-3xl border border-blue-500/25 bg-gradient-to-br from-[#050e26] via-[#08173d] to-[#0b1d4c] p-6 sm:p-8 space-y-4 shadow-2xl relative group"
+            >
+              {/* Card Header */}
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-xs sm:text-sm font-extrabold uppercase tracking-wider text-blue-400">
+                  {item.concept}
+                </span>
+                <span className="flex items-center gap-1.5 font-mono text-xs text-slate-300">
+                  <Clock className="size-4 text-blue-400" /> {item.time} min
+                </span>
+              </div>
+
+              {/* Diagnosed Gap & Priority */}
+              <div className="space-y-1.5 text-xs sm:text-sm">
+                <p className="text-slate-300">
+                  <strong className="text-rose-400 uppercase tracking-wider font-bold">DIAGNOSED GAP: </strong>
+                  {item.diagnosedGap}
+                </p>
+                <p className="text-slate-300">
+                  <strong className="text-amber-400 uppercase tracking-wider font-bold">PRIORITY: </strong>
+                  <span className={item.priorityLevel === "high" ? "text-amber-400 font-bold" : "text-amber-300"}>
+                    {item.priority}
+                  </span>
+                </p>
+              </div>
+
+              {/* Repair Activity */}
+              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed pt-1">
+                Repair activity: {item.activity}
               </p>
-              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
-                <Button asChild size="sm" className="bg-primary hover:bg-primary/90 text-white font-bold shadow-glow min-h-[44px]">
-                  <Link to="/reflection">Start 10s Reflection <ArrowRight className="ml-1 size-3.5" /></Link>
-                </Button>
-                <Button asChild size="sm" variant="outline" className="border-white/20 bg-white/5 hover:bg-white/10 text-white min-h-[44px]">
-                  <Link to="/timetable">Add Scheduled Class</Link>
+
+              {/* Bottom Actions */}
+              <div className="pt-3 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => handleRemove(item.id)}
+                  className="text-xs text-slate-400 hover:text-rose-400 transition-colors font-mono"
+                >
+                  Remove
+                </button>
+
+                <Button
+                  asChild
+                  size="md"
+                  className={`rounded-full px-6 font-bold text-xs min-h-[44px] shadow-glow ${
+                    item.priorityLevel === "high"
+                      ? "bg-blue-500 hover:bg-blue-600 text-white"
+                      : "border border-blue-400/40 bg-blue-500/10 hover:bg-blue-500/20 text-white"
+                  }`}
+                >
+                  <Link to="/repair" search={{ concept: item.concept }}>
+                    Launch Targeted Repair <ArrowRight className="ml-1.5 size-4" />
+                  </Link>
                 </Button>
               </div>
             </div>
-          ) : (
-            planItems.map((item) => (
-              <div key={item.id} className="glass-card glass-card-hover p-6 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <span className="text-xs font-bold uppercase tracking-wider text-primary">{item.priority}</span>
-                    <h3 className="text-base sm:text-lg font-bold text-white">{item.concept}</h3>
-                  </div>
-                  <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 pt-2 sm:pt-0">
-                    <span className="flex items-center gap-1 font-mono text-xs text-slate-300">
-                      <Clock className="size-3.5 text-primary" /> {item.time} min
-                    </span>
-                    <button
-                      onClick={() => removeItem(item.id, item.concept)}
-                      className="p-2.5 text-slate-400 hover:text-destructive transition-colors rounded-xl border border-white/10 min-h-[44px] min-w-[44px] flex items-center justify-center"
-                      title="Remove from study plan"
-                    >
-                      <Trash2 className="size-4" />
-                    </button>
-                  </div>
-                </div>
+          ))}
 
-                <div className="grid gap-2 text-xs rounded-xl bg-black/40 p-4 border border-white/10 font-mono">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Stability Score:</span>
-                    <span className={`font-bold ${item.stability < 60 ? "text-warning" : "text-primary"}`}>
-                      {item.stability} ({item.stabilityBand})
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Confidence Gap:</span>
-                    <span className="font-bold text-destructive">{item.confidenceGap}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Diagnosed Gap:</span>
-                    <span className="text-white">{item.diagnosedGap}</span>
-                  </div>
-                </div>
-
-                <p className="text-xs text-slate-300 leading-relaxed pt-1">
-                  Step-by-step repair breakdown: {item.breakdown}
-                </p>
-
-                <div className="pt-2 flex items-center justify-between gap-3">
-                  <button
-                    onClick={() => removeItem(item.id, item.concept)}
-                    className="text-xs text-slate-400 hover:text-destructive transition-colors font-semibold"
-                  >
-                    Remove from plan
-                  </button>
-
-                  <Button asChild size="sm" className="bg-primary hover:bg-primary/90 font-bold shadow-glow min-h-[44px]">
-                    <Link to="/repair" search={{ concept: item.concept }}>
-                      Start Repair <ArrowRight className="size-3.5 ml-1" />
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-            ))
+          {items.length === 0 && (
+            <div className="rounded-3xl border border-blue-500/20 bg-black/30 p-10 text-center space-y-3">
+              <Sparkles className="size-8 text-blue-400 mx-auto" />
+              <p className="text-xs sm:text-sm text-slate-300">All planned study repair items completed!</p>
+            </div>
           )}
         </div>
       </main>
