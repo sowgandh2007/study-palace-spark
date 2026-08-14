@@ -1,18 +1,6 @@
 import { useState, useEffect } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-  BookOpen,
-  ArrowRight,
-  Sparkles,
-  Loader2,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-  Brain,
-  Compass,
-  FileText,
-  RotateCcw,
-} from "lucide-react";
+import { Sparkles, Loader2, Clock, ArrowRight, CheckCircle2, RotateCcw } from "lucide-react";
 import { EchoNavbar } from "@/components/EchoNavbar";
 import { Button } from "@/components/ui/button";
 import { useEcho } from "@/lib/echo/store";
@@ -24,80 +12,15 @@ export const Route = createFileRoute("/study-plan")({
 });
 
 export function StudyPlanPage() {
-  const { reflections, latestResult } = useEcho();
+  const { reflections } = useEcho();
   const latestReflection = reflections[0];
 
+  const [hasGenerated, setHasGenerated] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [academicPlan, setAcademicPlan] = useState<AcademicStudyPlan | null>(null);
 
-  // Auto-generate plan based on latest student reflection evidence
-  useEffect(() => {
-    async function loadInitialPlan() {
-      if (latestReflection) {
-        setGenerating(true);
-        try {
-          const res = await generateAcademicStudyPlan(
-            latestReflection.conceptName,
-            latestReflection.understoodText,
-            latestReflection.notUnderstoodText,
-            latestReflection.confidence
-          );
-          setAcademicPlan(res);
-        } catch {
-          // Fallback plan
-        } finally {
-          setGenerating(false);
-        }
-      } else {
-        // Default academic plan baseline
-        setAcademicPlan({
-          topic: "Binary Search & Spatial Halving",
-          generatedAt: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-          totalMinutes: 35,
-          currentUnderstandingSummary:
-            "Evidence indicates baseline familiarity with binary search mechanisms, but reveals structural fragility around spatial halving conditions and array sorting preconditions.",
-          focusAreas: [
-            {
-              concept: "Order Invariance Precondition",
-              issueType: "Conceptual Gap",
-              description: "Requires clear formulation of why elimination logic fails on unsorted inputs.",
-            },
-            {
-              concept: "Midpoint Overflow Prevention",
-              issueType: "Weak Application",
-              description: "Boundary index calculations mid = low + (high - low)/2 under large limits.",
-            },
-          ],
-          sequence: [
-            { stepNumber: "01", title: "Review Prerequisite Invariants", objective: "Verify ordered array constraints." },
-            { stepNumber: "02", title: "Rebuild Core Elimination Logic", objective: "Formulate exact mid-point calculation." },
-            { stepNumber: "03", title: "Verify Transfer Applications", objective: "Test algorithm on rotated or non-standard search spaces." },
-          ],
-          sessions: [
-            {
-              id: "s1",
-              sessionNumber: "Session 01",
-              topic: "Binary Search — Core Invariants",
-              objective: "Formulate and write the array sorting precondition in your own words.",
-              recommendedActivity: "Review invariant definition → Write 2-sentence explanation → Verify against edge cases.",
-              estimatedMinutes: 15,
-            },
-            {
-              id: "s2",
-              sessionNumber: "Session 02",
-              topic: "Binary Search — Boundary Application",
-              objective: "Apply pointer elimination to rotated sorted arrays.",
-              recommendedActivity: "Solve 2 boundary variations → Verify index logic.",
-              estimatedMinutes: 20,
-            },
-          ],
-        });
-      }
-    }
-    loadInitialPlan();
-  }, [latestReflection]);
-
-  async function handleRegeneratePlan() {
+  // Function to generate evidence-based study plan
+  async function handleGeneratePlan() {
     setGenerating(true);
     try {
       const concept = latestReflection?.conceptName || "Binary Search";
@@ -108,212 +31,157 @@ export function StudyPlanPage() {
         latestReflection?.confidence
       );
       setAcademicPlan(res);
-      toast.success("Regenerated Evidence-Based Study Plan!");
+      setHasGenerated(true);
+      toast.success("Study Plan Generated!");
     } catch {
-      toast.error("Failed to generate plan.");
+      toast.error("Failed to generate study plan.");
     } finally {
       setGenerating(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-[#fdfbf7] text-[#0f172a] selection:bg-amber-100 pb-28 md:pb-20 font-sans">
-      {/* Global Echo Header */}
+    <div className="min-h-screen bg-gradient-royal-ice-page selection:bg-primary/30 flex flex-col justify-between pb-16">
+      {/* Subtle Global Header */}
       <EchoNavbar variant="light" />
 
-      <main className="mx-auto max-w-4xl px-4 sm:px-6 pt-8 sm:pt-12 space-y-10">
-        {/* Academic Page Header (No submenus or tabs) */}
-        <div className="border-b border-[#e5e0d8] pb-6 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-mono font-bold uppercase tracking-widest text-[#b45309]">
-              Academic Planning Workspace
+      <main className="flex-1 max-w-2xl mx-auto px-4 sm:px-6 pt-10 sm:pt-16 pb-12 w-full">
+        {!hasGenerated ? (
+          /* INITIAL STATE: Google-Homepage-Style Minimalism */
+          <div className="flex flex-col items-center justify-center text-center py-12 sm:py-20 space-y-6 animate-in fade-in duration-300">
+            <span className="text-xs font-mono font-bold tracking-widest text-primary uppercase bg-white/80 border border-primary/20 px-3 py-1 rounded-full shadow-sm">
+              ECHO
             </span>
-            {academicPlan && (
-              <span className="text-xs font-mono text-[#64748b]">
-                Generated {academicPlan.generatedAt}
-              </span>
-            )}
-          </div>
 
-          <h1 className="text-3xl sm:text-4xl font-serif font-extrabold text-[#0f172a] tracking-tight">
-            Study Plan
-          </h1>
-
-          <p className="text-sm text-[#475569] font-serif italic">
-            An evidence-based plan built around what you need to understand next.
-          </p>
-
-          {academicPlan && (
-            <div className="pt-2 flex items-center gap-4 text-xs font-mono text-[#64748b]">
-              <span>Topic: <strong className="text-[#0f172a]">{academicPlan.topic}</strong></span>
-              <span>•</span>
-              <span>Estimated Time: <strong className="text-[#0f172a]">{academicPlan.totalMinutes} minutes</strong></span>
-            </div>
-          )}
-        </div>
-
-        {generating ? (
-          <div className="rounded-2xl border border-[#e5e0d8] bg-white p-12 text-center space-y-3 shadow-sm">
-            <Loader2 className="size-8 text-[#b45309] animate-spin mx-auto" />
-            <p className="text-sm font-serif text-[#0f172a] font-bold">Generating Evidence-Based Academic Plan...</p>
-            <p className="text-xs text-[#64748b]">Analyzing reflection data, diagnosed gaps, and understanding stability.</p>
-          </div>
-        ) : academicPlan ? (
-          <div className="space-y-10 animate-in fade-in duration-300">
-            {/* SECTION 1: CURRENT UNDERSTANDING */}
-            <section className="rounded-2xl border border-[#e5e0d8] bg-white p-6 sm:p-8 space-y-3 shadow-sm">
-              <div className="flex items-center gap-2 text-[#b45309]">
-                <Brain className="size-5 shrink-0" />
-                <h2 className="text-xs font-mono font-bold uppercase tracking-widest">Current Understanding</h2>
-              </div>
-              <p className="text-sm sm:text-base text-[#1e293b] leading-relaxed font-serif">
-                {academicPlan.currentUnderstandingSummary}
+            <div className="space-y-2">
+              <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900">
+                Study Plan
+              </h1>
+              <p className="text-sm sm:text-base text-slate-700 font-medium max-w-md mx-auto">
+                An evidence-based plan built around what you need to understand next.
               </p>
-              {latestReflection && (
-                <div className="pt-2 border-t border-[#f1f5f9] flex items-center justify-between text-xs text-[#64748b] font-mono">
-                  <span>Based on recent reflection: <strong>{latestReflection.conceptName}</strong></span>
-                  <span>Self-reported confidence: <strong>{latestReflection.confidence}%</strong></span>
-                </div>
-              )}
-            </section>
+            </div>
 
-            {/* SECTION 2: FOCUS AREAS */}
-            <section className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xs font-mono font-bold uppercase tracking-widest text-[#0f172a]">
-                  Focus Areas
-                </h2>
-                <span className="text-xs font-mono text-[#64748b]">
-                  {academicPlan.focusAreas.length} Key Concepts Requiring Attention
-                </span>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                {academicPlan.focusAreas.map((fa, idx) => (
-                  <div
-                    key={idx}
-                    className="rounded-2xl border border-[#e5e0d8] bg-white p-5 space-y-2 shadow-sm"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-xs text-[#0f172a]">{fa.concept}</span>
-                      <span className="rounded-md bg-[#fff7ed] border border-[#ffedd5] px-2 py-0.5 text-[10px] font-mono font-bold text-[#c2410c]">
-                        {fa.issueType}
-                      </span>
-                    </div>
-                    <p className="text-xs text-[#475569] leading-relaxed">{fa.description}</p>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* SECTION 3: RECOMMENDED LEARNING SEQUENCE */}
-            <section className="rounded-2xl border border-[#e5e0d8] bg-white p-6 sm:p-8 space-y-4 shadow-sm">
-              <div className="flex items-center gap-2 text-[#0f172a]">
-                <Compass className="size-5 shrink-0 text-[#b45309]" />
-                <h2 className="text-xs font-mono font-bold uppercase tracking-widest">Recommended Learning Sequence</h2>
-              </div>
-
-              <div className="space-y-3 pt-2">
-                {academicPlan.sequence.map((seq) => (
-                  <div
-                    key={seq.stepNumber}
-                    className="rounded-xl border border-[#f1f5f9] bg-[#fafaf8] p-4 flex items-start gap-4"
-                  >
-                    <span className="font-mono text-sm font-extrabold text-[#b45309] shrink-0 pt-0.5">
-                      {seq.stepNumber}
-                    </span>
-                    <div className="space-y-0.5">
-                      <h3 className="text-xs font-bold text-[#0f172a]">{seq.title}</h3>
-                      <p className="text-xs text-[#475569]">{seq.objective}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* SECTION 4: YOUR STUDY SESSIONS */}
-            <section className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xs font-mono font-bold uppercase tracking-widest text-[#0f172a]">
-                  Your Study Sessions
-                </h2>
-                <span className="text-xs font-mono text-[#64748b]">
-                  Total Budget: {academicPlan.totalMinutes}m
-                </span>
-              </div>
-
-              <div className="space-y-4">
-                {academicPlan.sessions.map((sess) => (
-                  <div
-                    key={sess.id}
-                    className="rounded-2xl border border-[#e5e0d8] bg-white p-6 space-y-4 shadow-sm"
-                  >
-                    <div className="flex items-center justify-between border-b border-[#f1f5f9] pb-3">
-                      <div>
-                        <span className="text-[11px] font-mono font-bold uppercase text-[#b45309]">
-                          {sess.sessionNumber}
-                        </span>
-                        <h3 className="text-base font-bold text-[#0f172a] mt-0.5">{sess.topic}</h3>
-                      </div>
-                      <span className="flex items-center gap-1 font-mono text-xs text-[#64748b]">
-                        <Clock className="size-3.5 text-[#b45309]" /> {sess.estimatedMinutes} min
-                      </span>
-                    </div>
-
-                    <div className="space-y-2 text-xs text-[#334155]">
-                      <p><strong>Objective:</strong> {sess.objective}</p>
-                      <p className="text-[#475569] leading-relaxed">
-                        <strong>Recommended Activity:</strong> {sess.recommendedActivity}
-                      </p>
-                    </div>
-
-                    <div className="pt-2 flex items-center justify-end">
-                      <Button
-                        asChild
-                        size="sm"
-                        className="bg-[#0f172a] hover:bg-[#1e293b] text-white font-bold text-xs rounded-xl min-h-[38px] px-5"
-                      >
-                        <Link to="/repair" search={{ concept: sess.topic }}>
-                          Launch Repair Session <ArrowRight className="ml-1.5 size-3.5" />
-                        </Link>
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* SECTION 5: PRIMARY ACTION */}
-            <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-[#e5e0d8]">
+            <div className="pt-4 space-y-3 w-full max-w-xs mx-auto">
               <Button
                 type="button"
-                variant="outline"
-                onClick={handleRegeneratePlan}
+                onClick={handleGeneratePlan}
                 disabled={generating}
-                className="w-full sm:w-auto border-[#cbd5e1] bg-white text-[#0f172a] hover:bg-[#f8fafc] font-bold text-xs min-h-[44px] px-6"
+                className="w-full bg-primary hover:bg-primary/90 text-white font-bold text-base min-h-[48px] rounded-2xl shadow-glow transition-all"
               >
-                <RotateCcw className="mr-2 size-4 text-[#b45309]" /> Regenerate Evidence-Based Plan
+                {generating ? (
+                  <>
+                    <Loader2 className="mr-2 size-5 animate-spin" /> Generating Plan...
+                  </>
+                ) : (
+                  <>
+                    Generate Study Plan <Sparkles className="ml-2 size-5 text-sky-200" />
+                  </>
+                )}
               </Button>
 
-              <Button
-                asChild
-                className="w-full sm:w-auto bg-[#0f172a] hover:bg-[#1e293b] text-white font-bold text-xs min-h-[44px] px-6"
-              >
-                <Link to="/reflection">
-                  Submit New Reflection <Sparkles className="ml-2 size-4 text-amber-300" />
-                </Link>
-              </Button>
+              <p className="text-xs text-slate-600 font-medium">
+                {latestReflection
+                  ? `Based on your latest reflection: ${latestReflection.conceptName}`
+                  : "Based on your latest reflection"}
+              </p>
             </div>
           </div>
         ) : (
-          <div className="rounded-2xl border border-[#e5e0d8] bg-white p-10 text-center space-y-3">
-            <p className="text-sm font-serif text-[#0f172a]">No reflection evidence available yet.</p>
-            <Button asChild size="sm" className="bg-[#0f172a] text-white font-bold text-xs">
-              <Link to="/reflection">Reflect on a Topic →</Link>
-            </Button>
+          /* GENERATED PLAN UI: Extremely Minimal Vertical Timeline Sequence */
+          <div className="space-y-8 animate-in fade-in duration-300">
+            {/* Header */}
+            <div className="border-b border-slate-200/80 pb-6 flex items-center justify-between">
+              <div>
+                <span className="text-xs font-mono font-bold uppercase text-primary tracking-wider">
+                  Targeted Learning Sequence
+                </span>
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
+                  {academicPlan?.topic}
+                </h1>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleGeneratePlan}
+                disabled={generating}
+                className="border-slate-300 bg-white hover:bg-slate-50 text-slate-900 font-bold text-xs rounded-xl min-h-[38px]"
+              >
+                <RotateCcw className="size-3.5 mr-1.5 text-primary" /> Regenerate
+              </Button>
+            </div>
+
+            {/* What to Study & What Needs Attention */}
+            {academicPlan && (
+              <div className="rounded-2xl border border-slate-200 bg-white/95 p-5 sm:p-6 space-y-3 shadow-sm">
+                <div className="text-xs font-bold uppercase tracking-wider text-primary">
+                  What Needs Attention
+                </div>
+                <p className="text-xs sm:text-sm text-slate-800 font-medium leading-relaxed">
+                  {academicPlan.currentUnderstandingSummary}
+                </p>
+              </div>
+            )}
+
+            {/* Vertical Timeline / Sequence List */}
+            {academicPlan && (
+              <div className="space-y-4">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                  Recommended Order & Sessions
+                </h2>
+
+                <div className="space-y-4 relative before:absolute before:left-5 before:top-3 before:bottom-3 before:w-0.5 before:bg-primary/20">
+                  {academicPlan.sessions.map((sess, idx) => (
+                    <div
+                      key={sess.id}
+                      className="relative pl-12 rounded-2xl border border-slate-200 bg-white/95 p-5 space-y-3 shadow-sm"
+                    >
+                      {/* Step Number Dot */}
+                      <div className="absolute left-2.5 top-5 -translate-x-1/2 grid h-6 w-6 place-items-center rounded-full bg-primary text-white font-mono text-[10px] font-bold shadow-glow">
+                        0{idx + 1}
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-bold text-sm sm:text-base text-slate-900">
+                          {sess.topic}
+                        </h3>
+                        <span className="flex items-center gap-1 font-mono text-xs text-slate-600 font-medium">
+                          <Clock className="size-3.5 text-primary" /> {sess.estimatedMinutes}m
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-slate-700 font-medium leading-relaxed">
+                        <strong className="text-slate-900">Objective:</strong> {sess.objective}
+                      </p>
+
+                      <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <strong className="text-slate-800">Activity:</strong> {sess.recommendedActivity}
+                      </p>
+
+                      <div className="pt-2 flex justify-end">
+                        <Button
+                          asChild
+                          size="sm"
+                          className="bg-primary hover:bg-primary/90 text-white font-bold text-xs rounded-xl min-h-[38px] px-4 shadow-glow"
+                        >
+                          <Link to="/repair" search={{ concept: sess.topic }}>
+                            Start Session <ArrowRight className="ml-1.5 size-3.5" />
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </main>
+
+      {/* Subtle Footer */}
+      <footer className="text-center text-[11px] text-slate-500 font-mono">
+        ECHO • Evidence-Based Learning Intelligence
+      </footer>
     </div>
   );
 }

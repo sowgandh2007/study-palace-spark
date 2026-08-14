@@ -1,19 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-  ArrowRight,
-  ShieldCheck,
-  AlertTriangle,
-  BookOpen,
-  Clock,
-  Sparkles,
-  TrendingUp,
-  CheckCircle2,
-  Calendar,
-} from "lucide-react";
+import { useState } from "react";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { Search, Sparkles, BookOpen, BrainCircuit } from "lucide-react";
 import { EchoNavbar } from "@/components/EchoNavbar";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { STABILITY_TREND, PRIORITY_REPAIRS } from "@/lib/echo/data";
+import { Input } from "@/components/ui/input";
 import { useEcho } from "@/lib/echo/store";
 
 export const Route = createFileRoute("/dashboard")({
@@ -21,115 +11,108 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 function DashboardPage() {
-  const { timetable, reflections } = useEcho();
+  const navigate = useNavigate();
+  const { latestResult } = useEcho();
+  const [query, setQuery] = useState("");
+
+  function handleSearchSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const topic = query.trim() || "Binary Search";
+    navigate({ to: "/learn", search: { topic } });
+  }
+
+  function handleLearnClick() {
+    const topic = query.trim() || "Binary Search";
+    navigate({ to: "/learn", search: { topic } });
+  }
+
+  function handleReflectClick() {
+    const concept = query.trim() || "Binary Search";
+    navigate({ to: "/reflection", search: { concept } });
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 selection:bg-primary/30 pb-28 md:pb-20">
-      {/* Responsive Light Navbar */}
+    <div className="min-h-screen bg-gradient-royal-ice-page selection:bg-primary/30 flex flex-col justify-between pb-12">
+      {/* Subtle Global Header */}
       <EchoNavbar variant="light" />
 
-      <main className="mx-auto max-w-5xl px-4 sm:px-6 pt-6 sm:pt-8 space-y-6">
-        {/* Simple & Clean Header Banner */}
-        <div className="rounded-2xl bg-gradient-to-r from-blue-700 to-indigo-800 p-6 sm:p-8 text-white shadow-md">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-                Student Dashboard
-              </h1>
-              <p className="text-xs sm:text-sm text-sky-100">
-                Your reflection check-ins and study plan, in one place.
-              </p>
-            </div>
-
-            <Button asChild size="md" className="bg-white text-blue-950 hover:bg-slate-100 font-bold shadow-sm min-h-[42px] shrink-0">
-              <Link to="/reflection">
-                Start 10s Reflection <ArrowRight className="ml-1.5 size-4 text-blue-700" />
-              </Link>
-            </Button>
-          </div>
+      {/* Main Google-Homepage-Style Center Content */}
+      <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 max-w-2xl mx-auto w-full text-center py-12 sm:py-20 space-y-8">
+        {/* ECHO Branding & Central Question */}
+        <div className="space-y-3 animate-in fade-in duration-300">
+          <span className="text-xs font-mono font-bold tracking-widest text-primary uppercase bg-white/80 border border-primary/20 px-3 py-1 rounded-full shadow-sm">
+            ECHO
+          </span>
+          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
+            What do you want to understand?
+          </h1>
         </div>
 
-        {/* Clean 2-Column Dashboard Grid */}
-        <div className="grid gap-5 md:grid-cols-2">
-          {/* Card 1: 10-Second Post-Class Reflection */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4 flex flex-col justify-between">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
-                <Sparkles className="size-4" /> Quick Check-In
-              </div>
-              <h2 className="text-lg font-bold text-slate-900">Post-Class Reflection</h2>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Log your self-reported confidence and struggle points immediately after class to generate your personalized study plan.
-              </p>
-            </div>
+        {/* Central Search Input Form */}
+        <form onSubmit={handleSearchSubmit} className="w-full space-y-4">
+          <div className="relative group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+            <Input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search a topic or ask ECHO..."
+              className="w-full bg-white/95 border border-slate-300 hover:border-slate-400 focus:border-primary text-slate-900 placeholder:text-slate-400 text-sm sm:text-base rounded-2xl pl-12 pr-4 min-h-[52px] shadow-sm transition-all"
+            />
+          </div>
 
-            <Button asChild size="md" className="w-full bg-primary hover:bg-primary/90 text-white font-bold min-h-[42px]">
-              <Link to="/reflection">Reflect Now <ArrowRight className="ml-1.5 size-4" /></Link>
+          {/* Primary Action Buttons */}
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <Button
+              type="button"
+              onClick={handleLearnClick}
+              className="bg-primary hover:bg-primary/90 text-white font-bold text-sm px-6 py-2.5 rounded-xl shadow-glow min-h-[44px] transition-all"
+            >
+              <BookOpen className="size-4 mr-2" /> Learn
+            </Button>
+
+            <Button
+              type="button"
+              onClick={handleReflectClick}
+              variant="outline"
+              className="bg-white/90 hover:bg-white text-slate-900 border-slate-300 font-bold text-sm px-6 py-2.5 rounded-xl min-h-[44px] shadow-sm transition-all"
+            >
+              <BrainCircuit className="size-4 mr-2 text-primary" /> Reflect
             </Button>
           </div>
+        </form>
 
-          {/* Card 2: Upcoming Timetable & Action Context */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4 flex flex-col justify-between">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-indigo-600 font-bold text-xs uppercase tracking-wider">
-                <Calendar className="size-4" /> Academic Context
+        {/* Small Understanding Indicator */}
+        <div className="pt-8 border-t border-slate-200/60 w-full max-w-sm mx-auto">
+          {latestResult ? (
+            <div className="space-y-1">
+              <div className="text-2xl font-extrabold font-mono text-slate-900">
+                {latestResult.stabilityScore} <span className="text-xs text-slate-500 font-normal">/ 100</span>
               </div>
-              <h2 className="text-lg font-bold text-slate-900">Timetable & Schedule</h2>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Connect your class timetable to automatically align evening repair slots with tomorrow's upcoming lectures.
+              <p className="text-xs font-bold text-primary tracking-wide">
+                {latestResult.bandLabel}
+              </p>
+              <p className="text-[11px] text-slate-600 truncate max-w-xs mx-auto pt-0.5">
+                {latestResult.conceptName}
               </p>
             </div>
-
-            <Button asChild size="md" variant="outline" className="w-full border-slate-300 text-slate-800 hover:bg-slate-50 font-bold min-h-[42px]">
-              <Link to="/timetable">View Timetable <ArrowRight className="ml-1.5 size-4" /></Link>
-            </Button>
-          </div>
-
-          {/* Card 3: Priority Repairs & Study Plan */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4 md:col-span-2">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <BookOpen className="size-4 text-primary" />
-                <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Tonight's Study Plan & Priority Repairs</h2>
-              </div>
-              <Badge variant="outline" className="border-slate-200 text-slate-600 font-mono text-[10px]">
-                {PRIORITY_REPAIRS.length} Pending
-              </Badge>
+          ) : (
+            <div className="space-y-1">
+              <span className="text-xs font-mono text-slate-500 font-medium">
+                Understanding not measured yet
+              </span>
+              <p className="text-[11px] text-slate-500">
+                Complete a reflection check to measure stability
+              </p>
             </div>
-
-            {PRIORITY_REPAIRS.length === 0 ? (
-              <div className="text-center py-6 space-y-2">
-                <CheckCircle2 className="size-8 text-emerald-500 mx-auto" />
-                <p className="text-xs font-bold text-slate-700">No Pending Repairs Right Now</p>
-                <p className="text-[11px] text-slate-500 max-w-xs mx-auto">
-                  Complete a post-class reflection to automatically generate targeted repair slots.
-                </p>
-              </div>
-            ) : (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {PRIORITY_REPAIRS.map((c) => (
-                  <div key={c.conceptId} className="rounded-xl border border-slate-100 bg-slate-50 p-4 space-y-2">
-                    <div className="flex items-start justify-between">
-                      <h3 className="text-xs font-bold text-slate-900">{c.name}</h3>
-                      <span className="font-mono text-[11px] font-bold text-primary">{c.stability}%</span>
-                    </div>
-                    <p className="text-[11px] text-slate-600">Focus: {c.weakest}</p>
-                    <Button asChild size="sm" className="w-full text-xs font-bold bg-white text-slate-900 border border-slate-300 hover:bg-slate-100 min-h-[36px]">
-                      <Link to="/repair" search={{ concept: c.name }}>Repair Gap</Link>
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="pt-2">
-              <Button asChild size="sm" variant="ghost" className="w-full text-xs font-bold text-slate-700 hover:text-primary">
-                <Link to="/study-plan">Full Study Plan Queue →</Link>
-              </Button>
-            </div>
-          </div>
+          )}
         </div>
       </main>
+
+      {/* Subtle Footer */}
+      <footer className="text-center text-[11px] text-slate-500 font-mono">
+        Evidence-Based Conceptual Honesty Engine
+      </footer>
     </div>
   );
 }
