@@ -38,13 +38,14 @@ function LandingPage() {
   }, []);
 
   // 5 Stage Cards for ScrollStack deck matching exact Figma screenshot
+  // Plan card points DIRECTLY to /timetable (Tomorrow's Class Schedule)
   const stackItems: ScrollStackItem[] = [
     {
       id: "plan",
       stageNumber: "01",
       stageTitle: "Plan",
       icon: Calendar,
-      to: "/plan",
+      to: "/timetable",
       description:
         "ECHO reads your timetable and notes to build a focused plan around tomorrow's scheduled concepts — so study time is spent where evidence says it matters.",
     },

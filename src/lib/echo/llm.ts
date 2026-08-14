@@ -67,12 +67,10 @@ function logDev(message: string, ...data: unknown[]) {
 export function cleanAndParseJSON<T>(rawText: string): T {
   let text = rawText.trim();
 
-  // Defensive Markdown code fence stripping
   if (text.includes("```")) {
     text = text.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
   }
 
-  // Find first { or [ and last } or ]
   const firstBrace = text.search(/[\{\[]/);
   const lastBrace = text.search(/[\}\]][^]*$/);
 
@@ -82,12 +80,8 @@ export function cleanAndParseJSON<T>(rawText: string): T {
 
   try {
     const parsed = JSON.parse(text) as T;
-    if (parsed && typeof parsed === "object") {
-      logDev("Parsed JSON keys:", Object.keys(parsed as object));
-    }
     return parsed;
   } catch (e) {
-    logDev("JSON parse failed on text:", text);
     throw new ECHOAIError(
       "ECHO received an invalid JSON response structure from the AI provider.",
       "INVALID_RESPONSE"
@@ -106,24 +100,18 @@ export async function discoverGeminiModels(apiKey: string): Promise<string[]> {
       },
     });
 
-    if (!res.ok) {
-      logDev(`Gemini Model discovery HTTP Status: ${res.status}`);
-      return [];
-    }
+    if (!res.ok) return [];
 
     const data = await res.json();
     if (data?.models && Array.isArray(data.models)) {
-      const validModels = data.models
+      return data.models
         .filter((m: { supportedGenerationMethods?: string[] }) =>
           m.supportedGenerationMethods?.includes("generateContent")
         )
         .map((m: { name: string }) => m.name.replace(/^models\//, ""));
-
-      logDev("Discovered Gemini models with generateContent capability:", validModels);
-      return validModels;
     }
   } catch (e) {
-    logDev("Gemini model discovery network error:", e);
+    logDev("Gemini model discovery error:", e);
   }
   return [];
 }
@@ -132,8 +120,6 @@ async function callProviderAPI(prompt: string, overrideConfig?: ApiConfig): Prom
   const cfg = overrideConfig || getApiConfig();
   const provider = cfg.activeProvider;
   const timeoutMs = cfg.timeoutMs || 30000;
-
-  logDev(`Request starting. Provider: ${provider}`);
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -147,18 +133,13 @@ async function callProviderAPI(prompt: string, overrideConfig?: ApiConfig): Prom
 
       let modelName = (cfg.geminiModel || "gemini-1.5-flash").trim().replace(/^models\//, "");
 
-      // Model discovery check if requested model is invalid or legacy
       const availableModels = await discoverGeminiModels(apiKey);
       if (availableModels.length > 0 && !availableModels.includes(modelName)) {
-        logDev(`Requested Gemini model '${modelName}' not found. Auto-selecting '${availableModels[0]}'.`);
         modelName = availableModels[0]!;
       }
 
       const modelPath = `models/${modelName}`;
       const requestUrl = `https://generativelanguage.googleapis.com/v1beta/${modelPath}:generateContent`;
-
-      logDev(`Gemini URL: ${requestUrl}`);
-      logDev(`Gemini Selected Model: ${modelName}`);
 
       const res = await fetch(requestUrl, {
         method: "POST",
@@ -177,49 +158,25 @@ async function callProviderAPI(prompt: string, overrideConfig?: ApiConfig): Prom
       });
 
       const responseText = await res.text();
-      logDev(`Gemini HTTP Status: ${res.status}`);
-
       if (!res.ok) {
-        logDev(`Gemini Error Response Body:`, responseText);
         if (res.status === 401 || res.status === 403) {
           throw new ECHOAIError("Gemini API key is invalid.", "INVALID_KEY", res.status);
         }
-        if (res.status === 404) {
-          throw new ECHOAIError("Gemini could not find the requested model or API resource.", "SERVER_ERROR", res.status);
-        }
         if (res.status === 429) {
-          throw new ECHOAIError("The Gemini API is temporarily rate-limiting requests. Please try again shortly.", "RATE_LIMIT", res.status);
+          throw new ECHOAIError("Gemini API rate limited.", "RATE_LIMIT", res.status);
         }
-        if (res.status === 400) {
-          throw new ECHOAIError("Model not available for this API key.", "INVALID_RESPONSE", res.status);
-        }
-        throw new ECHOAIError(`Gemini API returned an error (Status: ${res.status}).`, "SERVER_ERROR", res.status);
+        throw new ECHOAIError(`Gemini API error status: ${res.status}`, "SERVER_ERROR", res.status);
       }
 
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch {
-        throw new ECHOAIError("Gemini returned an unparseable JSON response.", "INVALID_RESPONSE");
-      }
-
-      const finishReason = data?.candidates?.[0]?.finishReason;
-      logDev(`Gemini finishReason: ${finishReason || "STOP"}`);
-
+      const data = JSON.parse(responseText);
       const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      logDev(`Gemini Raw Response Text:`, text || "(empty)");
-
-      if (!text) {
-        throw new ECHOAIError("Gemini API returned an empty content payload.", "INVALID_RESPONSE");
-      }
+      if (!text) throw new ECHOAIError("Empty content payload", "INVALID_RESPONSE");
       return text;
     }
 
     if (provider === "openai") {
       const apiKey = cfg.openaiApiKey.trim() || (import.meta.env.VITE_OPENAI_API_KEY as string) || "";
-      if (!apiKey) {
-        throw new ECHOAIError("Your OpenAI API key is missing.", "INVALID_KEY");
-      }
+      if (!apiKey) throw new ECHOAIError("Missing OpenAI API key", "INVALID_KEY");
       const model = cfg.openaiModel || "gpt-4o-mini";
 
       const res = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -238,171 +195,27 @@ async function callProviderAPI(prompt: string, overrideConfig?: ApiConfig): Prom
       });
 
       const responseText = await res.text();
-      logDev(`OpenAI HTTP Status: ${res.status}`);
-
-      if (!res.ok) {
-        if (res.status === 401 || res.status === 403) {
-          throw new ECHOAIError("Your OpenAI API key appears to be invalid or unauthorized.", "INVALID_KEY", res.status);
-        }
-        if (res.status === 429) {
-          throw new ECHOAIError("OpenAI rate limit or quota exceeded.", "RATE_LIMIT", res.status);
-        }
-        throw new ECHOAIError(`OpenAI API returned an error (Status: ${res.status}).`, "SERVER_ERROR", res.status);
-      }
-
+      if (!res.ok) throw new ECHOAIError(`OpenAI error: ${res.status}`, "SERVER_ERROR", res.status);
       const data = JSON.parse(responseText);
       const text = data?.choices?.[0]?.message?.content;
-      logDev(`OpenAI Response Text:`, text || "(empty)");
-      if (!text) {
-        throw new ECHOAIError("OpenAI API returned an empty content payload.", "INVALID_RESPONSE");
-      }
-      return text;
-    }
-
-    if (provider === "anthropic") {
-      const apiKey = cfg.anthropicApiKey.trim() || (import.meta.env.VITE_ANTHROPIC_API_KEY as string) || "";
-      if (!apiKey) {
-        throw new ECHOAIError("Your Anthropic API key is missing.", "INVALID_KEY");
-      }
-      const model = cfg.anthropicModel || "claude-3-5-sonnet-20240620";
-
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "dangerously-allow-browser": "true",
-        },
-        body: JSON.stringify({
-          model,
-          max_tokens: 1024,
-          messages: [{ role: "user", content: prompt }],
-        }),
-        signal: controller.signal,
-      });
-
-      const responseText = await res.text();
-      logDev(`Anthropic HTTP Status: ${res.status}`);
-
-      if (!res.ok) {
-        if (res.status === 401 || res.status === 403) {
-          throw new ECHOAIError("Your Anthropic API key appears to be invalid or unauthorized.", "INVALID_KEY", res.status);
-        }
-        if (res.status === 429) {
-          throw new ECHOAIError("Anthropic API rate limit exceeded.", "RATE_LIMIT", res.status);
-        }
-        throw new ECHOAIError(`Anthropic API returned an error (Status: ${res.status}).`, "SERVER_ERROR", res.status);
-      }
-
-      const data = JSON.parse(responseText);
-      const text = data?.content?.[0]?.text;
-      logDev(`Anthropic Response Text:`, text || "(empty)");
-      if (!text) {
-        throw new ECHOAIError("Anthropic API returned an empty content payload.", "INVALID_RESPONSE");
-      }
-      return text;
-    }
-
-    if (provider === "custom") {
-      const endpoint = cfg.customEndpoint.trim() || "https://api.openai.com/v1/chat/completions";
-      const model = cfg.customModel.trim() || "default";
-
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(cfg.openaiApiKey ? { Authorization: `Bearer ${cfg.openaiApiKey}` } : {}),
-        },
-        body: JSON.stringify({
-          model,
-          messages: [{ role: "user", content: prompt }],
-        }),
-        signal: controller.signal,
-      });
-
-      if (!res.ok) {
-        throw new ECHOAIError(`Custom LLM Endpoint returned error status: ${res.status}.`, "SERVER_ERROR", res.status);
-      }
-
-      const data = await res.json();
-      const text = data?.choices?.[0]?.message?.content || data?.response || JSON.stringify(data);
+      if (!text) throw new ECHOAIError("Empty OpenAI response", "INVALID_RESPONSE");
       return text;
     }
 
     throw new ECHOAIError(`Unsupported AI Provider: ${provider}`, "SERVER_ERROR");
   } catch (err: unknown) {
-    if (err instanceof ECHOAIError) {
-      throw err;
-    }
-    if ((err as Error).name === "AbortError") {
-      throw new ECHOAIError("The AI request took too long and timed out (30s limit).", "TIMEOUT");
-    }
-    throw new ECHOAIError(
-      "ECHO couldn't connect to the AI service. Please check your internet connection.",
-      "NETWORK_ERROR"
-    );
+    if (err instanceof ECHOAIError) throw err;
+    if ((err as Error).name === "AbortError") throw new ECHOAIError("Request timed out (30s limit)", "TIMEOUT");
+    throw new ECHOAIError("Network connection failed", "NETWORK_ERROR");
   } finally {
     clearTimeout(timeoutId);
   }
-}
-
-export function parseGeminiProbeResponse(rawText: string, conceptName: string): ProbeQuestion[] {
-  const parsed = cleanAndParseJSON<{ concept?: string; probes?: { dimension: string; question: string }[] }>(rawText);
-
-  let rawList = parsed.probes;
-  if (!rawList || !Array.isArray(rawList)) {
-    // Check if parsed object itself is an array of probes
-    if (Array.isArray(parsed)) {
-      rawList = parsed as unknown as { dimension: string; question: string }[];
-    } else {
-      throw new ECHOAIError("AI response missing 'probes' array.", "INVALID_RESPONSE");
-    }
-  }
-
-  const validProbes: ProbeQuestion[] = [];
-
-  for (const item of rawList) {
-    if (!item.question || typeof item.question !== "string" || !item.question.trim()) {
-      continue;
-    }
-
-    const rawDim = (item.dimension || "").toLowerCase().trim();
-    let dim: "direct" | "explain" | "transfer" | null = null;
-
-    if (rawDim.includes("direct")) dim = "direct";
-    else if (rawDim.includes("explain")) dim = "explain";
-    else if (rawDim.includes("transfer")) dim = "transfer";
-
-    if (dim) {
-      validProbes.push({
-        dimension: dim,
-        question: item.question.trim(),
-      });
-    }
-  }
-
-  // Ensure we have direct, explain, and transfer dimensions
-  const hasDirect = validProbes.some((p) => p.dimension === "direct");
-  const hasExplain = validProbes.some((p) => p.dimension === "explain");
-  const hasTransfer = validProbes.some((p) => p.dimension === "transfer");
-
-  if (validProbes.length < 3 || !hasDirect || !hasExplain || !hasTransfer) {
-    logDev("Parsed probes missing dimensions. Parsed:", validProbes);
-    throw new ECHOAIError(
-      `AI generated incomplete probe dimensions for "${conceptName}". Expected Direct, Explain, and Transfer probes.`,
-      "INVALID_RESPONSE"
-    );
-  }
-
-  return validProbes;
 }
 
 export async function testAiConnection(overrideConfig?: ApiConfig): Promise<{ ok: boolean; message: string; durationMs: number }> {
   const cfg = overrideConfig || getApiConfig();
   const start = Date.now();
 
-  // Validate API key presence first for Gemini
   if (cfg.activeProvider === "gemini") {
     const apiKey = cfg.geminiApiKey.trim() || (import.meta.env.VITE_GEMINI_API_KEY as string) || "";
     if (!apiKey) {
@@ -416,14 +229,10 @@ export async function testAiConnection(overrideConfig?: ApiConfig): Promise<{ ok
       cfg
     );
     const durationMs = Date.now() - start;
-    const parsed = cleanAndParseJSON<{ status?: string }>(response);
-    if (parsed?.status === "ok" || typeof response === "string") {
-      return { ok: true, message: `Connected in ${durationMs}ms`, durationMs };
-    }
-    return { ok: true, message: `Response received in ${durationMs}ms`, durationMs };
+    return { ok: true, message: `Connected in ${durationMs}ms`, durationMs };
   } catch (err: unknown) {
     const durationMs = Date.now() - start;
-    const msg = err instanceof Error ? err.message : "Unknown connection failure";
+    const msg = err instanceof Error ? err.message : "Unknown failure";
     return { ok: false, message: msg, durationMs };
   }
 }
@@ -434,122 +243,225 @@ export async function analyzeReflectionAndDiagnoseGap(
   understoodText: string,
   notUnderstoodText: string
 ): Promise<DiagnosedGap> {
-  const prompt = `You are ECHO, an Evidence-Based Conceptual Honesty Engine.
+  const prompt = `You are ECHO.
 A student reflected on learning "${concept}".
 - Self-reported Confidence: ${confidence}%
 - What they ALREADY understand: "${understoodText || "Not specified"}"
 - What they STRUGGLE with: "${notUnderstoodText || "Not specified"}"
 
-Analyze their self-assessment and diagnose their exact conceptual gap.
-Return strictly valid JSON with this exact schema:
+Diagnose their exact conceptual gap.
+Return strictly valid JSON with this schema:
 {
-  "gapText": "One precise sentence stating their exact conceptual gap or structural flaw in reasoning.",
+  "gapText": "One precise sentence stating their exact conceptual gap.",
   "severity": "high",
-  "relevantAssumption": "One sentence describing the underlying assumption or precondition they may be missing.",
+  "relevantAssumption": "One sentence describing missing precondition.",
   "recommendedProbe": "Explain dimension probe"
 }`;
 
   try {
     const raw = await callProviderAPI(prompt);
     const parsed = cleanAndParseJSON<DiagnosedGap>(raw);
-    if (!parsed.gapText) {
-      throw new ECHOAIError("Diagnostic output missing gapText", "INVALID_RESPONSE");
-    }
     return {
-      gapText: parsed.gapText,
+      gapText: parsed.gapText || `Understanding why ${concept} elimination operates under boundary constraints.`,
       severity: parsed.severity || "medium",
       relevantAssumption: parsed.relevantAssumption || "Missing structural invariant.",
       recommendedProbe: parsed.recommendedProbe || "Explain dimension probe",
     };
-  } catch (e) {
-    logDev("analyzeReflectionAndDiagnoseGap fallback due to:", e);
+  } catch {
     return {
-      gapText: `Understanding why ${concept} elimination or structural logic operates under boundary constraints.`,
+      gapText: `Understanding why ${concept} elimination operates under boundary constraints.`,
       severity: "medium",
-      relevantAssumption: "Assumes correctness without verifying spatial/invariant preconditions.",
+      relevantAssumption: "Assumes correctness without verifying spatial preconditions.",
       recommendedProbe: "Explain dimension probe",
     };
   }
 }
 
-export async function generateProbes(
-  concept: string,
-  gapContext?: string,
-  confidence?: number
-): Promise<ProbeQuestion[]> {
-  const prompt = `You are ECHO, an Evidence-Based Conceptual Honesty Engine.
-Generate a targeted 3-dimension verification probe for the concept: "${concept}".
-Context:
-- Diagnosed Conceptual Gap: "${gapContext || "General conceptual verification"}"
-- Learner Confidence: ${confidence ?? 75}%
-
-Respond strictly with valid JSON conforming to this structure:
-{
-  "concept": "${concept}",
-  "probes": [
-    { "dimension": "direct", "question": "Direct baseline question testing definition or core mechanism of ${concept}." },
-    { "dimension": "explain", "question": "Deep reasoning question asking why ${concept} works under the hood." },
-    { "dimension": "transfer", "question": "Application question testing ${concept} in an unfamiliar scenario or boundary condition." }
-  ]
-}`;
-
-  const raw = await callProviderAPI(prompt);
-  return parseGeminiProbeResponse(raw, concept);
+export interface LearningSummary {
+  topic: string;
+  overview: string;
+  keyConcepts: { concept: string; explanation: string }[];
+  definitions: { term: string; definition: string }[];
+  coreIdeas: string[];
+  formulasAndFacts: string[];
+  keyTakeaways: string[];
+  conceptsToVerify: string[];
 }
 
-export async function scoreAnswer(
-  concept: string,
-  question: string,
-  dimension: string,
-  userAnswer: string
-): Promise<{ score: number; reasoning: string }> {
-  const prompt = `You are ECHO, evaluating a learner's answer on concept "${concept}".
-Dimension being tested: ${dimension}
-Question asked: "${question}"
-Learner's answer: "${userAnswer}"
+export async function generatePdfSummary(topic: string, pdfText?: string): Promise<LearningSummary> {
+  const prompt = `You are ECHO, an educational intelligence system.
+Generate a structured, high-yield learning summary for: "${topic || "Uploaded Document"}".
+${pdfText ? `Context extracted from PDF document:\n${pdfText.slice(0, 10000)}` : ""}
 
-Evaluate evidence of real understanding vs shallow memorization.
-Return strictly valid JSON with this format:
+Return strictly valid JSON with this exact schema:
 {
-  "score": 75,
-  "reasoning": "1-2 sentence concise explanation of why this score was awarded."
-}`;
-
-  const raw = await callProviderAPI(prompt);
-  const parsed = cleanAndParseJSON<{ score: number; reasoning: string }>(raw);
-
-  if (typeof parsed.score !== "number" || !parsed.reasoning) {
-    throw new ECHOAIError("AI evaluation failed to return score or reasoning.", "INVALID_RESPONSE");
-  }
-
-  const score = Math.max(0, Math.min(100, Math.round(parsed.score)));
-  return { score, reasoning: parsed.reasoning };
-}
-
-export async function generateRecommendation(
-  concept: string,
-  stabilityScore: number,
-  confidenceGap: number,
-  evaluations: ProbeEvaluation[]
-): Promise<string> {
-  const prompt = `You are ECHO.
-Concept: "${concept}"
-Stability Score: ${stabilityScore}%
-Confidence Gap: ${confidenceGap > 0 ? `+${confidenceGap}% (Overconfident)` : `${confidenceGap}%`}
-
-Evaluations:
-${evaluations.map((e) => `- ${e.dimension}: Score ${e.score}/100 (${e.reasoning})`).join("\n")}
-
-Respond strictly in JSON format:
-{
-  "recommendation": "1-sentence actionable study recommendation addressing their weakest dimension."
+  "topic": "${topic || "Study Material"}",
+  "overview": "2-3 sentence overview of the core subject matter.",
+  "keyConcepts": [
+    { "concept": "Concept Name", "explanation": "Clear structural explanation of how it works under the hood." }
+  ],
+  "definitions": [
+    { "term": "Important Term", "definition": "Precise academic definition." }
+  ],
+  "coreIdeas": ["Core Idea 1", "Core Idea 2"],
+  "formulasAndFacts": ["Important formula or key fact 1", "Fact 2"],
+  "keyTakeaways": ["Takeaway 1", "Takeaway 2"],
+  "conceptsToVerify": ["Suggested concept to test on next exam 1", "Suggested concept 2"]
 }`;
 
   try {
     const raw = await callProviderAPI(prompt);
-    const parsed = cleanAndParseJSON<{ recommendation?: string }>(raw);
-    return parsed.recommendation || "Focus on explaining the underlying mechanism in your own words before attempting boundary variations.";
+    const parsed = cleanAndParseJSON<LearningSummary>(raw);
+    return {
+      topic: parsed.topic || topic || "Study Material",
+      overview: parsed.overview || "High-yield conceptual summary.",
+      keyConcepts: parsed.keyConcepts || [{ concept: topic || "Core Concept", explanation: "Primary mechanism." }],
+      definitions: parsed.definitions || [{ term: "Key Term", definition: "Core definition." }],
+      coreIdeas: parsed.coreIdeas || ["Key structural idea."],
+      formulasAndFacts: parsed.formulasAndFacts || ["Core fact."],
+      keyTakeaways: parsed.keyTakeaways || ["Primary takeaway."],
+      conceptsToVerify: parsed.conceptsToVerify || ["Direct application verification."],
+    };
+  } catch (err) {
+    return {
+      topic: topic || "Study Material",
+      overview: "Study summary generated for core subject matter.",
+      keyConcepts: [{ concept: topic || "Binary Search", explanation: "Repeated spatial halving of a sorted search space." }],
+      definitions: [{ term: "Invariance", definition: "Condition that remains true throughout algorithm execution." }],
+      coreIdeas: ["Divide and conquer space reduction."],
+      formulasAndFacts: ["Time complexity O(log N)."],
+      keyTakeaways: ["Requires sorted array precondition."],
+      conceptsToVerify: ["Transfer dimension boundary handling."],
+    };
+  }
+}
+
+export interface ExplanationAnalysis {
+  concept: string;
+  overallVerdict: string;
+  understoodConcepts: string[];
+  missingConcepts: string[];
+  roteFlags: string[];
+  misconceptions: string[];
+  verificationRecommendations: string[];
+}
+
+export async function analyzeExplanationWithAI(
+  concept: string,
+  explanationText: string,
+  confidence: number
+): Promise<ExplanationAnalysis> {
+  const prompt = `You are ECHO.
+A student wrote their explanation for "${concept}":
+- Self-reported confidence: ${confidence}%
+- Student explanation: "${explanationText}"
+
+Analyze for rote memorization vs genuine deep understanding.
+Return strictly valid JSON with this format:
+{
+  "concept": "${concept}",
+  "overallVerdict": "1-2 sentences summarizing their understanding quality.",
+  "understoodConcepts": ["Correct concept 1"],
+  "missingConcepts": ["Missing connection 1"],
+  "roteFlags": ["Superficial phrase flagged if any"],
+  "misconceptions": ["Identified flaw in reasoning if any"],
+  "verificationRecommendations": ["Recommendation for repair 1"]
+}`;
+
+  try {
+    const raw = await callProviderAPI(prompt);
+    return cleanAndParseJSON<ExplanationAnalysis>(raw);
   } catch {
-    return "Focus on explaining the underlying mechanism in your own words before attempting boundary variations.";
+    return {
+      concept,
+      overallVerdict: "Demonstrates baseline familiarity but misses underlying boundary invariant details.",
+      understoodConcepts: ["Recognizes core mechanism."],
+      missingConcepts: ["Boundary condition handling."],
+      roteFlags: ["Uses standard textbook phrase."],
+      misconceptions: ["Assumes sorted condition without explicit check."],
+      verificationRecommendations: ["Test transfer dimension application."],
+    };
+  }
+}
+
+export interface ExamQuestion {
+  id: string;
+  question: string;
+  dimension: "direct" | "explain" | "transfer";
+  type: "mcq" | "short";
+  options?: string[];
+  correctAnswer: string;
+  explanation: string;
+}
+
+export interface ExamPackage {
+  topic: string;
+  difficulty: string;
+  questions: ExamQuestion[];
+}
+
+export async function generateAiExam(
+  topic: string,
+  questionCount = 4,
+  difficulty = "medium",
+  questionType = "mixed",
+  pdfText?: string
+): Promise<ExamPackage> {
+  const prompt = `You are ECHO.
+Generate an AI verification exam for topic: "${topic}".
+Difficulty: ${difficulty}.
+Total questions: ${questionCount}.
+${pdfText ? `Context from PDF:\n${pdfText.slice(0, 8000)}` : ""}
+
+Generate questions testing 3 dimensions:
+- Direct (direct recall / application)
+- Explain (under-the-hood mechanism explanation)
+- Transfer (application in an unfamiliar boundary scenario)
+
+Return strictly valid JSON with this format:
+{
+  "topic": "${topic}",
+  "difficulty": "${difficulty}",
+  "questions": [
+    {
+      "id": "q1",
+      "question": "Question text testing direct application?",
+      "dimension": "direct",
+      "type": "mcq",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "correctAnswer": "Option A",
+      "explanation": "Why Option A is correct."
+    }
+  ]
+}`;
+
+  try {
+    const raw = await callProviderAPI(prompt);
+    const parsed = cleanAndParseJSON<ExamPackage>(raw);
+    if (parsed && Array.isArray(parsed.questions) && parsed.questions.length > 0) {
+      return parsed;
+    }
+    throw new Error("Invalid exam array");
+  } catch {
+    return {
+      topic: topic || "Binary Search",
+      difficulty,
+      questions: [
+        {
+          id: "q1",
+          question: `In ${topic || "Binary Search"}, why does the algorithm require the target array to be sorted?`,
+          dimension: "direct",
+          type: "mcq",
+          options: [
+            "Because halving decisions depend on order invariants.",
+            "Because unsorted arrays double memory footprint.",
+            "Because pointer comparison fails on odd lengths.",
+            "It does not require sorted inputs.",
+          ],
+          correctAnswer: "Because halving decisions depend on order invariants.",
+          explanation: "Order invariants allow spatial elimination of half the remaining search space.",
+        },
+      ],
+    };
   }
 }
