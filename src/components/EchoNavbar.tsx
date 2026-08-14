@@ -15,9 +15,11 @@ import {
   Zap,
   Home,
   Sliders,
+  BookOpen,
+  TrendingUp,
+  FileCheck2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ThemeSelect } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
@@ -45,7 +47,6 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
 
-  // 6. Nav on scroll performance hook (no heavy backdrop-filter blur)
   useEffect(() => {
     function handleScroll() {
       setIsScrolled(window.scrollY > 50);
@@ -54,27 +55,27 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // 5 Central ECHO Stage Gateways
   const navLinks = [
-    { label: "HOME", to: "/", icon: Home },
-    { label: "DASHBOARD", to: "/dashboard", icon: LayoutDashboard },
-    { label: "TIMETABLE", to: "/timetable", icon: Calendar },
-    { label: "STUDY PLAN", to: "/study-plan", icon: ClipboardList },
-    { label: "FACULTY", to: "/faculty", icon: Users },
+    { label: "PLAN", to: "/plan", icon: Calendar },
+    { label: "LEARN", to: "/learn", icon: BookOpen },
+    { label: "REFLECT", to: "/reflection", icon: Sparkles },
+    { label: "VERIFY", to: "/assessment", icon: Zap },
+    { label: "ADAPT", to: "/dashboard", icon: TrendingUp },
   ];
 
   const bottomNavItems = [
-    { label: "Home", to: "/", icon: Home },
-    { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
-    { label: "Timetable", to: "/timetable", icon: Calendar },
-    { label: "Study Plan", to: "/study-plan", icon: ClipboardList },
+    { label: "Plan", to: "/plan", icon: Calendar },
+    { label: "Learn", to: "/learn", icon: BookOpen },
     { label: "Reflect", to: "/reflection", icon: Sparkles },
+    { label: "Verify", to: "/assessment", icon: Zap },
+    { label: "Adapt", to: "/dashboard", icon: TrendingUp },
   ];
 
   const isLight = variant === "light";
 
   return (
     <>
-      {/* 6. Sticky Header Navigation with High-Performance Scroll Transition */}
       <header
         className={cn(
           "sticky top-0 z-40 w-full nav-scroll-base",
@@ -91,7 +92,7 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
           <EchoLogo />
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-5 lg:gap-6 text-[11px] lg:text-xs font-bold uppercase tracking-wider">
+          <nav className="hidden md:flex items-center gap-6 lg:gap-8 text-xs font-bold uppercase tracking-wider">
             {navLinks.map((link) => {
               const isActive = currentPath === link.to;
               return (
@@ -122,7 +123,7 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
                   ? "border-slate-200 text-slate-700 hover:text-primary hover:bg-slate-100"
                   : "border-white/10 text-slate-300 hover:text-white hover:bg-white/5"
               )}
-              title="API & System Settings"
+              title="API & Model Settings"
             >
               <Settings className="size-4" />
             </Link>
@@ -139,7 +140,7 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
             </Button>
           </div>
 
-          {/* Mobile Top Actions (Theme Select + Hamburger) */}
+          {/* Mobile Top Actions */}
           <div className="flex md:hidden items-center gap-2">
             <ThemeSelect />
             <button
@@ -159,7 +160,7 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
         </div>
       </header>
 
-      {/* Mobile Slide-Over Drawer / Full Feature Navigation Modal */}
+      {/* Mobile Slide-Over Drawer with Categorized Stages */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 md:hidden flex flex-col bg-background/95 text-foreground animate-in fade-in duration-200">
           <div className="flex items-center justify-between p-4 border-b border-border">
@@ -174,21 +175,19 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
 
           <div className="flex-1 overflow-y-auto p-5 space-y-5">
             <div className="space-y-0.5">
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-primary">All Features Navigation</span>
-              <h2 className="text-lg font-bold tracking-tight text-foreground">ECHO Application</h2>
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-primary">Core Learning Stages</span>
+              <h2 className="text-lg font-bold tracking-tight text-foreground">The ECHO Loop</h2>
             </div>
 
             <nav className="space-y-2">
               {[
-                { label: "Home / Overview", to: "/", icon: Home, desc: "Evidence-Based Honesty Engine" },
-                { label: "Student Dashboard", to: "/dashboard", icon: LayoutDashboard, desc: "Real-time stability telemetry" },
-                { label: "Class Timetable", to: "/timetable", icon: Calendar, desc: "Tomorrow's schedule & reflections" },
-                { label: "Personalized Study Plan", to: "/study-plan", icon: ClipboardList, desc: "Tonight's time budget & repairs" },
-                { label: "Post-Class Reflection", to: "/reflection", icon: Sparkles, desc: "10-second confidence check-in" },
-                { label: "3-Question Diagnostic Probe", to: "/assessment", icon: Zap, desc: "Direct, Explain & Transfer MCQs" },
-                { label: "Faculty Cohort Portal", to: "/faculty", icon: Users, desc: "Classroom stability analytics" },
-                { label: "AI API & Model Settings", to: "/settings", icon: Settings, desc: "Gemini, OpenAI or Built-in Mode" },
-                { label: "Sign In / Profile", to: "/login", icon: UserCheck, desc: "Student session login" },
+                { label: "1. PLAN", to: "/plan", icon: Calendar, desc: "Timetable, Study Plan & Goals" },
+                { label: "2. LEARN", to: "/learn", icon: BookOpen, desc: "AI PDF Summary Generator" },
+                { label: "3. REFLECT", to: "/reflection", icon: Sparkles, desc: "Manual explanation & AI analysis" },
+                { label: "4. VERIFY", to: "/assessment", icon: Zap, desc: "AI Exam Generator & Probes" },
+                { label: "5. ADAPT", to: "/dashboard", icon: TrendingUp, desc: "Stability index & recommendations" },
+                { label: "Faculty Portal", to: "/faculty", icon: Users, desc: "Classroom stability analytics" },
+                { label: "Settings", to: "/settings", icon: Settings, desc: "AI Provider configuration" },
               ].map((item) => {
                 const isActive = currentPath === item.to;
                 const IconComponent = item.icon;
@@ -244,15 +243,6 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
               </Link>
             );
           })}
-
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(true)}
-            className="flex flex-col items-center justify-center min-h-[46px] min-w-[52px] px-1.5 py-1 rounded-xl text-muted-foreground hover:text-foreground transition-all"
-          >
-            <Sliders className="size-4 sm:size-5" />
-            <span className="text-[9px] sm:text-[10px] font-bold tracking-tight mt-0.5 whitespace-nowrap">More</span>
-          </button>
         </div>
       </div>
     </>

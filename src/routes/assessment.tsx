@@ -13,21 +13,24 @@ import {
   ShieldQuestion,
   Sparkles,
   Zap,
-  Settings,
-  AlertTriangle,
+  Upload,
+  FileText,
+  AlertCircle,
   HelpCircle,
   TrendingUp,
+  XCircle,
 } from "lucide-react";
 import { EchoNavbar } from "@/components/EchoNavbar";
-import { ThemeSelect } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { generateLocalEchoCheck, type DiagnosticMCQ, type EchoCheckResult } from "@/lib/echo/localAi";
+import { generateLocalEchoCheck, type DiagnosticMCQ } from "@/lib/echo/localAi";
+import { generateAiExam, type ExamQuestion, type ExamPackage } from "@/lib/echo/llm";
+import { extractTextFromPdf, type PdfExtractResult } from "@/lib/echo/pdf";
 import { calculateStabilityScore, calculateConfidenceGap, bandFor } from "@/lib/echo/scoring";
 import type { ProbeEvaluation, StabilityResult } from "@/lib/echo/types";
 import { useEcho } from "@/lib/echo/store";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/assessment")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -44,353 +47,446 @@ function AssessmentPage() {
   const isDemo = Boolean(demo);
   const { setLatestResult } = useEcho();
 
+  const [mode, setMode] = useState<"ai_exam" | "probe">("ai_exam");
   const [step, setStep] = useState<"input" | "answering" | "results">("input");
 
-  const [conceptInput, setConceptInput] = useState(
+  // AI Exam Generator state
+  const [examTopic, setExamTopic] = useState(
     searchConcept === "binary-search" || isDemo ? "Binary Search" : searchConcept ?? "Binary Search"
   );
-  const [notUnderstoodText, setNotUnderstoodText] = useState(searchGap ?? "");
-  const [confidenceInput, setConfidenceInput] = useState(
-    searchConf ? Number(searchConf) : isDemo ? 90 : 75
-  );
+  const [questionCount, setQuestionCount] = useState(4);
+  const [difficulty, setDifficulty] = useState("medium");
+  const [questionType, setQuestionType] = useState("mixed");
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [pdfData, setPdfData] = useState<PdfExtractResult | null>(null);
+  const [extractingPdf, setExtractingPdf] = useState(false);
+  const [loadingExam, setLoadingExam] = useState(false);
 
-  const [questions, setQuestions] = useState<DiagnosticMCQ[]>([]);
-  const [index, setIndex] = useState(0);
-  const [selectedOptions, setSelectedOptions] = useState<Record<number, number>>({});
-  const [evaluations, setEvaluations] = useState<ProbeEvaluation[]>([]);
-  const [gapDiagnosisText, setGapDiagnosisText] = useState("");
+  // Active Exam/Probe State
+  const [examQuestions, setExamQuestions] = useState<ExamQuestion[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [userAnswers, setUserAnswers] = useState<Record<number, string>>({});
+  const [examResults, setExamResults] = useState<{
+    score: number;
+    evaluations: ProbeEvaluation[];
+    details: { question: ExamQuestion; userAns: string; isCorrect: boolean }[];
+  } | null>(null);
 
-  const hasAutoStarted = useRef(false);
+  async function handlePdfUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  // Auto-start diagnostic check if concept passed in URL search params
-  useEffect(() => {
-    if (searchConcept && !hasAutoStarted.current) {
-      hasAutoStarted.current = true;
-      handleStartCheck();
+    setExtractingPdf(true);
+    try {
+      const res = await extractTextFromPdf(file);
+      setPdfFile(file);
+      setPdfData(res);
+      setExamTopic(file.name.replace(/\.pdf$/i, ""));
+      toast.success(`Loaded PDF: ${file.name} (${res.pageCount} pages)`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to parse PDF.");
+    } finally {
+      setExtractingPdf(false);
     }
-  }, [searchConcept]);
+  }
 
-  function handleStartCheck(e?: React.FormEvent) {
+  async function handleGenerateExam(e?: React.FormEvent) {
     if (e) e.preventDefault();
-    const concept = (conceptInput || searchConcept || "Binary Search").trim();
-    if (!concept) return;
+    if (!examTopic.trim() && !pdfData) {
+      toast.error("Please enter a topic or upload a PDF.");
+      return;
+    }
 
-    const checkData = generateLocalEchoCheck(concept, confidenceInput, "", notUnderstoodText);
-    setQuestions(checkData.questions);
-    setGapDiagnosisText(checkData.gapDiagnosis.gapText);
-    setIndex(0);
-    setSelectedOptions({});
-    setEvaluations([]);
+    setLoadingExam(true);
+    try {
+      const pkg = await generateAiExam(
+        examTopic.trim(),
+        questionCount,
+        difficulty,
+        questionType,
+        pdfData?.text
+      );
+      setExamQuestions(pkg.questions);
+      setCurrentIndex(0);
+      setUserAnswers({});
+      setExamResults(null);
+      setStep("answering");
+      toast.success("Generated AI Exam!");
+    } catch (err: any) {
+      toast.error("Exam generation failed. Using default probe questions.");
+      // Fallback probe start
+      startDefaultProbe();
+    } finally {
+      setLoadingExam(false);
+    }
+  }
+
+  function startDefaultProbe() {
+    const checkData = generateLocalEchoCheck(examTopic.trim() || "Binary Search", 75, "", "");
+    const formattedQuestions: ExamQuestion[] = checkData.questions.map((q, i) => ({
+      id: `probe-${i}`,
+      question: q.question,
+      dimension: q.dimension,
+      type: "mcq",
+      options: q.options.map((o) => o.text),
+      correctAnswer: q.options.find((o) => o.score === 100)?.text || q.options[0]!.text,
+      explanation: q.options.find((o) => o.score === 100)?.misconception || "Correct response.",
+    }));
+    setExamQuestions(formattedQuestions);
+    setCurrentIndex(0);
+    setUserAnswers({});
+    setExamResults(null);
     setStep("answering");
   }
 
-  function handleSelectOption(qIndex: number, optionIndex: number) {
-    setSelectedOptions({ ...selectedOptions, [qIndex]: optionIndex });
+  function handleAnswerSelect(ans: string) {
+    setUserAnswers({ ...userAnswers, [currentIndex]: ans });
   }
 
-  function handleNextQuestion() {
-    const currentQ = questions[index];
-    const chosenOptIndex = selectedOptions[index];
-
-    if (currentQ && chosenOptIndex !== undefined) {
-      const chosenOpt = currentQ.options[chosenOptIndex]!;
-      const newEval: ProbeEvaluation = {
-        dimension: currentQ.dimension,
-        score: chosenOpt.score,
-        reasoning: chosenOpt.misconception
-          ? `Misconception detected: ${chosenOpt.misconception}`
-          : chosenOpt.score === 100
-          ? "Correct reasoning selected."
-          : `Selected option scored ${chosenOpt.score}/100.`,
-        question: currentQ.question,
-        answer: chosenOpt.text,
-      };
-      setEvaluations([...evaluations, newEval]);
-    }
-
-    if (index < questions.length - 1) {
-      setIndex(index + 1);
+  function handleNext() {
+    if (currentIndex < examQuestions.length - 1) {
+      setCurrentIndex(currentIndex + 1);
     } else {
-      finalizeResults([...evaluations, {
-        dimension: questions[index]!.dimension,
-        score: questions[index]!.options[selectedOptions[index]!]!.score,
-        reasoning: questions[index]!.options[selectedOptions[index]!]!.misconception
-          ? `Misconception detected: ${questions[index]!.options[selectedOptions[index]!]!.misconception}`
-          : "Evaluated answer.",
-        question: questions[index]!.question,
-        answer: questions[index]!.options[selectedOptions[index]!]!.text,
-      }]);
-      setStep("results");
+      submitExam();
     }
   }
 
-  function finalizeResults(evals: ProbeEvaluation[]) {
-    const directEval = evals.find((e) => e.dimension === "direct");
-    const explainEval = evals.find((e) => e.dimension === "explain");
-    const transferEval = evals.find((e) => e.dimension === "transfer");
+  function handlePrev() {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+    }
+  }
 
-    const directScore = directEval ? directEval.score : 0;
-    const explainScore = explainEval ? explainEval.score : 0;
-    const transferScore = transferEval ? transferEval.score : 0;
+  function submitExam() {
+    let totalScore = 0;
+    const details = examQuestions.map((q, idx) => {
+      const userAns = userAnswers[idx] || "";
+      const isCorrect = userAns.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase();
+      if (isCorrect) totalScore += 1;
+      return { question: q, userAns, isCorrect };
+    });
 
-    const stabilityScore = calculateStabilityScore(directScore, explainScore, transferScore);
-    const confidenceGap = calculateConfidenceGap(confidenceInput, stabilityScore);
+    const finalPct = Math.round((totalScore / examQuestions.length) * 100);
 
-    const isConfidentButFragile = confidenceInput >= 70 && stabilityScore < 60;
-    const band = bandFor(stabilityScore);
+    // Map to ECHO 3-dimension probe evaluations
+    const directQuestions = details.filter((d) => d.question.dimension === "direct");
+    const explainQuestions = details.filter((d) => d.question.dimension === "explain");
+    const transferQuestions = details.filter((d) => d.question.dimension === "transfer");
+
+    const directScore = directQuestions.length
+      ? Math.round((directQuestions.filter((d) => d.isCorrect).length / directQuestions.length) * 100)
+      : finalPct;
+    const explainScore = explainQuestions.length
+      ? Math.round((explainQuestions.filter((d) => d.isCorrect).length / explainQuestions.length) * 100)
+      : finalPct;
+    const transferScore = transferQuestions.length
+      ? Math.round((transferQuestions.filter((d) => d.isCorrect).length / transferQuestions.length) * 100)
+      : finalPct;
+
+    const evalList: ProbeEvaluation[] = [
+      { dimension: "direct", score: directScore, reasoning: `${directQuestions.filter((d) => d.isCorrect).length}/${directQuestions.length || 1} correct` },
+      { dimension: "explain", score: explainScore, reasoning: `${explainQuestions.filter((d) => d.isCorrect).length}/${explainQuestions.length || 1} correct` },
+      { dimension: "transfer", score: transferScore, reasoning: `${transferQuestions.filter((d) => d.isCorrect).length}/${transferQuestions.length || 1} correct` },
+    ];
+
+    const stabilityScore = calculateStabilityScore(evalList);
+    const confidenceGap = calculateConfidenceGap(75, stabilityScore);
+    const bandInfo = bandFor(stabilityScore);
 
     const resultObj: StabilityResult = {
-      conceptName: conceptInput.trim() || "Concept",
-      confidenceInput,
+      conceptName: examTopic.trim() || "Exam Concept",
+      evaluatedAt: new Date().toISOString(),
+      confidenceScore: 75,
       stabilityScore,
       confidenceGap,
-      isConfidentButFragile,
-      bandLabel: band.label,
-      evaluations: evals,
-      recommendation: `Focus on repairing your weakest dimension (${
-        explainScore <= directScore && explainScore <= transferScore ? "Explain reasoning" : "Transfer application"
-      }).`,
+      evaluations: evalList,
+      recommendation: `Focus on repairing your weakest dimension (${evalList.sort((a, b) => a.score - b.score)[0]?.dimension}).`,
+      isConfidentButFragile: confidenceGap >= 25 && stabilityScore < 60,
+      bandLabel: bandInfo.label,
     };
 
     setLatestResult(resultObj);
+    setExamResults({ score: finalPct, evaluations: evalList, details });
+    setStep("results");
+    toast.success(`Exam submitted! Score: ${finalPct}%`);
   }
 
-  function handleReset() {
-    setStep("input");
-    setQuestions([]);
-    setIndex(0);
-    setSelectedOptions({});
-    setEvaluations([]);
-    hasAutoStarted.current = false;
-  }
+  const currentQ = examQuestions[currentIndex];
 
   return (
-    <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 pb-28 md:pb-20">
+    <div className="min-h-screen text-foreground selection:bg-primary/30 pb-28 md:pb-20">
       <EchoNavbar variant="dark" />
 
-      <main className="mx-auto max-w-3xl px-4 sm:px-6 pt-6 sm:pt-8">
-        {/* STEP 1: INPUT STEP */}
+      <main className="mx-auto max-w-3xl px-4 sm:px-6 pt-6 sm:pt-10 space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="border-primary/40 bg-primary/10 text-primary font-mono text-xs">
+                STAGE 4: VERIFY
+              </Badge>
+              <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">AI Exam & Diagnostic Verification</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mt-1">
+              Verification Exam Generator
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-300 mt-1">
+              Test whether your understanding survives direct application, under-the-hood reasoning, and unfamiliar transfer problems.
+            </p>
+          </div>
+        </div>
+
+        {/* Input / Config Screen */}
         {step === "input" && (
           <div className="glass-card p-6 sm:p-8 space-y-6">
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-primary">Diagnostic Check</span>
-              <h1 className="text-2xl font-bold tracking-tight text-white mt-1">Start 3-Question ECHO Check</h1>
-              <p className="text-xs text-slate-300 mt-0.5">
-                Evaluate your verified understanding across 3 core dimensions: Direct Definition, Under-The-Hood Reasoning, and Unfamiliar Transfer.
-              </p>
-            </div>
-
-            <form onSubmit={handleStartCheck} className="space-y-5">
-              <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-300">Today's Concept Name</label>
-                <Input
-                  required
-                  value={conceptInput}
-                  onChange={(e) => setConceptInput(e.target.value)}
-                  placeholder="e.g. SQL, Binary Search, DBMS Normalization"
-                  className="mt-1 bg-black/40 border-white/10 text-white min-h-[44px]"
-                />
-              </div>
-
-              <div>
-                <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-slate-300">
-                  <span>Self-Reported Confidence</span>
-                  <span className="font-mono text-primary font-bold">{confidenceInput}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={confidenceInput}
-                  onChange={(e) => setConfidenceInput(Number(e.target.value))}
-                  className="mt-2 h-2.5 w-full cursor-pointer appearance-none rounded-lg bg-white/10 accent-primary"
-                />
-              </div>
-
+            <form onSubmit={handleGenerateExam} className="space-y-6">
               <div>
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                  What part didn't you understand? (Optional)
+                  Topic Name <span className="text-destructive">*</span>
                 </label>
-                <Textarea
-                  rows={2}
-                  value={notUnderstoodText}
-                  onChange={(e) => setNotUnderstoodText(e.target.value)}
-                  placeholder="e.g. I struggle with spatial halving or inner vs outer joins..."
-                  className="mt-1 bg-black/40 border-white/10 text-xs text-white"
+                <Input
+                  value={examTopic}
+                  onChange={(e) => setExamTopic(e.target.value)}
+                  placeholder="e.g. Binary Search, Normalization (3NF), TCP Flow Control"
+                  className="mt-1.5 bg-black/40 border-white/10 text-white min-h-[46px]"
                 />
               </div>
 
-              <Button type="submit" size="lg" className="w-full bg-primary hover:bg-primary/90 font-bold shadow-glow min-h-[48px]">
-                Begin 3-Question ECHO Check <ArrowRight className="ml-2 size-4" />
-              </Button>
-            </form>
-          </div>
-        )}
+              {/* PDF Upload Option */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                  <FileText className="size-4 text-primary" /> Generate Exam from PDF Document (Optional)
+                </label>
 
-        {/* STEP 2: ANSWERING DIAGNOSTIC MCQs */}
-        {step === "answering" && questions.length > 0 && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between text-xs font-mono text-slate-300">
-              <span>Question {index + 1} of {questions.length}</span>
-              <span className="uppercase text-primary font-bold">{questions[index]?.dimensionLabel}</span>
-            </div>
-
-            <div className="h-2 overflow-hidden rounded-full bg-white/10">
-              <div
-                className="h-full bg-primary transition-all duration-300 shadow-glow"
-                style={{ width: `${((index + 1) / questions.length) * 100}%` }}
-              />
-            </div>
-
-            <div className="glass-card p-6 sm:p-8 space-y-6">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-primary">
-                  {questions[index]!.dimensionLabel}
-                </span>
-                <span className="text-xs text-slate-400 font-mono">
-                  {questions[index]!.dimension === "direct" ? "20% Weight" : "40% Weight"}
-                </span>
-              </div>
-
-              <h2 className="text-base sm:text-lg font-bold leading-relaxed text-white">
-                {questions[index]!.question}
-              </h2>
-
-              <div className="space-y-3">
-                {questions[index]!.options.map((opt, optIdx) => {
-                  const isSelected = selectedOptions[index] === optIdx;
-                  return (
+                {!pdfFile ? (
+                  <div className="relative rounded-2xl border-2 border-dashed border-white/20 bg-black/20 hover:bg-black/30 p-5 text-center space-y-2 transition-colors">
+                    <Upload className="size-6 text-primary mx-auto" />
+                    <p className="text-xs font-bold text-white">Click or drag PDF to generate exam questions</p>
+                    <input
+                      type="file"
+                      accept=".pdf,application/pdf"
+                      onChange={handlePdfUpload}
+                      disabled={extractingPdf}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    />
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-primary/40 bg-primary/10 p-3.5 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <FileText className="size-5 text-primary shrink-0" />
+                      <span className="text-xs font-bold text-white truncate max-w-xs">{pdfFile.name}</span>
+                    </div>
                     <button
-                      key={optIdx}
                       type="button"
-                      onClick={() => handleSelectOption(index, optIdx)}
-                      className={`w-full rounded-xl border p-4 text-left text-xs sm:text-sm font-medium transition-all min-h-[52px] ${
-                        isSelected
-                          ? "border-primary bg-primary/20 text-white ring-1 ring-primary shadow-glow"
-                          : "border-white/10 bg-black/20 hover:border-white/30 text-slate-300"
-                      }`}
+                      onClick={() => {
+                        setPdfFile(null);
+                        setPdfData(null);
+                      }}
+                      className="text-xs text-slate-400 hover:text-destructive"
                     >
-                      <div className="flex items-start gap-3">
-                        <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-lg border font-mono text-xs font-bold ${
-                          isSelected ? "border-primary bg-primary text-white" : "border-white/20 text-slate-400"
-                        }`}>
-                          {String.fromCharCode(65 + optIdx)}
-                        </span>
-                        <span className="mt-0.5 leading-relaxed">{opt.text}</span>
-                      </div>
+                      Remove
                     </button>
-                  );
-                })}
+                  </div>
+                )}
               </div>
 
-              <div className="pt-2 flex justify-end">
+              {/* Exam Options */}
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
+                <div>
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-300">Question Count</label>
+                  <select
+                    value={questionCount}
+                    onChange={(e) => setQuestionCount(Number(e.target.value))}
+                    className="mt-1.5 w-full rounded-xl bg-black/40 border border-white/10 p-3 text-xs text-white"
+                  >
+                    <option value={3}>3 Questions</option>
+                    <option value={4}>4 Questions</option>
+                    <option value={6}>6 Questions</option>
+                    <option value={10}>10 Questions</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-300">Difficulty</label>
+                  <select
+                    value={difficulty}
+                    onChange={(e) => setDifficulty(e.target.value)}
+                    className="mt-1.5 w-full rounded-xl bg-black/40 border border-white/10 p-3 text-xs text-white"
+                  >
+                    <option value="easy">Baseline (Easy)</option>
+                    <option value="medium">Rigorous (Medium)</option>
+                    <option value="hard">Advanced (Hard)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-300">Dimension Filter</label>
+                  <select
+                    value={questionType}
+                    onChange={(e) => setQuestionType(e.target.value)}
+                    className="mt-1.5 w-full rounded-xl bg-black/40 border border-white/10 p-3 text-xs text-white"
+                  >
+                    <option value="mixed">All 3 Dimensions (Mixed)</option>
+                    <option value="direct">Direct Understanding</option>
+                    <option value="explain">Under-the-Hood Explain</option>
+                    <option value="transfer">Unfamiliar Transfer</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
                 <Button
+                  type="submit"
                   size="lg"
-                  disabled={selectedOptions[index] === undefined}
-                  onClick={handleNextQuestion}
-                  className="w-full sm:w-auto bg-primary hover:bg-primary/90 font-bold shadow-glow min-h-[44px]"
+                  disabled={loadingExam || extractingPdf}
+                  className="w-full bg-primary hover:bg-primary/90 font-bold shadow-glow text-base min-h-[48px]"
                 >
-                  {index < questions.length - 1 ? (
+                  {loadingExam ? (
                     <>
-                      Next Question <ArrowRight className="ml-1.5 size-4" />
+                      <Loader2 className="mr-2 size-5 animate-spin" /> Generating AI Exam...
                     </>
                   ) : (
                     <>
-                      View Understanding Map <Sparkles className="ml-1.5 size-4" />
+                      Generate AI Verification Exam <Zap className="ml-2 size-5 text-warning" />
                     </>
                   )}
                 </Button>
               </div>
+            </form>
+          </div>
+        )}
+
+        {/* Answering Screen */}
+        {step === "answering" && currentQ && (
+          <div className="glass-card p-6 sm:p-8 space-y-6">
+            {/* Exam Header Bar */}
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+              <div>
+                <span className="text-xs font-mono font-bold text-primary">
+                  Question {currentIndex + 1} of {examQuestions.length}
+                </span>
+                <h2 className="text-sm font-bold text-white mt-0.5">{examTopic} Exam</h2>
+              </div>
+              <Badge variant="outline" className="text-xs uppercase font-mono border-primary/40 text-primary">
+                {currentQ.dimension} Dimension
+              </Badge>
+            </div>
+
+            {/* Question Text */}
+            <div className="space-y-4">
+              <h3 className="text-base sm:text-lg font-bold text-white leading-relaxed">
+                {currentQ.question}
+              </h3>
+
+              {/* MCQ Options */}
+              {currentQ.options && currentQ.options.length > 0 ? (
+                <div className="space-y-3 pt-2">
+                  {currentQ.options.map((opt, i) => {
+                    const isSelected = userAnswers[currentIndex] === opt;
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => handleAnswerSelect(opt)}
+                        className={`w-full text-left p-4 rounded-xl border text-xs sm:text-sm transition-all min-h-[48px] flex items-center justify-between ${
+                          isSelected
+                            ? "border-primary bg-primary/20 text-white font-bold shadow-glow"
+                            : "border-white/10 bg-black/30 text-slate-300 hover:border-white/30"
+                        }`}
+                      >
+                        <span>{opt}</span>
+                        {isSelected && <CheckCircle2 className="size-4 text-primary shrink-0 ml-2" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <Textarea
+                  rows={4}
+                  value={userAnswers[currentIndex] || ""}
+                  onChange={(e) => handleAnswerSelect(e.target.value)}
+                  placeholder="Write your answer here..."
+                  className="bg-black/40 border-white/10 text-white text-xs sm:text-sm"
+                />
+              )}
+            </div>
+
+            {/* Navigation Controls */}
+            <div className="pt-4 border-t border-white/10 flex items-center justify-between gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handlePrev}
+                disabled={currentIndex === 0}
+                className="border-white/20 text-white min-h-[44px]"
+              >
+                Previous
+              </Button>
+
+              <Button
+                type="button"
+                onClick={handleNext}
+                disabled={!userAnswers[currentIndex]}
+                className="bg-primary hover:bg-primary/90 font-bold shadow-glow min-h-[44px]"
+              >
+                {currentIndex === examQuestions.length - 1 ? "Submit Exam" : "Next Question"}
+                <ArrowRight className="size-4 ml-1.5" />
+              </Button>
             </div>
           </div>
         )}
 
-        {/* STEP 3: UNDERSTANDING MAP & RESULTS */}
-        {step === "results" && (
-          <div className="space-y-6">
-            <div className="glass-card p-6 sm:p-8 space-y-6">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-5">
-                <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-primary">Diagnostic Analysis Complete</span>
-                  <h1 className="text-2xl font-bold tracking-tight text-white mt-1">{conceptInput} Understanding Map</h1>
-                </div>
-                <Button size="sm" variant="outline" onClick={handleReset} className="border-white/20 bg-white/5 hover:bg-white/10 min-h-[40px]">
-                  <RotateCcw className="mr-1.5 size-3.5" /> Re-Check Concept
-                </Button>
+        {/* Results Screen */}
+        {step === "results" && examResults && (
+          <div className="glass-card p-6 sm:p-8 space-y-6 border-primary/40 shadow-glow">
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-primary">Verification Analysis</span>
+                <h2 className="text-xl sm:text-2xl font-bold text-white mt-0.5">{examTopic} Exam Score</h2>
               </div>
+              <div className="text-right">
+                <span className="font-mono text-3xl font-extrabold text-primary">{examResults.score}%</span>
+                <span className="text-[10px] text-slate-400 block font-mono uppercase">Total Accuracy</span>
+              </div>
+            </div>
 
-              {(() => {
-                const directEval = evaluations.find((e) => e.dimension === "direct");
-                const explainEval = evaluations.find((e) => e.dimension === "explain");
-                const transferEval = evaluations.find((e) => e.dimension === "transfer");
-
-                const dScore = directEval ? directEval.score : 0;
-                const eScore = explainEval ? explainEval.score : 0;
-                const tScore = transferEval ? transferEval.score : 0;
-
-                const stScore = calculateStabilityScore(dScore, eScore, tScore);
-                const gap = calculateConfidenceGap(confidenceInput, stScore);
-                const isTrap = confidenceInput >= 70 && stScore < 60;
-                const band = bandFor(stScore);
-
-                return (
-                  <div className="space-y-6">
-                    <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
-                      <div className="rounded-xl border border-white/10 bg-black/40 p-4 text-center space-y-1">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Self-Reported Confidence</span>
-                        <p className="font-mono text-3xl font-bold text-white">{confidenceInput}%</p>
-                      </div>
-
-                      <div className="rounded-xl border border-primary/40 bg-primary/10 p-4 text-center space-y-1">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-300">ECHO Stability Score</span>
-                        <p className="font-mono text-3xl font-extrabold text-primary">{stScore}%</p>
-                        <span className="text-[11px] font-bold text-primary block">{band.label}</span>
-                      </div>
-
-                      <div className="rounded-xl border border-white/10 bg-black/40 p-4 text-center space-y-1">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Confidence Gap</span>
-                        <p className={`font-mono text-3xl font-extrabold ${gap > 0 ? "text-destructive" : "text-success"}`}>
-                          {gap > 0 ? `+${gap}%` : `${gap}%`}
-                        </p>
-                        <span className="text-[11px] text-slate-400 block">{gap > 0 ? "Overconfident" : "Calibrated"}</span>
-                      </div>
+            {/* Detailed Question Review */}
+            <div className="space-y-4">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Detailed Answer Analysis</h3>
+              <div className="space-y-3">
+                {examResults.details.map((item, i) => (
+                  <div
+                    key={i}
+                    className={`rounded-xl p-4 border space-y-2 text-xs ${
+                      item.isCorrect ? "bg-emerald-500/10 border-emerald-500/30" : "bg-rose-500/10 border-rose-500/30"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-bold text-white">{i + 1}. {item.question.question}</p>
+                      <Badge variant="outline" className={`shrink-0 text-[10px] ${item.isCorrect ? "text-emerald-400 border-emerald-500/40" : "text-rose-400 border-rose-500/40"}`}>
+                        {item.question.dimension}
+                      </Badge>
                     </div>
-
-                    {isTrap && (
-                      <div className="rounded-2xl border border-warning/50 bg-warning/10 p-5 space-y-2">
-                        <div className="flex items-center gap-2 text-warning font-bold text-sm uppercase tracking-wider">
-                          <ShieldAlert className="size-5 shrink-0" />
-                          <span>Confident but Fragile Warning</span>
-                        </div>
-                        <p className="text-xs leading-relaxed text-slate-200">
-                          You felt <strong>{confidenceInput}% confident</strong> in {conceptInput}, but verified evidence stability is <strong>{stScore}% ({band.label})</strong>. ECHO recommends targeted repair.
-                        </p>
-                      </div>
+                    <p className="text-slate-300">Your Answer: <strong className="text-white">{item.userAns || "None"}</strong></p>
+                    {!item.isCorrect && (
+                      <p className="text-rose-300 font-medium">Correct Answer: <strong>{item.question.correctAnswer}</strong></p>
                     )}
-
-                    <div className="space-y-3">
-                      <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">3-Dimension Understanding Map</h2>
-                      <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
-                        {evaluations.map((ev) => (
-                          <div key={ev.dimension} className="rounded-xl border border-white/10 bg-black/30 p-4 space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-bold uppercase text-primary">{ev.dimension}</span>
-                              <span className="font-mono text-base font-bold text-white">{ev.score}/100</span>
-                            </div>
-                            <p className="text-xs text-slate-300 leading-relaxed">{ev.reasoning}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="pt-2 flex flex-col sm:flex-row items-center justify-end gap-3">
-                      <Button asChild size="lg" className="w-full sm:w-auto bg-primary hover:bg-primary/90 font-bold shadow-glow min-h-[48px]">
-                        <Link to="/study-plan">View Personalized Study Plan <ArrowRight className="ml-1.5 size-4" /></Link>
-                      </Button>
-                    </div>
+                    <p className="text-slate-400 leading-relaxed text-[11px] pt-1">{item.question.explanation}</p>
                   </div>
-                );
-              })()}
+                ))}
+              </div>
+            </div>
+
+            {/* CTAs */}
+            <div className="pt-4 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <Button size="sm" variant="outline" onClick={() => setStep("input")} className="w-full sm:w-auto border-white/20 text-white min-h-[44px]">
+                <RotateCcw className="size-4 mr-1.5" /> Take Another Exam
+              </Button>
+              <Button asChild size="sm" className="w-full sm:w-auto bg-primary hover:bg-primary/90 font-bold shadow-glow min-h-[44px]">
+                <Link to="/dashboard">
+                  View Updated Stability Dashboard <TrendingUp className="size-4 ml-1.5" />
+                </Link>
+              </Button>
             </div>
           </div>
         )}

@@ -18,6 +18,7 @@ import { Route as ReflectionRouteImport } from './routes/reflection'
 import { Route as RecheckRouteImport } from './routes/recheck'
 import { Route as PlanRouteImport } from './routes/plan'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as LearnRouteImport } from './routes/learn'
 import { Route as FacultyRouteImport } from './routes/faculty'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -69,6 +70,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LearnRoute = LearnRouteImport.update({
+  id: '/learn',
+  path: '/learn',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FacultyRoute = FacultyRouteImport.update({
   id: '/faculty',
   path: '/faculty',
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
   '/faculty': typeof FacultyRoute
+  '/learn': typeof LearnRoute
   '/login': typeof LoginRoute
   '/plan': typeof PlanRoute
   '/recheck': typeof RecheckRoute
@@ -117,6 +124,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
   '/faculty': typeof FacultyRoute
+  '/learn': typeof LearnRoute
   '/login': typeof LoginRoute
   '/plan': typeof PlanRoute
   '/recheck': typeof RecheckRoute
@@ -134,6 +142,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
   '/faculty': typeof FacultyRoute
+  '/learn': typeof LearnRoute
   '/login': typeof LoginRoute
   '/plan': typeof PlanRoute
   '/recheck': typeof RecheckRoute
@@ -152,6 +161,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/faculty'
+    | '/learn'
     | '/login'
     | '/plan'
     | '/recheck'
@@ -168,6 +178,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/faculty'
+    | '/learn'
     | '/login'
     | '/plan'
     | '/recheck'
@@ -184,6 +195,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/faculty'
+    | '/learn'
     | '/login'
     | '/plan'
     | '/recheck'
@@ -201,6 +213,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   DashboardRoute: typeof DashboardRoute
   FacultyRoute: typeof FacultyRoute
+  LearnRoute: typeof LearnRoute
   LoginRoute: typeof LoginRoute
   PlanRoute: typeof PlanRoute
   RecheckRoute: typeof RecheckRoute
@@ -277,6 +290,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/learn': {
+      id: '/learn'
+      path: '/learn'
+      fullPath: '/learn'
+      preLoaderRoute: typeof LearnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/faculty': {
       id: '/faculty'
       path: '/faculty'
@@ -321,6 +341,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   DashboardRoute: DashboardRoute,
   FacultyRoute: FacultyRoute,
+  LearnRoute: LearnRoute,
   LoginRoute: LoginRoute,
   PlanRoute: PlanRoute,
   RecheckRoute: RecheckRoute,

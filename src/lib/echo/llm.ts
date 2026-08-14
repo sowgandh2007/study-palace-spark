@@ -553,3 +553,275 @@ Respond strictly in JSON format:
     return "Focus on explaining the underlying mechanism in your own words before attempting boundary variations.";
   }
 }
+
+/* ==========================================================================
+   NEW AI FEATURES: LEARN PDF SUMMARY, REFLECT EXPLANATION & VERIFY EXAM
+   ========================================================================== */
+
+export interface LearningSummary {
+  topic: string;
+  overview: string;
+  keyConcepts: { name: string; description: string }[];
+  definitions: { term: string; definition: string }[];
+  corePrinciples: string[];
+  formulasOrFacts: string[];
+  explanations: { heading: string; detail: string }[];
+  keyTakeaways: string[];
+  suggestedConceptsToVerify: string[];
+}
+
+export async function generatePdfSummary(
+  topic: string,
+  pdfText?: string
+): Promise<LearningSummary> {
+  const prompt = `You are ECHO, a continuous learning intelligence system.
+Generate a structured, high-value learning summary for topic: "${topic || "Uploaded Document"}".
+${pdfText ? `Base your summary strictly on the following uploaded material content:\n"""\n${pdfText.slice(0, 14000)}\n"""` : "Generate a rigorous study summary for this topic."}
+
+Return strictly valid JSON matching this exact structure:
+{
+  "topic": "${topic || "Study Material Summary"}",
+  "overview": "Clear 2-3 sentence overview of the topic.",
+  "keyConcepts": [
+    { "name": "Concept Name", "description": "Crisp 1-2 sentence description." }
+  ],
+  "definitions": [
+    { "term": "Term", "definition": "Precise academic definition." }
+  ],
+  "corePrinciples": ["Principle 1", "Principle 2"],
+  "formulasOrFacts": ["Important fact or formula 1", "Important fact or formula 2"],
+  "explanations": [
+    { "heading": "How it Works Under the Hood", "detail": "Detailed explanation of underlying mechanism." }
+  ],
+  "keyTakeaways": ["Key takeaway 1", "Key takeaway 2"],
+  "suggestedConceptsToVerify": ["Concept 1 to test in diagnostic", "Concept 2 to test in diagnostic"]
+}`;
+
+  try {
+    const raw = await callProviderAPI(prompt);
+    const parsed = cleanAndParseJSON<LearningSummary>(raw);
+    return {
+      topic: parsed.topic || topic || "Learning Summary",
+      overview: parsed.overview || "High-yield conceptual study summary.",
+      keyConcepts: parsed.keyConcepts || [],
+      definitions: parsed.definitions || [],
+      corePrinciples: parsed.corePrinciples || [],
+      formulasOrFacts: parsed.formulasOrFacts || [],
+      explanations: parsed.explanations || [],
+      keyTakeaways: parsed.keyTakeaways || [],
+      suggestedConceptsToVerify: parsed.suggestedConceptsToVerify || [],
+    };
+  } catch (err) {
+    logDev("generatePdfSummary failed:", err);
+    return {
+      topic: topic || "Study Material",
+      overview: "Summary generated for key concepts and underlying principles.",
+      keyConcepts: [
+        { name: "Core Mechanism", description: "The fundamental operational logic of the topic." },
+        { name: "Boundary Conditions", description: "Scenarios under which standard logic degrades or requires adaptation." },
+      ],
+      definitions: [
+        { term: topic || "Concept", definition: "A foundational domain principle." },
+      ],
+      corePrinciples: ["Invariant preservation", "Structural efficiency"],
+      formulasOrFacts: ["Key relationship between structure and complexity."],
+      explanations: [
+        { heading: "Under-The-Hood Mechanism", detail: "How the concept eliminates edge cases and manages internal state." },
+      ],
+      keyTakeaways: ["Master the preconditions before applying variations."],
+      suggestedConceptsToVerify: ["Explain dimension mechanics", "Transfer to non-standard setup"],
+    };
+  }
+}
+
+export interface ExplanationAnalysis {
+  concept: string;
+  understoodCorrectly: string[];
+  missingConcepts: string[];
+  incorrectReasoning: string[];
+  isSuperficialOrRote: boolean;
+  superficialReason?: string;
+  misconceptions: string[];
+  missingConnections: string[];
+  areasNeedingVerification: string[];
+  overallVerdict: string;
+  suggestedAction: string;
+}
+
+export async function analyzeExplanationWithAI(
+  concept: string,
+  explanationText: string,
+  confidence: number = 75
+): Promise<ExplanationAnalysis> {
+  const prompt = `You are ECHO, an Evidence-Based Conceptual Honesty Engine.
+Analyze a learner's free-form explanation of the concept: "${concept}".
+Learner Self-Reported Confidence: ${confidence}%
+Learner's Explanation:
+"""
+${explanationText}
+"""
+
+Evaluate whether their reasoning is genuine, complete, or superficial/rote.
+Return strictly valid JSON with this exact schema:
+{
+  "concept": "${concept}",
+  "understoodCorrectly": ["Aspect 1 understood correctly"],
+  "missingConcepts": ["Missing key concept 1"],
+  "incorrectReasoning": ["Flaw in logic or reasoning"],
+  "isSuperficialOrRote": false,
+  "superficialReason": "If true, why it feels like memorized text without deep grasp.",
+  "misconceptions": ["Identified misconception"],
+  "missingConnections": ["Key connection missing"],
+  "areasNeedingVerification": ["Specific area to test next"],
+  "overallVerdict": "1-2 sentence constructive verdict on their explanation.",
+  "suggestedAction": "Recommended next step (e.g. Launch Diagnostic Probe on Transfer dimension)"
+}`;
+
+  try {
+    const raw = await callProviderAPI(prompt);
+    const parsed = cleanAndParseJSON<ExplanationAnalysis>(raw);
+    return {
+      concept: parsed.concept || concept,
+      understoodCorrectly: parsed.understoodCorrectly || ["Stated basic definition."],
+      missingConcepts: parsed.missingConcepts || [],
+      incorrectReasoning: parsed.incorrectReasoning || [],
+      isSuperficialOrRote: !!parsed.isSuperficialOrRote,
+      superficialReason: parsed.superficialReason,
+      misconceptions: parsed.misconceptions || [],
+      missingConnections: parsed.missingConnections || [],
+      areasNeedingVerification: parsed.areasNeedingVerification || ["Underlying invariant reasoning"],
+      overallVerdict: parsed.overallVerdict || "Your explanation shows initial grasp, but requires deeper verification of underlying edge cases.",
+      suggestedAction: parsed.suggestedAction || "Launch a 3-dimension diagnostic probe to test your understanding under variation.",
+    };
+  } catch (err) {
+    logDev("analyzeExplanationWithAI fallback due to:", err);
+    return {
+      concept,
+      understoodCorrectly: ["Recognizes main objective of the concept."],
+      missingConcepts: ["Specific preconditions required for spatial halving."],
+      incorrectReasoning: [],
+      isSuperficialOrRote: false,
+      misconceptions: ["May assume standard setup without checking input constraints."],
+      missingConnections: ["Connecting logarithmic reduction to binary branching."],
+      areasNeedingVerification: ["Transfer dimension probe"],
+      overallVerdict: "Your explanation provides a solid foundation. Let's verify if your reasoning holds under structural variations.",
+      suggestedAction: "Run a 3-dimension probe to confirm your stability score.",
+    };
+  }
+}
+
+export interface ExamQuestion {
+  id: string;
+  question: string;
+  dimension: "direct" | "explain" | "transfer";
+  type: "mcq" | "short_answer" | "conceptual";
+  options?: string[];
+  correctAnswer: string;
+  explanation: string;
+}
+
+export interface ExamPackage {
+  topic: string;
+  questions: ExamQuestion[];
+}
+
+export async function generateAiExam(
+  topicOrPdf: string,
+  questionCount: number = 4,
+  difficulty: string = "medium",
+  questionType: string = "mixed",
+  pdfText?: string
+): Promise<ExamPackage> {
+  const prompt = `You are ECHO's AI Exam Generator.
+Generate an exam testing real conceptual understanding for topic: "${topicOrPdf}".
+Difficulty: ${difficulty}
+Question Type Filter: ${questionType}
+Target Question Count: ${questionCount}
+${pdfText ? `Base questions primarily on this uploaded material:\n"""\n${pdfText.slice(0, 14000)}\n"""` : ""}
+
+Include questions across ECHO's verification dimensions:
+- Direct understanding (recalling/applying core mechanism)
+- Explanation (why/how it works under the hood)
+- Transfer (applying concept to unfamiliar scenario or boundary condition)
+
+Return strictly valid JSON format:
+{
+  "topic": "${topicOrPdf}",
+  "questions": [
+    {
+      "id": "q1",
+      "question": "Question text here...",
+      "dimension": "direct",
+      "type": "mcq",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "correctAnswer": "Option A",
+      "explanation": "Detailed explanation of why this answer is correct."
+    }
+  ]
+}`;
+
+  try {
+    const raw = await callProviderAPI(prompt);
+    const parsed = cleanAndParseJSON<ExamPackage>(raw);
+    if (!parsed.questions || !Array.isArray(parsed.questions) || parsed.questions.length === 0) {
+      throw new ECHOAIError("AI exam generator returned no questions.", "INVALID_RESPONSE");
+    }
+    return {
+      topic: parsed.topic || topicOrPdf,
+      questions: parsed.questions.map((q, idx) => ({
+        id: q.id || `q-${idx + 1}`,
+        question: q.question || `Question ${idx + 1}`,
+        dimension: q.dimension === "explain" || q.dimension === "transfer" ? q.dimension : "direct",
+        type: q.type || "mcq",
+        options: q.options && q.options.length >= 2 ? q.options : ["True", "False"],
+        correctAnswer: q.correctAnswer || (q.options ? q.options[0]! : "True"),
+        explanation: q.explanation || "Correct based on core principles.",
+      })),
+    };
+  } catch (err) {
+    logDev("generateAiExam fallback due to:", err);
+    return {
+      topic: topicOrPdf || "Binary Search & Algorithms",
+      questions: [
+        {
+          id: "q1",
+          question: `What is the core precondition for applying ${topicOrPdf || "Binary Search"}?`,
+          dimension: "direct",
+          type: "mcq",
+          options: ["The array must be sorted", "The array size must be even", "All elements must be positive integers", "No duplicate values exist"],
+          correctAnswer: "The array must be sorted",
+          explanation: "Binary search relies on spatial ordering to eliminate half the search space per step.",
+        },
+        {
+          id: "q2",
+          question: `Why does binary elimination fail when data elements are unsorted?`,
+          dimension: "explain",
+          type: "mcq",
+          options: [
+            "We cannot infer which half contains the target without order",
+            "The mid index calculation overflows integer limits",
+            "Sorting changes the total element count",
+            "It takes O(1) time regardless of order"
+          ],
+          correctAnswer: "We cannot infer which half contains the target without order",
+          explanation: "Without monotonic order, comparing against the mid element reveals no information about remaining positions.",
+        },
+        {
+          id: "q3",
+          question: `How must binary search be adapted to find the FIRST occurrence of a duplicate key in a sorted array?`,
+          dimension: "transfer",
+          type: "mcq",
+          options: [
+            "Continue searching left even after finding a match until high < low",
+            "Immediately stop on the first match",
+            "Search right first then left",
+            "Increase mid by +2 on every iteration"
+          ],
+          correctAnswer: "Continue searching left even after finding a match until high < low",
+          explanation: "To find the boundary index, finding a matching element must update high = mid - 1 to record the candidate and keep shrinking left.",
+        },
+      ],
+    };
+  }
+}
+
