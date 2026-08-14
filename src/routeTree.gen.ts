@@ -9,85 +9,25 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TimetableRouteImport } from './routes/timetable'
-import { Route as StudyPlanRouteImport } from './routes/study-plan'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as ResultsRouteImport } from './routes/results'
-import { Route as RepairRouteImport } from './routes/repair'
-import { Route as ReflectionRouteImport } from './routes/reflection'
-import { Route as RecheckRouteImport } from './routes/recheck'
-import { Route as PlanRouteImport } from './routes/plan'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as LearnRouteImport } from './routes/learn'
-import { Route as FacultyRouteImport } from './routes/faculty'
-import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AssessmentRouteImport } from './routes/assessment'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AssessmentRouteImport } from './routes/assessment'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as FacultyRouteImport } from './routes/faculty'
+import { Route as LearnRouteImport } from './routes/learn'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as PlanRouteImport } from './routes/plan'
+import { Route as RecheckRouteImport } from './routes/recheck'
+import { Route as ReflectionRouteImport } from './routes/reflection'
+import { Route as RepairRouteImport } from './routes/repair'
+import { Route as ResultsRouteImport } from './routes/results'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as StudyPlanRouteImport } from './routes/study-plan'
+import { Route as TimetableRouteImport } from './routes/timetable'
 
-const TimetableRoute = TimetableRouteImport.update({
-  id: '/timetable',
-  path: '/timetable',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const StudyPlanRoute = StudyPlanRouteImport.update({
-  id: '/study-plan',
-  path: '/study-plan',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResultsRoute = ResultsRouteImport.update({
-  id: '/results',
-  path: '/results',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RepairRoute = RepairRouteImport.update({
-  id: '/repair',
-  path: '/repair',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ReflectionRoute = ReflectionRouteImport.update({
-  id: '/reflection',
-  path: '/reflection',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RecheckRoute = RecheckRouteImport.update({
-  id: '/recheck',
-  path: '/recheck',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PlanRoute = PlanRouteImport.update({
-  id: '/plan',
-  path: '/plan',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LearnRoute = LearnRouteImport.update({
-  id: '/learn',
-  path: '/learn',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FacultyRoute = FacultyRouteImport.update({
-  id: '/faculty',
-  path: '/faculty',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AssessmentRoute = AssessmentRouteImport.update({
@@ -95,9 +35,69 @@ const AssessmentRoute = AssessmentRouteImport.update({
   path: '/assessment',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FacultyRoute = FacultyRouteImport.update({
+  id: '/faculty',
+  path: '/faculty',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LearnRoute = LearnRouteImport.update({
+  id: '/learn',
+  path: '/learn',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlanRoute = PlanRouteImport.update({
+  id: '/plan',
+  path: '/plan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecheckRoute = RecheckRouteImport.update({
+  id: '/recheck',
+  path: '/recheck',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReflectionRoute = ReflectionRouteImport.update({
+  id: '/reflection',
+  path: '/reflection',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RepairRoute = RepairRouteImport.update({
+  id: '/repair',
+  path: '/repair',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResultsRoute = ResultsRouteImport.update({
+  id: '/results',
+  path: '/results',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudyPlanRoute = StudyPlanRouteImport.update({
+  id: '/study-plan',
+  path: '/study-plan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TimetableRoute = TimetableRouteImport.update({
+  id: '/timetable',
+  path: '/timetable',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -227,95 +227,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/timetable': {
-      id: '/timetable'
-      path: '/timetable'
-      fullPath: '/timetable'
-      preLoaderRoute: typeof TimetableRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/study-plan': {
-      id: '/study-plan'
-      path: '/study-plan'
-      fullPath: '/study-plan'
-      preLoaderRoute: typeof StudyPlanRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/results': {
-      id: '/results'
-      path: '/results'
-      fullPath: '/results'
-      preLoaderRoute: typeof ResultsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/repair': {
-      id: '/repair'
-      path: '/repair'
-      fullPath: '/repair'
-      preLoaderRoute: typeof RepairRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reflection': {
-      id: '/reflection'
-      path: '/reflection'
-      fullPath: '/reflection'
-      preLoaderRoute: typeof ReflectionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/recheck': {
-      id: '/recheck'
-      path: '/recheck'
-      fullPath: '/recheck'
-      preLoaderRoute: typeof RecheckRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/plan': {
-      id: '/plan'
-      path: '/plan'
-      fullPath: '/plan'
-      preLoaderRoute: typeof PlanRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/learn': {
-      id: '/learn'
-      path: '/learn'
-      fullPath: '/learn'
-      preLoaderRoute: typeof LearnRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/faculty': {
-      id: '/faculty'
-      path: '/faculty'
-      fullPath: '/faculty'
-      preLoaderRoute: typeof FacultyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/assessment': {
@@ -325,11 +241,95 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AssessmentRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faculty': {
+      id: '/faculty'
+      path: '/faculty'
+      fullPath: '/faculty'
+      preLoaderRoute: typeof FacultyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/learn': {
+      id: '/learn'
+      path: '/learn'
+      fullPath: '/learn'
+      preLoaderRoute: typeof LearnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/plan': {
+      id: '/plan'
+      path: '/plan'
+      fullPath: '/plan'
+      preLoaderRoute: typeof PlanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recheck': {
+      id: '/recheck'
+      path: '/recheck'
+      fullPath: '/recheck'
+      preLoaderRoute: typeof RecheckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reflection': {
+      id: '/reflection'
+      path: '/reflection'
+      fullPath: '/reflection'
+      preLoaderRoute: typeof ReflectionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/repair': {
+      id: '/repair'
+      path: '/repair'
+      fullPath: '/repair'
+      preLoaderRoute: typeof RepairRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/results': {
+      id: '/results'
+      path: '/results'
+      fullPath: '/results'
+      preLoaderRoute: typeof ResultsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/study-plan': {
+      id: '/study-plan'
+      path: '/study-plan'
+      fullPath: '/study-plan'
+      preLoaderRoute: typeof StudyPlanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/timetable': {
+      id: '/timetable'
+      path: '/timetable'
+      fullPath: '/timetable'
+      preLoaderRoute: typeof TimetableRouteImport
       parentRoute: typeof rootRouteImport
     }
   }

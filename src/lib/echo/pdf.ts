@@ -32,24 +32,25 @@ async function loadPdfJsScript(): Promise<any> {
         reject(new Error("Failed to initialize PDF.js library."));
       }
     };
-    script.onerror = () => reject(new Error("Failed to load PDF processing script. Please check your connection."));
+    script.onerror = () => reject(new Error("Failed to load PDF processing script. Please check your internet connection."));
     document.head.appendChild(script);
   });
 }
 
 /**
- * Safe client-side PDF text extractor with file validation.
+ * Robust client-side PDF text extractor with file validation.
+ * Extracts up to 100 pages and up to 120,000 characters for Gemini AI processing.
  */
-export async function extractTextFromPdf(file: File, maxPages = 30): Promise<PdfExtractResult> {
+export async function extractTextFromPdf(file: File, maxPages = 100): Promise<PdfExtractResult> {
   if (!file) {
     throw new Error("No file provided for extraction.");
   }
 
   if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
-    throw new Error("Invalid file type. Please upload a valid PDF document (.pdf).");
+    throw new Error("Invalid file format. Please upload a valid PDF document (.pdf).");
   }
 
-  const MAX_FILE_SIZE_MB = 12;
+  const MAX_FILE_SIZE_MB = 20;
   if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
     throw new Error(`File is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). Maximum allowed size is ${MAX_FILE_SIZE_MB} MB.`);
   }
@@ -67,28 +68,32 @@ export async function extractTextFromPdf(file: File, maxPages = 30): Promise<Pdf
       const page = await pdfDocument.getPage(pageNum);
       const textContent = await page.getTextContent();
       const pageText = textContent.items.map((item: any) => item.str).join(" ");
-      fullText += `--- Page ${pageNum} ---\n${pageText}\n\n`;
+      if (pageText.trim()) {
+        fullText += `--- Page ${pageNum} ---\n${pageText}\n\n`;
+      }
     }
 
-    if (!fullText.trim()) {
-      throw new Error("The uploaded PDF appears to contain no extractable text (it might be a scanned image).");
+    if (!fullText.trim() || fullText.trim().length < 50) {
+      throw new Error("The uploaded PDF contains no extractable text. It may be a scanned image PDF or password protected.");
     }
 
-    // Limit context length for prompt window efficiency
-    const truncatedText = fullText.slice(0, 16000);
+    // High capacity limit (up to 120,000 chars) for thorough Gemini document analysis
+    const fullExtractedContent = fullText.slice(0, 120000);
 
     return {
-      text: truncatedText,
+      text: fullExtractedContent,
       pageCount: pdfDocument.numPages,
     };
   } catch (err: any) {
-    if (err.message && err.message.includes("PDF")) {
+    if (err.message && (err.message.includes("PDF") || err.message.includes("extractable"))) {
       throw err;
     }
-    // Fallback simple FileReader reader text fallback if WebWorker fails
     try {
       const text = await readTextFileFallback(file);
-      return { text: text.slice(0, 16000), pageCount: 1 };
+      if (!text.trim() || text.length < 50) {
+        throw new Error("Failed to extract readable text from PDF.");
+      }
+      return { text: text.slice(0, 120000), pageCount: 1 };
     } catch {
       throw new Error(err.message || "Failed to process PDF document.");
     }
