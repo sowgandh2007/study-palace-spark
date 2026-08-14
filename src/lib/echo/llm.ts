@@ -277,6 +277,123 @@ Return strictly valid JSON with this schema:
   }
 }
 
+export interface AcademicStudyPlan {
+  topic: string;
+  generatedAt: string;
+  totalMinutes: number;
+  currentUnderstandingSummary: string;
+  focusAreas: { concept: string; issueType: string; description: string }[];
+  sequence: { stepNumber: string; title: string; objective: string }[];
+  sessions: {
+    id: string;
+    sessionNumber: string;
+    topic: string;
+    objective: string;
+    recommendedActivity: string;
+    estimatedMinutes: number;
+  }[];
+}
+
+export async function generateAcademicStudyPlan(
+  concept: string,
+  understoodText?: string,
+  notUnderstoodText?: string,
+  confidenceScore = 75
+): Promise<AcademicStudyPlan> {
+  const prompt = `You are ECHO, an Evidence-Based Conceptual Honesty Engine.
+A student reflected on: "${concept}".
+- Self-reported confidence: ${confidenceScore}%
+- Understood: "${understoodText || "Baseline familiarity"}"
+- Struggling with: "${notUnderstoodText || "Boundary conditions and invariant mechanics"}"
+
+Generate a focused, evidence-based academic study plan.
+Return strictly valid JSON matching this exact structure:
+{
+  "topic": "${concept}",
+  "generatedAt": "${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}",
+  "totalMinutes": 35,
+  "currentUnderstandingSummary": "2-3 sentence evidence-based assessment of their current grasp, highlighting identified conceptual gaps.",
+  "focusAreas": [
+    { "concept": "Core Invariant Mechanics", "issueType": "Conceptual Gap", "description": "Needs clear formulation of why spatial elimination holds." },
+    { "concept": "Boundary Condition Overflow", "issueType": "Weak Application", "description": "Index calculation mid-overflow under large inputs." }
+  ],
+  "sequence": [
+    { "stepNumber": "01", "title": "Review Prerequisite Invariants", "objective": "Verify ordered array constraints." },
+    { "stepNumber": "02", "title": "Rebuild Core Elimination Logic", "objective": "Formulate exact mid-point calculation." },
+    { "stepNumber": "03", "title": "Verify Transfer Applications", "objective": "Test algorithm on rotated or non-standard search spaces." }
+  ],
+  "sessions": [
+    {
+      "id": "s1",
+      "sessionNumber": "Session 01",
+      "topic": "${concept} — Core Invariants",
+      "objective": "Formulate and write the array sorting precondition in your own words.",
+      "recommendedActivity": "Review invariant definition → Write 2-sentence explanation → Verify against edge cases.",
+      "estimatedMinutes": 15
+    },
+    {
+      "id": "s2",
+      "sessionNumber": "Session 02",
+      "topic": "${concept} — Boundary Application",
+      "objective": "Apply pointer elimination to rotated sorted arrays.",
+      "recommendedActivity": "Solve 2 boundary variations → Verify index logic.",
+      "estimatedMinutes": 20
+    }
+  ]
+}`;
+
+  try {
+    const raw = await callProviderAPI(prompt);
+    const parsed = cleanAndParseJSON<AcademicStudyPlan>(raw);
+    if (parsed && parsed.currentUnderstandingSummary && Array.isArray(parsed.sessions)) {
+      return parsed;
+    }
+    throw new Error("Invalid plan structure");
+  } catch {
+    return {
+      topic: concept || "Binary Search",
+      generatedAt: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      totalMinutes: 35,
+      currentUnderstandingSummary: `Student demonstrates baseline familiarity with ${concept || "Binary Search"}, but evidence reveals fragile understanding around boundary invariants and spatial elimination logic.`,
+      focusAreas: [
+        {
+          concept: `${concept || "Binary Search"} Invariance`,
+          issueType: "Conceptual Gap",
+          description: "Needs clear formulation of why spatial halving requires sorted preconditions.",
+        },
+        {
+          concept: "Index Boundary Calculation",
+          issueType: "Weak Application",
+          description: "Midpoint overflow prevention and loop termination criteria under edge cases.",
+        },
+      ],
+      sequence: [
+        { stepNumber: "01", title: "Review Prerequisite Invariants", objective: "Verify ordered array constraints." },
+        { stepNumber: "02", title: "Rebuild Core Elimination Logic", objective: "Formulate exact mid-point calculation." },
+        { stepNumber: "03", title: "Verify Transfer Applications", objective: "Test algorithm on rotated or non-standard search spaces." },
+      ],
+      sessions: [
+        {
+          id: "s1",
+          sessionNumber: "Session 01",
+          topic: `${concept || "Binary Search"} — Core Invariants`,
+          objective: "Formulate and write the array sorting precondition in your own words.",
+          recommendedActivity: "Review invariant definition → Write 2-sentence explanation → Verify against edge cases.",
+          estimatedMinutes: 15,
+        },
+        {
+          id: "s2",
+          sessionNumber: "Session 02",
+          topic: `${concept || "Binary Search"} — Boundary Application`,
+          objective: "Apply pointer elimination to rotated sorted arrays.",
+          recommendedActivity: "Solve 2 boundary variations → Verify index logic.",
+          estimatedMinutes: 20,
+        },
+      ],
+    };
+  }
+}
+
 export interface LearningSummary {
   topic: string;
   overview: string;
@@ -289,40 +406,30 @@ export interface LearningSummary {
 }
 
 export async function generatePdfSummary(topic: string, pdfText?: string): Promise<LearningSummary> {
-  const prompt = `You are ECHO, an educational intelligence system.
+  const prompt = `You are ECHO.
 Generate a structured, high-yield learning summary for: "${topic || "Uploaded Document"}".
-${pdfText ? `Context extracted from PDF document:\n${pdfText.slice(0, 10000)}` : ""}
+${pdfText ? `Context extracted from PDF:\n${pdfText.slice(0, 10000)}` : ""}
 
 Return strictly valid JSON with this exact schema:
 {
   "topic": "${topic || "Study Material"}",
   "overview": "2-3 sentence overview of the core subject matter.",
   "keyConcepts": [
-    { "concept": "Concept Name", "explanation": "Clear structural explanation of how it works under the hood." }
+    { "concept": "Concept Name", "explanation": "Clear structural explanation." }
   ],
   "definitions": [
-    { "term": "Important Term", "definition": "Precise academic definition." }
+    { "term": "Important Term", "definition": "Precise definition." }
   ],
-  "coreIdeas": ["Core Idea 1", "Core Idea 2"],
-  "formulasAndFacts": ["Important formula or key fact 1", "Fact 2"],
-  "keyTakeaways": ["Takeaway 1", "Takeaway 2"],
-  "conceptsToVerify": ["Suggested concept to test on next exam 1", "Suggested concept 2"]
+  "coreIdeas": ["Core Idea 1"],
+  "formulasAndFacts": ["Fact 1"],
+  "keyTakeaways": ["Takeaway 1"],
+  "conceptsToVerify": ["Suggested concept 1"]
 }`;
 
   try {
     const raw = await callProviderAPI(prompt);
-    const parsed = cleanAndParseJSON<LearningSummary>(raw);
-    return {
-      topic: parsed.topic || topic || "Study Material",
-      overview: parsed.overview || "High-yield conceptual summary.",
-      keyConcepts: parsed.keyConcepts || [{ concept: topic || "Core Concept", explanation: "Primary mechanism." }],
-      definitions: parsed.definitions || [{ term: "Key Term", definition: "Core definition." }],
-      coreIdeas: parsed.coreIdeas || ["Key structural idea."],
-      formulasAndFacts: parsed.formulasAndFacts || ["Core fact."],
-      keyTakeaways: parsed.keyTakeaways || ["Primary takeaway."],
-      conceptsToVerify: parsed.conceptsToVerify || ["Direct application verification."],
-    };
-  } catch (err) {
+    return cleanAndParseJSON<LearningSummary>(raw);
+  } catch {
     return {
       topic: topic || "Study Material",
       overview: "Study summary generated for core subject matter.",
@@ -414,9 +521,7 @@ Total questions: ${questionCount}.
 ${pdfText ? `Context from PDF:\n${pdfText.slice(0, 8000)}` : ""}
 
 Generate questions testing 3 dimensions:
-- Direct (direct recall / application)
-- Explain (under-the-hood mechanism explanation)
-- Transfer (application in an unfamiliar boundary scenario)
+- Direct, Explain, Transfer.
 
 Return strictly valid JSON with this format:
 {
