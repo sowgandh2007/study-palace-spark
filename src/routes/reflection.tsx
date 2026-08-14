@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, BrainCircuit, Loader2, Sparkles, HelpCircle, CheckCircle2 } from "lucide-react";
+import { ArrowRight, BrainCircuit, Loader2, Sparkles } from "lucide-react";
 import { EchoNavbar } from "@/components/EchoNavbar";
-import { ThemeSelect } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -69,24 +68,24 @@ function ReflectionPage() {
   }
 
   return (
-    <div className="min-h-screen text-foreground selection:bg-primary/30 pb-28 md:pb-20">
-      <EchoNavbar variant="dark" />
+    <div className="min-h-screen bg-gradient-royal-ice-page selection:bg-primary/30 pb-28 md:pb-20">
+      <EchoNavbar variant="light" />
 
       <main className="mx-auto max-w-2xl px-4 sm:px-6 pt-6 sm:pt-10">
-        <div className="glass-card p-6 sm:p-8 space-y-6">
+        <div className="glass-card-light p-6 sm:p-8 space-y-6 rounded-2xl bg-white/95 border border-slate-200 shadow-md">
           <div className="flex items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-xl bg-primary/20 border border-primary/40 text-primary shadow-glow shrink-0">
+            <div className="grid h-11 w-11 place-items-center rounded-xl bg-primary/10 border border-primary/30 text-primary shrink-0">
               <BrainCircuit className="size-6" />
             </div>
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-primary">Post-Class Self-Assessment</span>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">Quick ECHO Reflection</h1>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Quick ECHO Reflection</h1>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
                 Topic / Concept Name <span className="text-destructive">*</span>
               </label>
               <Input
@@ -94,14 +93,14 @@ function ReflectionPage() {
                 value={concept}
                 onChange={(e) => setConcept(e.target.value)}
                 placeholder="e.g. Binary Search, TCP Flow Control"
-                className="mt-1.5 bg-black/40 border-white/10 text-white min-h-[44px]"
+                className="mt-1.5 bg-white border-slate-300 text-slate-900 min-h-[44px]"
               />
             </div>
 
-            <div>
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                  How much do you understand this? (0–100%)
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                  Self-Reported Confidence Level
                 </label>
                 <span className="font-mono text-sm font-bold text-primary">{confidence}%</span>
               </div>
@@ -111,50 +110,54 @@ function ReflectionPage() {
                 max="100"
                 value={confidence}
                 onChange={(e) => setConfidence(Number(e.target.value))}
-                className="mt-3 h-3 w-full cursor-pointer appearance-none rounded-lg bg-white/10 accent-primary"
+                className="w-full accent-primary h-2 rounded-lg bg-slate-200 cursor-pointer"
               />
-              <div className="mt-1.5 flex justify-between font-mono text-[10px] sm:text-[11px] text-slate-400">
-                <span>0% — Lost</span>
-                <span>50% — Somewhat Clear</span>
-                <span>100% — Mastery</span>
+              <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+                <span>0% Completely Lost</span>
+                <span>50% Partial</span>
+                <span>100% Fully Mastered</span>
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                <HelpCircle className="size-4 text-warning shrink-0" /> What part didn't you understand? <span className="text-destructive">*</span>
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                What parts did you feel you understood today?
               </label>
               <Textarea
-                required
                 rows={3}
-                value={notUnderstoodText}
-                onChange={(e) => setNotUnderstoodText(e.target.value)}
-                placeholder="e.g. I don't understand why sorted order allows us to eliminate half the array..."
-                className="mt-1.5 bg-black/40 border-white/10 text-xs text-white"
+                value={understoodText}
+                onChange={(e) => setUnderstoodText(e.target.value)}
+                placeholder="Explain the mechanism in your own words..."
+                className="mt-1.5 bg-white border-slate-300 text-slate-900 text-xs sm:text-sm p-3"
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                <CheckCircle2 className="size-4 text-success shrink-0" /> What part do you already understand? (Optional)
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                What felt confusing or hard to explain?
               </label>
               <Textarea
-                rows={2}
-                value={understoodText}
-                onChange={(e) => setUnderstoodText(e.target.value)}
-                placeholder="e.g. I know how to calculate the mid index..."
-                className="mt-1.5 bg-black/40 border-white/10 text-xs text-white"
+                rows={3}
+                value={notUnderstoodText}
+                onChange={(e) => setNotUnderstoodText(e.target.value)}
+                placeholder="Where does your explanation break down?"
+                className="mt-1.5 bg-white border-slate-300 text-slate-900 text-xs sm:text-sm p-3"
               />
             </div>
 
-            <Button type="submit" size="lg" disabled={loading} className="w-full bg-primary hover:bg-primary/90 font-bold shadow-glow text-base min-h-[48px]">
+            <Button
+              type="submit"
+              size="lg"
+              disabled={loading}
+              className="w-full bg-primary hover:bg-primary/90 text-white font-bold shadow-glow min-h-[48px] text-base"
+            >
               {loading ? (
                 <>
-                  <Loader2 className="mr-2 size-4 animate-spin" /> Diagnosing Gap...
+                  <Loader2 className="mr-2 size-5 animate-spin" /> Analyzing Understanding...
                 </>
               ) : (
                 <>
-                  Diagnose Gap & Verify <Sparkles className="ml-2 size-4" />
+                  Generate Verification Check <ArrowRight className="ml-2 size-5" />
                 </>
               )}
             </Button>
