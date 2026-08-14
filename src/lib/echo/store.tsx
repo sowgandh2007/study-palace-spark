@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { ApiConfig, Reflection, RepairActivity, StabilityResult, TimetableEntry } from "./types";
-import { SAMPLE_TIMETABLE } from "./data";
 import { getApiConfig, saveApiConfig } from "./llm";
 
 type EchoStoreState = {
@@ -16,6 +15,7 @@ type EchoStoreCtx = EchoStoreState & {
   addTimetableEntry: (entry: Omit<TimetableEntry, "id">) => void;
   deleteTimetableEntry: (id: string) => void;
   saveReflection: (reflection: Omit<Reflection, "id" | "createdAt">) => Reflection;
+  deleteReflection: (id: string) => void;
   setLatestResult: (result: StabilityResult) => void;
   setActiveRepair: (repair: RepairActivity | null) => void;
   completeRecheck: (concept: string, beforeScore: number, afterScore: number) => void;
@@ -86,6 +86,10 @@ export function EchoProvider({ children }: { children: ReactNode }) {
     return newRef;
   }
 
+  function deleteReflection(id: string) {
+    setReflections((prev) => prev.filter((r) => r.id !== id));
+  }
+
   function completeRecheck(concept: string, beforeScore: number, afterScore: number) {
     const item = { concept, beforeScore, afterScore, date: new Date().toLocaleTimeString() };
     setRecheckHistory((prev) => [item, ...prev]);
@@ -108,6 +112,7 @@ export function EchoProvider({ children }: { children: ReactNode }) {
         addTimetableEntry,
         deleteTimetableEntry,
         saveReflection,
+        deleteReflection,
         setLatestResult,
         setActiveRepair,
         completeRecheck,
