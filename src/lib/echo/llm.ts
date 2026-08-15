@@ -7,7 +7,7 @@ export const INTEGRATED_GEMINI_KEY = typeof atob === "function" ? atob(ENCODED_K
 export const DEFAULT_API_CONFIG: ApiConfig = {
   activeProvider: "gemini",
   geminiApiKey: INTEGRATED_GEMINI_KEY,
-  geminiModel: "gemini-1.5-flash",
+  geminiModel: "gemini-2.5-flash",
   openaiApiKey: "",
   openaiModel: "gpt-4o-mini",
   anthropicApiKey: "",
@@ -114,7 +114,7 @@ export async function discoverGeminiModels(apiKey?: string): Promise<string[]> {
   const keyToUse = (apiKey || "").trim() || (import.meta.env.VITE_GEMINI_API_KEY as string) || INTEGRATED_GEMINI_KEY;
   if (!keyToUse) return [];
   try {
-    const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models", {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(keyToUse)}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -138,6 +138,68 @@ export async function discoverGeminiModels(apiKey?: string): Promise<string[]> {
   return [];
 }
 
+export async function callGeminiREST(prompt: string, apiKey: string, modelName = "gemini-2.5-flash", signal?: AbortSignal): Promise<string> {
+  const candidateModels = Array.from(new Set([
+    modelName.trim().replace(/^models\//, ""),
+    "gemini-2.5-flash",
+    "gemini-1.5-flash",
+    "gemini-1.5-pro",
+  ]));
+
+  let lastError: ECHOAIError | null = null;
+
+  for (const modelCandidate of candidateModels) {
+    const requestUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelCandidate}:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+    try {
+      const res = await fetch(requestUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": apiKey,
+        },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseMimeType: "application/json",
+            temperature: 0.2,
+          },
+        }),
+        signal,
+      });
+
+      const responseText = await res.text();
+      if (!res.ok) {
+        if (res.status === 404) {
+          logDev(`Model ${modelCandidate} returned 404. Retrying next candidate...`);
+          lastError = new ECHOAIError(`Gemini model ${modelCandidate} returned 404 Not Found.`, "SERVER_ERROR", 404);
+          continue;
+        }
+        if (res.status === 401 || res.status === 403) {
+          throw new ECHOAIError("Gemini API key is invalid.", "INVALID_KEY", res.status);
+        }
+        if (res.status === 429) {
+          throw new ECHOAIError("Gemini API rate limited.", "RATE_LIMIT", res.status);
+        }
+        throw new ECHOAIError(`Gemini API error status: ${res.status}`, "SERVER_ERROR", res.status);
+      }
+
+      const data = JSON.parse(responseText);
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) throw new ECHOAIError("Empty content payload returned from Gemini.", "INVALID_RESPONSE");
+      return text;
+    } catch (err: unknown) {
+      if (err instanceof ECHOAIError && err.status === 404) {
+        lastError = err;
+        continue;
+      }
+      throw err;
+    }
+  }
+
+  throw lastError || new ECHOAIError("All Gemini model candidates returned 404 Not Found.", "SERVER_ERROR", 404);
+}
+
 async function callProviderAPI(prompt: string, overrideConfig?: ApiConfig): Promise<string> {
   const cfg = overrideConfig || getApiConfig();
   const provider = cfg.activeProvider || "gemini";
@@ -157,47 +219,7 @@ async function callProviderAPI(prompt: string, overrideConfig?: ApiConfig): Prom
         throw new ECHOAIError("Gemini API key is invalid.", "INVALID_KEY");
       }
 
-      let modelName = (cfg.geminiModel || "gemini-1.5-flash").trim().replace(/^models\//, "");
-
-      const availableModels = await discoverGeminiModels(apiKey);
-      if (availableModels.length > 0 && !availableModels.includes(modelName)) {
-        modelName = availableModels[0]!;
-      }
-
-      const modelPath = `models/${modelName}`;
-      const requestUrl = `https://generativelanguage.googleapis.com/v1beta/${modelPath}:generateContent`;
-
-      const res = await fetch(requestUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
-        },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            responseMimeType: "application/json",
-            temperature: 0.2,
-          },
-        }),
-        signal: controller.signal,
-      });
-
-      const responseText = await res.text();
-      if (!res.ok) {
-        if (res.status === 401 || res.status === 403) {
-          throw new ECHOAIError("Gemini API key is invalid.", "INVALID_KEY", res.status);
-        }
-        if (res.status === 429) {
-          throw new ECHOAIError("Gemini API rate limited.", "RATE_LIMIT", res.status);
-        }
-        throw new ECHOAIError(`Gemini API error status: ${res.status}`, "SERVER_ERROR", res.status);
-      }
-
-      const data = JSON.parse(responseText);
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text) throw new ECHOAIError("Empty content payload returned from Gemini.", "INVALID_RESPONSE");
-      return text;
+      return await callGeminiREST(prompt, apiKey, cfg.geminiModel || "gemini-2.5-flash", controller.signal);
     }
 
     if (provider === "openai") {
