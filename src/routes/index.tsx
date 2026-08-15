@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { FRAMEWORK_DIMENSIONS } from "@/lib/echo/types";
 import { EchoNavbar, EchoLogo } from "@/components/EchoNavbar";
 import { ScrollStack, type ScrollStackItem } from "@/components/ui/ScrollStack";
-import { NotebookIntro } from "@/components/echo/NotebookIntro";
+import { BrainIntro } from "@/components/echo/BrainIntro";
 
 export { EchoLogo };
 
@@ -71,8 +71,8 @@ function LandingPage() {
     <div className="notebook-home min-h-screen selection:bg-sky-300/40 pb-28 md:pb-20">
       <EchoNavbar variant="light" />
 
-      {/* Notebook page-turn interactive introduction */}
-      <NotebookIntro />
+      {/* Brain Zoom & 6-Dimension Explosion Interactive Introduction */}
+      <BrainIntro />
 
       {/* SCROLL STACK STACKING CARD DECK ON HOME PAGE */}
       <section className="py-16 px-4 sm:px-6">
