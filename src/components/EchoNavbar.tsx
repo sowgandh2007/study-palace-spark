@@ -6,7 +6,6 @@ import {
   Calendar,
   ClipboardList,
   Sparkles,
-  Users,
   Settings,
   UserCheck,
   Menu,
@@ -14,10 +13,9 @@ import {
   ChevronRight,
   Zap,
   Home,
-  Sliders,
+  BookOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ThemeSelect } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
@@ -45,7 +43,6 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
 
-  // 6. Nav on scroll performance hook (no heavy backdrop-filter blur)
   useEffect(() => {
     function handleScroll() {
       setIsScrolled(window.scrollY > 50);
@@ -57,15 +54,16 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
   const navLinks = [
     { label: "HOME", to: "/", icon: Home },
     { label: "DASHBOARD", to: "/dashboard", icon: LayoutDashboard },
-    { label: "TIMETABLE", to: "/timetable", icon: Calendar },
+    { label: "LEARN", to: "/learn", icon: BookOpen },
+    { label: "REFLECT", to: "/reflection", icon: Sparkles },
     { label: "STUDY PLAN", to: "/study-plan", icon: ClipboardList },
-    { label: "FACULTY", to: "/faculty", icon: Users },
+    { label: "VERIFY", to: "/assessment", icon: Zap },
   ];
 
   const bottomNavItems = [
     { label: "Home", to: "/", icon: Home },
     { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
-    { label: "Timetable", to: "/timetable", icon: Calendar },
+    { label: "Learn", to: "/learn", icon: BookOpen },
     { label: "Study Plan", to: "/study-plan", icon: ClipboardList },
     { label: "Reflect", to: "/reflection", icon: Sparkles },
   ];
@@ -74,7 +72,6 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
 
   return (
     <>
-      {/* 6. Sticky Header Navigation with High-Performance Scroll Transition */}
       <header
         className={cn(
           "sticky top-0 z-40 w-full nav-scroll-base",
@@ -139,7 +136,7 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
             </Button>
           </div>
 
-          {/* Mobile Top Actions (Theme Select + Hamburger) */}
+          {/* Mobile Top Actions */}
           <div className="flex md:hidden items-center gap-2">
             <ThemeSelect />
             <button
@@ -159,7 +156,7 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
         </div>
       </header>
 
-      {/* Mobile Slide-Over Drawer / Full Feature Navigation Modal */}
+      {/* Mobile Slide-Over Drawer */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 md:hidden flex flex-col bg-background/95 text-foreground animate-in fade-in duration-200">
           <div className="flex items-center justify-between p-4 border-b border-border">
@@ -182,12 +179,12 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
               {[
                 { label: "Home / Overview", to: "/", icon: Home, desc: "Evidence-Based Honesty Engine" },
                 { label: "Student Dashboard", to: "/dashboard", icon: LayoutDashboard, desc: "Real-time stability telemetry" },
-                { label: "Class Timetable", to: "/timetable", icon: Calendar, desc: "Tomorrow's schedule & reflections" },
-                { label: "Personalized Study Plan", to: "/study-plan", icon: ClipboardList, desc: "Tonight's time budget & repairs" },
-                { label: "Post-Class Reflection", to: "/reflection", icon: Sparkles, desc: "10-second confidence check-in" },
-                { label: "3-Question Diagnostic Probe", to: "/assessment", icon: Zap, desc: "Direct, Explain & Transfer MCQs" },
-                { label: "Faculty Cohort Portal", to: "/faculty", icon: Users, desc: "Classroom stability analytics" },
-                { label: "AI API & Model Settings", to: "/settings", icon: Settings, desc: "Gemini, OpenAI or Built-in Mode" },
+                { label: "Stage 2: Learn", to: "/learn", icon: BookOpen, desc: "AI PDF Summary & Topic Learning" },
+                { label: "Stage 3: Reflect", to: "/reflection", icon: Sparkles, desc: "Explain concepts in your own words" },
+                { label: "Evidence Study Plan", to: "/study-plan", icon: ClipboardList, desc: "Targeted learning sequence" },
+                { label: "Stage 4: Verify", to: "/assessment", icon: Zap, desc: "Diagnostic Probe & AI Exam Generator" },
+                { label: "Class Timetable", to: "/timetable", icon: Calendar, desc: "Schedule & class timing" },
+                { label: "AI System Settings", to: "/settings", icon: Settings, desc: "Gemini AI Engine status" },
                 { label: "Sign In / Profile", to: "/login", icon: UserCheck, desc: "Student session login" },
               ].map((item) => {
                 const isActive = currentPath === item.to;
@@ -198,19 +195,19 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
                     to={item.to}
                     onClick={() => setMobileMenuOpen(false)}
                     className={cn(
-                      "flex items-center justify-between p-3.5 rounded-2xl border transition-all min-h-[52px]",
+                      "flex items-center justify-between p-3.5 rounded-2xl border transition-all touch-target",
                       isActive
-                        ? "border-primary bg-primary/20 text-white font-bold"
-                        : "border-border bg-card/60 hover:bg-card text-foreground"
+                        ? "border-primary bg-primary/10 text-primary font-extrabold shadow-sm"
+                        : "border-border/60 bg-card/40 hover:bg-card text-foreground"
                     )}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-primary/10 border border-primary/30 text-primary">
+                      <div className={cn("p-2 rounded-xl border", isActive ? "border-primary/40 bg-primary/20 text-primary" : "border-border bg-background text-muted-foreground")}>
                         <IconComponent className="size-4" />
                       </div>
                       <div>
-                        <p className="text-xs sm:text-sm font-bold leading-tight">{item.label}</p>
-                        <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5">{item.desc}</p>
+                        <p className="text-xs font-bold">{item.label}</p>
+                        <p className="text-[10px] text-muted-foreground">{item.desc}</p>
                       </div>
                     </div>
                     <ChevronRight className="size-4 text-muted-foreground" />
@@ -222,38 +219,25 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
         </div>
       )}
 
-      {/* Sticky Mobile Bottom Navigation Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 glass-header border-t border-border px-2 py-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-2xl">
-        <div className="flex items-center justify-around">
-          {bottomNavItems.map((item) => {
-            const isActive = currentPath === item.to;
-            const IconComponent = item.icon;
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={cn(
-                  "flex flex-col items-center justify-center min-h-[46px] min-w-[52px] px-1.5 py-1 rounded-xl transition-all",
-                  isActive
-                    ? "text-primary font-bold bg-primary/15"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <IconComponent className={cn("size-4 sm:size-5", isActive && "scale-110")} />
-                <span className="text-[9px] sm:text-[10px] font-bold tracking-tight mt-0.5 whitespace-nowrap">{item.label}</span>
-              </Link>
-            );
-          })}
-
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(true)}
-            className="flex flex-col items-center justify-center min-h-[46px] min-w-[52px] px-1.5 py-1 rounded-xl text-muted-foreground hover:text-foreground transition-all"
-          >
-            <Sliders className="size-4 sm:size-5" />
-            <span className="text-[9px] sm:text-[10px] font-bold tracking-tight mt-0.5 whitespace-nowrap">More</span>
-          </button>
-        </div>
+      {/* Mobile Fixed Bottom Stage Navigation Bar */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-background/95 border-t border-border px-2 py-2 flex items-center justify-around shadow-lg backdrop-blur-lg">
+        {bottomNavItems.map((item) => {
+          const isActive = currentPath === item.to;
+          const IconComp = item.icon;
+          return (
+            <Link
+              key={item.to}
+              to={item.to}
+              className={cn(
+                "flex flex-col items-center justify-center p-1.5 rounded-xl transition-all min-w-[56px]",
+                isActive ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <IconComp className={cn("size-5 mb-0.5", isActive && "text-primary scale-110")} />
+              <span className="text-[10px] font-mono">{item.label}</span>
+            </Link>
+          );
+        })}
       </div>
     </>
   );

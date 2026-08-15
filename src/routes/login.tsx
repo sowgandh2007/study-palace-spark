@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { BrainCircuit, ArrowRight, ShieldCheck, UserCheck, Lock } from "lucide-react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { BrainCircuit, ArrowRight, UserCheck } from "lucide-react";
 import { EchoNavbar } from "@/components/EchoNavbar";
-import { ThemeSelect } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -27,11 +26,6 @@ function LoginPage() {
     navigate({ to: "/dashboard" });
   }
 
-  function handleDemoFaculty() {
-    toast.success("Signed in as Faculty Portal Lead");
-    navigate({ to: "/faculty" });
-  }
-
   return (
     <div className="min-h-screen text-foreground selection:bg-primary/30 pb-28 md:pb-20">
       <EchoNavbar variant="dark" />
@@ -47,13 +41,10 @@ function LoginPage() {
             <p className="text-xs text-slate-300 mt-1">Access your verified conceptual telemetry & adaptive study plan.</p>
           </div>
 
-          {/* Quick Demo Access Buttons */}
+          {/* Quick Demo Access Button */}
           <div className="space-y-2.5 pt-2">
             <Button onClick={handleDemoStudent} className="w-full bg-primary hover:bg-primary/90 font-bold shadow-glow min-h-[44px]">
               <UserCheck className="mr-2 size-4" /> Demo Student Access
-            </Button>
-            <Button onClick={handleDemoFaculty} variant="outline" className="w-full border-white/20 bg-white/5 hover:bg-white/10 min-h-[44px]">
-              <ShieldCheck className="mr-2 size-4 text-primary" /> Demo Faculty Portal Access
             </Button>
           </div>
 

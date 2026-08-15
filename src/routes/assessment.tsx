@@ -1,19 +1,12 @@
 import { useEffect, useState, useRef } from "react";
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-  ArrowLeft,
   ArrowRight,
-  BrainCircuit,
   CheckCircle2,
-  Lightbulb,
-  Loader2,
   RotateCcw,
-  ShieldAlert,
-  ShieldCheck,
-  ShieldQuestion,
-  Sparkles,
   Zap,
   TrendingUp,
+  BookOpen,
 } from "lucide-react";
 import { EchoNavbar } from "@/components/EchoNavbar";
 import { Button } from "@/components/ui/button";
@@ -37,13 +30,13 @@ export const Route = createFileRoute("/assessment")({
 function AssessmentPage() {
   const { concept: searchConcept, gap: searchGap, confidence: searchConf, demo } = Route.useSearch();
   const isDemo = Boolean(demo);
-  const { setLatestResult } = useEcho();
+  const { activeLearnMaterial, setLatestResult } = useEcho();
 
   const [step, setStep] = useState<"input" | "answering" | "results">("input");
 
-  const [conceptInput, setConceptInput] = useState(
-    searchConcept === "binary-search" || isDemo ? "Binary Search" : searchConcept ?? "Binary Search"
-  );
+  const initialTopic = searchConcept || activeLearnMaterial?.topic || "Binary Search";
+
+  const [conceptInput, setConceptInput] = useState(initialTopic);
   const [notUnderstoodText, setNotUnderstoodText] = useState(searchGap ?? "");
   const [confidenceInput, setConfidenceInput] = useState(
     searchConf ? Number(searchConf) : isDemo ? 90 : 75
@@ -56,6 +49,14 @@ function AssessmentPage() {
   const [gapDiagnosisText, setGapDiagnosisText] = useState("");
 
   const hasAutoStarted = useRef(false);
+
+  useEffect(() => {
+    if (searchConcept) {
+      setConceptInput(searchConcept);
+    } else if (activeLearnMaterial?.topic) {
+      setConceptInput(activeLearnMaterial.topic);
+    }
+  }, [searchConcept, activeLearnMaterial]);
 
   useEffect(() => {
     if (searchConcept && !hasAutoStarted.current) {
@@ -101,7 +102,6 @@ function AssessmentPage() {
       if (index < questions.length - 1) {
         setIndex(index + 1);
       } else {
-        // Complete Diagnostic Verification
         const finalStability = calculateStabilityScore(updatedEvals);
         const finalGap = calculateConfidenceGap(confidenceInput, finalStability);
         const bandInfo = bandFor(finalStability);
@@ -134,14 +134,22 @@ function AssessmentPage() {
       <EchoNavbar variant="light" />
 
       <main className="mx-auto max-w-3xl px-4 sm:px-6 pt-6 sm:pt-10 space-y-6">
-        <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-primary">STAGE 4: VERIFY</span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 mt-1">
-            Diagnostic Verification Probe
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-700 font-medium mt-1">
-            Test whether your understanding survives direct application, under-the-hood reasoning, and unfamiliar transfer problems.
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-primary">STAGE 4: VERIFY</span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 mt-1">
+              Diagnostic Verification Probe
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-700 font-medium mt-1">
+              Test whether your understanding survives direct application, under-the-hood reasoning, and unfamiliar transfer problems.
+            </p>
+          </div>
+
+          {activeLearnMaterial && activeLearnMaterial.topic === conceptInput && (
+            <Badge variant="outline" className="border-primary/40 text-primary text-xs font-mono hidden sm:inline-flex">
+              <BookOpen className="size-3 mr-1" /> From Learn
+            </Badge>
+          )}
         </div>
 
         {step === "input" && (

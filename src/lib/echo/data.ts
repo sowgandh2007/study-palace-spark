@@ -38,29 +38,6 @@ export const DEMO_BINARY_SEARCH_DATA = {
 
 export const PRIORITY_REPAIRS: any[] = [];
 
-export const FACULTY_CLASS = {
-  cohort: "CSE — Semester 4 · Section B",
-  students: 48,
-  avgStability: 58,
-  confidentButFragile: 17,
-  concepts: [
-    {
-      conceptId: "binary-search",
-      name: "Binary Search",
-      assessed: 41,
-      avgStability: 58,
-      confidentButFragile: 17,
-      dimensions: { direct: 91, explain: 63, variation: 46, assumption: 38, error: 44, transfer: 52 },
-      misconceptions: [
-        { text: "Believes binary search always returns the leftmost occurrence with duplicates", share: 54 },
-        { text: "Cannot state the sortedness precondition unprompted", share: 47 },
-        { text: "Recites 'divide by 2' without connecting halving to log₂n", share: 39 },
-        { text: "Blames the overflow bug for an infinite loop caused by lo = mid", share: 33 },
-      ],
-    },
-  ],
-};
-
 export const STABILITY_TREND = [
   { day: "Mon", stability: 44 },
   { day: "Tue", stability: 51 },
