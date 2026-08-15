@@ -275,3 +275,18 @@
   min-height: 44px;
   min-width: 44px;
 }
+
+/* Notebook homepage surface (light paper environment) */
+.notebook-home {
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgba(56, 189, 248, 0.22), transparent 65%),
+    linear-gradient(180deg, #eaf3ff 0%, #f6faff 40%, #fdfbf6 100%);
+  color: #0f1c33;
+}
+
+.paper-card {
+  background: linear-gradient(180deg, #ffffff, #fbf8f1);
+  border: 1px solid rgba(12, 74, 140, 0.12);
+  border-radius: var(--radius);
+  box-shadow: 0 12px 28px -18px rgba(10, 40, 90, 0.45);
+}

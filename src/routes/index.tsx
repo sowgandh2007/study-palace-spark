@@ -8,8 +8,6 @@ import {
   Zap,
   BookOpen,
   TrendingUp,
-  ShieldCheck,
-  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +16,7 @@ import { FoldText } from "@/components/ui/FoldText";
 import { EchoNavbar, EchoLogo } from "@/components/EchoNavbar";
 import { Prism } from "@/components/ui/Prism";
 import { ScrollStack, type ScrollStackItem } from "@/components/ui/ScrollStack";
+import { NotebookIntro } from "@/components/echo/NotebookIntro";
 
 export { EchoLogo };
 
@@ -37,8 +36,6 @@ function LandingPage() {
     return () => window.removeEventListener("resize", checkViewport);
   }, []);
 
-  // 5 Stage Cards for ScrollStack deck matching exact Figma screenshot
-  // Plan card points DIRECTLY to /timetable (Tomorrow's Class Schedule)
   const stackItems: ScrollStackItem[] = [
     {
       id: "plan",
@@ -54,7 +51,7 @@ function LandingPage() {
       stageNumber: "02",
       stageTitle: "Learn",
       icon: BookOpen,
-      to: "/study-plan",
+      to: "/learn",
       description:
         "You attend class and engage with the underlying concept. ECHO tracks the concept itself — the mechanism and its constraints — not a memorised answer.",
     },
@@ -161,6 +158,9 @@ function LandingPage() {
         </div>
       </section>
 
+      {/* Notebook page-turn interactive introduction */}
+      <NotebookIntro />
+
       {/* SCROLL STACK STACKING CARD DECK ON HOME PAGE */}
       <section className="py-16 px-4 sm:px-6">
         <div className="mx-auto max-w-4xl space-y-10">
@@ -189,7 +189,7 @@ function LandingPage() {
           </div>
 
           <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
-            {FRAMEWORK_DIMENSIONS.map((dim, idx) => (
+            {FRAMEWORK_DIMENSIONS.map((dim) => (
               <div key={dim.id} className="glass-card p-6 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider text-primary">{dim.label}</span>
