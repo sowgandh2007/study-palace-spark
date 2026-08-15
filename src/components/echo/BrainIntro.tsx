@@ -17,7 +17,7 @@ export function PixelBrainSVG({ className = "w-32 h-32" }: { className?: string 
       </defs>
       {/* Outer Glow Path */}
       <path
-        d="M50 15 C30 15 15 30 15 50 C15 70 30 85 45 85 C47 85 49 84 50 82 C51 84 53 85 55 85 C70 85 70 85 85 50 C85 30 70 15 50 15 Z"
+        d="M50 15 C30 15 15 30 15 50 C15 70 30 85 45 85 C47 85 49 84 50 82 C51 84 53 85 55 85 C70 85 85 70 85 50 C85 30 70 15 50 15 Z"
         fill="url(#brain-grad)"
         filter="url(#brain-glow)"
       />
@@ -45,48 +45,45 @@ export function PixelBrainSVG({ className = "w-32 h-32" }: { className?: string 
   );
 }
 
-const LEARNING_PRINCIPLES = [
+const LEFT_PRINCIPLES = [
   {
     num: "1",
     title: "Simplify relentlessly",
     desc: "Explain the idea in plain English as if teaching a beginner.",
     icon: Pencil,
-    pos: "top-4 left-4 sm:top-8 sm:left-8 text-left",
-  },
-  {
-    num: "2",
-    title: "Deconstruct to first principles",
-    desc: "Break the concept down into its smallest fundamental parts.",
-    icon: Boxes,
-    pos: "top-4 right-4 sm:top-8 sm:right-8 text-right",
   },
   {
     num: "3",
     title: "Anchor with analogies",
     desc: "Tie the new concept to something you already understand intuitively.",
     icon: GitBranch,
-    pos: "top-1/3 left-2 sm:left-6 text-left",
-  },
-  {
-    num: "4",
-    title: "Test before you feel ready",
-    desc: "Use active recall instead of passive re-reading. Close your notes and write or speak what you know from memory.",
-    icon: ClipboardCheck,
-    pos: "top-1/3 right-2 sm:right-6 text-right",
   },
   {
     num: "5",
     title: "Space out the reps",
     desc: "Reviewing across 3 separate 20-minute sessions beats a single 60-minute cram session.",
     icon: Calendar,
-    pos: "bottom-12 left-4 sm:bottom-14 sm:left-8 text-left",
+  },
+];
+
+const RIGHT_PRINCIPLES = [
+  {
+    num: "2",
+    title: "Deconstruct to first principles",
+    desc: "Break the concept down into its smallest fundamental parts.",
+    icon: Boxes,
+  },
+  {
+    num: "4",
+    title: "Test before you feel ready",
+    desc: "Use active recall instead of passive re-reading. Close your notes and write or speak what you know from memory.",
+    icon: ClipboardCheck,
   },
   {
     num: "6",
     title: "Build or break something",
     desc: "Apply the concept to a real scenario, problem, or project. Direct feedback from errors is the fastest path to mastery.",
     icon: Laptop,
-    pos: "bottom-12 right-4 sm:bottom-14 sm:right-8 text-right",
   },
 ];
 
@@ -155,7 +152,7 @@ export function BrainIntro() {
 
         {/* Header Title Section (Fade out as we reach final state) */}
         <div
-          className="relative z-20 pt-16 sm:pt-20 px-4 text-center space-y-3 transition-all duration-500"
+          className="relative z-20 pt-14 sm:pt-16 px-4 text-center space-y-2 transition-all duration-500"
           style={{
             opacity: isFinalStage ? 0 : Math.max(0, 1 - progress * 1.4),
             transform: `translateY(${progress * -30}px)`,
@@ -169,7 +166,7 @@ export function BrainIntro() {
           </div>
 
           <div className="space-y-1 max-w-md mx-auto">
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 drop-shadow-sm font-mono">
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 drop-shadow-sm font-mono">
               ECHO
             </h1>
             <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-800 font-mono">
@@ -177,15 +174,15 @@ export function BrainIntro() {
             </p>
           </div>
 
-          <div className="pt-1">
-            <p className="text-xs sm:text-sm text-slate-800 font-medium italic font-serif max-w-sm mx-auto bg-white/60 backdrop-blur-sm px-4 py-1.5 rounded-full border border-white/60 shadow-sm">
+          <div className="pt-0.5">
+            <p className="text-xs sm:text-sm text-slate-800 font-medium italic font-serif max-w-sm mx-auto bg-white/60 backdrop-blur-sm px-4 py-1 rounded-full border border-white/60 shadow-sm">
               “The answer is correct. But is the understanding real?”
             </p>
           </div>
         </div>
 
         {/* Center Stage Animation Area */}
-        <div className="relative z-10 flex-1 flex items-center justify-center pointer-events-none">
+        <div className="relative z-10 flex-1 flex items-center justify-center pointer-events-none px-4 py-2">
           {!isFinalStage ? (
             /* States 1-3: Scaling Brain with Radial Aura */
             <div className="relative flex items-center justify-center">
@@ -220,51 +217,79 @@ export function BrainIntro() {
               </div>
             </div>
           ) : (
-            /* State 4: Pixel Brain in Center Surrounded by 6 Core Learning Principles Cards */
-            <div className="relative w-full h-full max-w-5xl mx-auto flex items-center justify-center animate-in fade-in zoom-in-95 duration-700">
-              {/* Central Glowing Pixel Brain */}
-              <div className="relative z-20 flex flex-col items-center justify-center">
-                <div className="absolute size-44 sm:size-60 rounded-full bg-sky-300/40 blur-2xl animate-pulse" />
-                <div className="relative z-10 p-2 rounded-3xl bg-white/30 border border-white/50 backdrop-blur-sm shadow-2xl">
-                  <PixelBrainSVG className="w-24 h-24 sm:w-36 sm:h-36 drop-shadow-2xl" />
-                </div>
-              </div>
-
-              {/* Connection Dotted Rays from Central Brain */}
-              <svg className="absolute inset-0 w-full h-full opacity-60 pointer-events-none" viewBox="0 0 400 300">
-                <line x1="200" y1="150" x2="60" y2="40" stroke="#38bdf8" strokeWidth="2" strokeDasharray="4 4" />
-                <line x1="200" y1="150" x2="340" y2="40" stroke="#38bdf8" strokeWidth="2" strokeDasharray="4 4" />
-                <line x1="200" y1="150" x2="40" y2="150" stroke="#38bdf8" strokeWidth="2" strokeDasharray="4 4" />
-                <line x1="200" y1="150" x2="360" y2="150" stroke="#38bdf8" strokeWidth="2" strokeDasharray="4 4" />
-                <line x1="200" y1="150" x2="60" y2="260" stroke="#38bdf8" strokeWidth="2" strokeDasharray="4 4" />
-                <line x1="200" y1="150" x2="340" y2="260" stroke="#38bdf8" strokeWidth="2" strokeDasharray="4 4" />
+            /* State 4: Uniform 3-Column Layout with 6 Non-Overlapping Cards + Center Pixel Brain */
+            <div className="relative w-full h-full max-w-6xl mx-auto flex items-center justify-between gap-3 sm:gap-6 md:gap-10 pointer-events-auto animate-in fade-in zoom-in-95 duration-700">
+              {/* Background Connection Rays */}
+              <svg className="absolute inset-0 w-full h-full opacity-40 pointer-events-none" viewBox="0 0 400 300">
+                <line x1="200" y1="150" x2="60" y2="50" stroke="#0284c7" strokeWidth="2" strokeDasharray="4 4" />
+                <line x1="200" y1="150" x2="340" y2="50" stroke="#0284c7" strokeWidth="2" strokeDasharray="4 4" />
+                <line x1="200" y1="150" x2="60" y2="150" stroke="#0284c7" strokeWidth="2" strokeDasharray="4 4" />
+                <line x1="200" y1="150" x2="340" y2="150" stroke="#0284c7" strokeWidth="2" strokeDasharray="4 4" />
+                <line x1="200" y1="150" x2="60" y2="250" stroke="#0284c7" strokeWidth="2" strokeDasharray="4 4" />
+                <line x1="200" y1="150" x2="340" y2="250" stroke="#0284c7" strokeWidth="2" strokeDasharray="4 4" />
               </svg>
 
-              {/* 6 Surrounding Core Learning Principles Cards */}
-              <div className="absolute inset-0 p-3 sm:p-6 pointer-events-auto">
-                {LEARNING_PRINCIPLES.map((principle) => {
+              {/* LEFT COLUMN: Cards 1, 3, 5 */}
+              <div className="flex-1 flex flex-col justify-center gap-2.5 sm:gap-4 max-w-[280px] sm:max-w-[320px] z-20">
+                {LEFT_PRINCIPLES.map((principle) => {
                   const Icon = principle.icon;
                   return (
                     <div
                       key={principle.num}
-                      className={`absolute ${principle.pos} max-w-[160px] sm:max-w-[240px] p-3 sm:p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xl backdrop-blur-md transition-all duration-300 hover:scale-105 hover:shadow-2xl`}
+                      className="p-3 sm:p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xl backdrop-blur-md transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl"
                     >
-                      <div className="flex items-start gap-2 mb-1.5">
+                      <div className="flex items-center gap-2 mb-1">
                         <div className="grid size-7 sm:size-8 place-items-center rounded-xl bg-sky-100 text-sky-800 shrink-0">
                           <Icon className="size-3.5 sm:size-4 text-sky-700" />
                         </div>
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-1">
-                            <span className="grid size-4 place-items-center rounded-full bg-sky-600 text-white font-bold text-[10px] font-mono">
-                              {principle.num}
-                            </span>
-                            <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 leading-snug">
-                              {principle.title}
-                            </h4>
-                          </div>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="grid size-4 place-items-center rounded-full bg-sky-600 text-white font-bold text-[10px] font-mono shrink-0">
+                            {principle.num}
+                          </span>
+                          <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 leading-tight truncate">
+                            {principle.title}
+                          </h4>
                         </div>
                       </div>
-                      <p className="text-[10px] sm:text-xs text-slate-700 leading-relaxed font-medium">
+                      <p className="text-[10px] sm:text-xs text-slate-600 leading-relaxed font-medium">
+                        {principle.desc}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* CENTER COLUMN: Pixel Brain */}
+              <div className="relative z-30 flex flex-col items-center justify-center shrink-0">
+                <div className="absolute size-36 sm:size-52 rounded-full bg-sky-300/40 blur-2xl animate-pulse" />
+                <div className="relative p-2.5 sm:p-3.5 rounded-3xl bg-white/40 border border-white/60 backdrop-blur-md shadow-2xl">
+                  <PixelBrainSVG className="w-20 h-20 sm:w-32 sm:h-32 drop-shadow-2xl" />
+                </div>
+              </div>
+
+              {/* RIGHT COLUMN: Cards 2, 4, 6 */}
+              <div className="flex-1 flex flex-col justify-center gap-2.5 sm:gap-4 max-w-[280px] sm:max-w-[320px] z-20">
+                {RIGHT_PRINCIPLES.map((principle) => {
+                  const Icon = principle.icon;
+                  return (
+                    <div
+                      key={principle.num}
+                      className="p-3 sm:p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xl backdrop-blur-md transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl"
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="grid size-7 sm:size-8 place-items-center rounded-xl bg-sky-100 text-sky-800 shrink-0">
+                          <Icon className="size-3.5 sm:size-4 text-sky-700" />
+                        </div>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="grid size-4 place-items-center rounded-full bg-sky-600 text-white font-bold text-[10px] font-mono shrink-0">
+                            {principle.num}
+                          </span>
+                          <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 leading-tight truncate">
+                            {principle.title}
+                          </h4>
+                        </div>
+                      </div>
+                      <p className="text-[10px] sm:text-xs text-slate-600 leading-relaxed font-medium">
                         {principle.desc}
                       </p>
                     </div>
@@ -277,10 +302,10 @@ export function BrainIntro() {
 
         {/* Scroll Down Bouncing Footer Indicator */}
         <div
-          className="relative z-20 pb-8 text-center transition-opacity duration-300"
-          style={{ opacity: isFinalStage ? 0.3 : 1 }}
+          className="relative z-20 pb-6 text-center transition-opacity duration-300"
+          style={{ opacity: isFinalStage ? 0.4 : 1 }}
         >
-          <div className="inline-flex flex-col items-center gap-1 text-[11px] font-mono font-bold uppercase tracking-widest text-slate-800 bg-white/60 backdrop-blur-sm px-4 py-1.5 rounded-full border border-white/60 shadow-sm">
+          <div className="inline-flex flex-col items-center gap-1 text-[11px] font-mono font-bold uppercase tracking-widest text-slate-800 bg-white/60 backdrop-blur-sm px-4 py-1 rounded-full border border-white/60 shadow-sm">
             <ChevronDown className="size-4 animate-bounce text-sky-800" />
             <span>{isFinalStage ? "Explore Below" : "Scroll Down"}</span>
           </div>
