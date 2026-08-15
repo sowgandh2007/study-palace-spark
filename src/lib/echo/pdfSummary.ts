@@ -1,4 +1,4 @@
-import { getApiConfig, discoverGeminiModels, cleanAndParseJSON, ECHOAIError } from "./llm";
+import { getApiConfig, discoverGeminiModels, cleanAndParseJSON, ECHOAIError, INTEGRATED_GEMINI_KEY } from "./llm";
 
 export interface ComprehensivePdfSummaryResult {
   title: string;
@@ -23,7 +23,7 @@ export async function generateComprehensivePdfSummaryHTML(
   }
 
   const cfg = getApiConfig();
-  const apiKey = cfg.geminiApiKey.trim() || (import.meta.env.VITE_GEMINI_API_KEY as string) || "";
+  const apiKey = cfg.geminiApiKey.trim() || (import.meta.env.VITE_GEMINI_API_KEY as string) || INTEGRATED_GEMINI_KEY;
 
   if (!apiKey) {
     throw new ECHOAIError(
@@ -47,7 +47,7 @@ Analyze the following extracted text from an uploaded PDF document:
 ==================================================
 EXTRACTED PDF DOCUMENT TEXT (${pageCount ? `${pageCount} pages, ` : ""}${pdfText.length} characters):
 ==================================================
-${pdfText}
+${pdfText.slice(0, 50000)}
 ==================================================
 
 YOUR TASK:
@@ -105,23 +105,48 @@ Return strictly valid JSON matching this exact structure:
   }
 
   try {
-    const parsed = cleanAndParseJSON<ComprehensivePdfSummaryResult>(text);
-    if (parsed && parsed.htmlContent) {
-      const words = parsed.htmlContent.replace(/<[^>]*>/g, " ").split(/\s+/).length;
-      return {
-        title: parsed.title || topic || "Uploaded Document Summary",
-        htmlContent: parsed.htmlContent,
-        summaryText: parsed.summaryText || "Comprehensive AI study document generated from uploaded PDF.",
-        keyConcepts: parsed.keyConcepts || [{ concept: topic || "Core Concept", explanation: "Primary mechanism described in source document." }],
-        importantPoints: parsed.importantPoints || ["Key concept reviewed in study document."],
-        pageCount,
-        wordCount: words,
-      };
+    const parsed = cleanAndParseJSON<any>(text);
+
+    // Support flexible JSON structure returned by model (e.g. summary, key_points, analysis, keyConcepts, htmlContent)
+    const summaryText = parsed.summaryText || parsed.summary || "Comprehensive AI study document generated from uploaded material.";
+    const title = parsed.title || topic || "Uploaded Document Summary";
+    const keyPoints = parsed.importantPoints || parsed.key_points || parsed.core_ideas || ["Key concept reviewed in study document."];
+    const keyConcepts = Array.isArray(parsed.keyConcepts)
+      ? parsed.keyConcepts
+      : (keyPoints as string[]).map((p: string) => ({ concept: "Key Point", explanation: p }));
+
+    let htmlContent = parsed.htmlContent || parsed.analysis;
+
+    if (!htmlContent) {
+      // Auto-generate clean HTML document from parsed structure if model omitted raw htmlContent string
+      htmlContent = `<div class="echo-study-document space-y-6"><header class="doc-header border-b border-slate-200 pb-4"><h1 className="text-2xl font-bold text-slate-900">${title}</h1><p className="text-xs text-slate-500 font-mono">Comprehensive AI Study Document</p></header><section className="doc-section"><h2 className="text-lg font-bold text-slate-900">Executive Summary</h2><p className="text-sm text-slate-700 leading-relaxed">${summaryText}</p></section><section className="doc-section"><h2 className="text-lg font-bold text-slate-900">Key Points</h2><ul className="list-disc pl-5 text-sm text-slate-700 space-y-2">${keyPoints.map((kp: string) => `<li>${kp}</li>`).join("")}</ul></section></div>`;
     }
-    throw new Error("HTML content missing");
+
+    const words = htmlContent.replace(/<[^>]*>/g, " ").split(/\s+/).length;
+
+    return {
+      title,
+      htmlContent,
+      summaryText,
+      keyConcepts,
+      importantPoints: keyPoints,
+      pageCount,
+      wordCount: words,
+    };
   } catch (err: any) {
     if (err instanceof ECHOAIError) throw err;
-    throw new ECHOAIError("Failed to parse the generated summary HTML from Gemini.", "INVALID_RESPONSE");
+
+    // Fallback: wrap raw text response gracefully into HTML document
+    const fallbackHtml = `<div class="echo-study-document space-y-4"><h1 className="text-xl font-bold text-slate-900">${topic || "Study Material"}</h1><p className="text-sm text-slate-700 whitespace-pre-wrap">${text}</p></div>`;
+    return {
+      title: topic || "Study Material",
+      htmlContent: fallbackHtml,
+      summaryText: "Comprehensive AI study summary.",
+      keyConcepts: [{ concept: topic || "Core Concept", explanation: "Extracted from source material." }],
+      importantPoints: ["Key concept extracted from source material."],
+      pageCount,
+      wordCount: text.split(/\s+/).length,
+    };
   }
 }
 
@@ -135,15 +160,15 @@ export async function downloadHtmlAsPdf(elementId: string, filename: string): Pr
     const html2pdf = html2pdfModule.default || (window as any).html2pdf;
 
     const opt = {
-      margin: [12, 12, 12, 12],
+      margin: [12, 12, 12, 12] as [number, number, number, number],
       filename: filename.endsWith(".pdf") ? filename : `${filename}.pdf`,
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true, logging: false },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
       pagebreak: { mode: ["avoid-all", "css", "legacy"] },
-    };
+    } as const satisfies Record<string, unknown>;
 
-    await html2pdf().set(opt).from(element).save();
+    await html2pdf().set(opt as never).from(element).save();
   } catch (err: any) {
     console.error("[PDF Export Error]", err);
     window.print();

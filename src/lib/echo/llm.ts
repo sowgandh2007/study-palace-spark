@@ -74,10 +74,12 @@ function logDev(message: string, ...data: unknown[]) {
 export function cleanAndParseJSON<T>(rawText: string): T {
   let text = rawText.trim();
 
+  // 1. Remove markdown fence code blocks
   if (text.includes("```")) {
     text = text.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
   }
 
+  // 2. Locate boundaries of JSON object or array
   const firstBrace = text.search(/[\{\[]/);
   const lastBrace = text.search(/[\}\]][^]*$/);
 
@@ -85,14 +87,26 @@ export function cleanAndParseJSON<T>(rawText: string): T {
     text = text.substring(firstBrace, lastBrace + 1).trim();
   }
 
+  // 3. Attempt standard parse
   try {
-    const parsed = JSON.parse(text) as T;
-    return parsed;
-  } catch (e) {
-    throw new ECHOAIError(
-      "ECHO received an invalid JSON response structure from the AI provider.",
-      "INVALID_RESPONSE"
-    );
+    return JSON.parse(text) as T;
+  } catch (err) {
+    // 4. Sanitize unescaped newlines/tabs inside string values
+    try {
+      const sanitized = text
+        .replace(/[\u0000-\u001F\u007F-\u009F]/g, (match) => {
+          if (match === "\n") return "\\n";
+          if (match === "\r") return "\\r";
+          if (match === "\t") return "\\t";
+          return "";
+        });
+      return JSON.parse(sanitized) as T;
+    } catch {
+      throw new ECHOAIError(
+        "ECHO received an unparseable JSON response structure from the AI provider.",
+        "INVALID_RESPONSE"
+      );
+    }
   }
 }
 
@@ -182,7 +196,7 @@ async function callProviderAPI(prompt: string, overrideConfig?: ApiConfig): Prom
 
       const data = JSON.parse(responseText);
       const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text) throw new ECHOAIError("Empty content payload", "INVALID_RESPONSE");
+      if (!text) throw new ECHOAIError("Empty content payload returned from Gemini.", "INVALID_RESPONSE");
       return text;
     }
 
