@@ -78,7 +78,7 @@ Return strictly valid JSON matching this exact structure:
     let htmlContent = parsed.htmlContent || parsed.analysis;
 
     if (!htmlContent) {
-      htmlContent = `<div class="echo-study-document space-y-6"><header class="doc-header border-b border-slate-200 pb-4"><h1 className="text-2xl font-bold text-slate-900">${title}</h1><p className="text-xs text-slate-500 font-mono">Comprehensive AI Study Document</p></header><section className="doc-section"><h2 className="text-lg font-bold text-slate-900">Executive Summary</h2><p className="text-sm text-slate-700 leading-relaxed">${summaryText}</p></section><section className="doc-section"><h2 className="text-lg font-bold text-slate-900">Key Points</h2><ul className="list-disc pl-5 text-sm text-slate-700 space-y-2">${keyPoints.map((kp: string) => `<li>${kp}</li>`).join("")}</ul></section></div>`;
+      htmlContent = `<div class="echo-study-document space-y-6"><header class="doc-header border-b border-slate-200 pb-4"><h1 class="text-2xl font-bold text-slate-900">${title}</h1><p class="text-xs text-slate-500 font-mono">Comprehensive AI Study Document</p></header><section class="doc-section"><h2 class="text-lg font-bold text-slate-900">Executive Summary</h2><p class="text-sm text-slate-700 leading-relaxed">${summaryText}</p></section><section class="doc-section"><h2 class="text-lg font-bold text-slate-900">Key Points</h2><ul class="list-disc pl-5 text-sm text-slate-700 space-y-2">${keyPoints.map((kp: string) => `<li>${kp}</li>`).join("")}</ul></section></div>`;
     }
 
     const words = htmlContent.replace(/<[^>]*>/g, " ").split(/\s+/).length;
@@ -95,7 +95,7 @@ Return strictly valid JSON matching this exact structure:
   } catch (err: any) {
     if (err instanceof ECHOAIError) throw err;
 
-    const fallbackHtml = `<div class="echo-study-document space-y-4"><h1 className="text-xl font-bold text-slate-900">${topic || "Study Material"}</h1><p className="text-sm text-slate-700 whitespace-pre-wrap">${text}</p></div>`;
+    const fallbackHtml = `<div class="echo-study-document space-y-4"><h1 class="text-xl font-bold text-slate-900">${topic || "Study Material"}</h1><p class="text-sm text-slate-700 whitespace-pre-wrap">${text}</p></div>`;
     return {
       title: topic || "Study Material",
       htmlContent: fallbackHtml,
@@ -104,6 +104,71 @@ Return strictly valid JSON matching this exact structure:
       importantPoints: ["Key concept extracted from source material."],
       pageCount,
       wordCount: text.split(/\s+/).length,
+    };
+  }
+}
+
+export interface HtmlStudyPlanResult {
+  topic: string;
+  summaryText: string;
+  htmlContent: string;
+  estimatedMinutes: number;
+}
+
+export async function generateHtmlStudyPlanDocument(
+  concept: string,
+  understoodText?: string,
+  notUnderstoodText?: string,
+  confidenceScore = 75
+): Promise<HtmlStudyPlanResult> {
+  const cfg = getApiConfig();
+  const apiKey = cfg.geminiApiKey.trim() || (import.meta.env.VITE_GEMINI_API_KEY as string) || INTEGRATED_GEMINI_KEY;
+
+  const prompt = `You are ECHO, an Evidence-Based Conceptual Honesty Engine.
+Generate a comprehensive HTML study plan document for the concept: "${concept}".
+Student Self-Reported Confidence: ${confidenceScore}%
+Student Understood: "${understoodText || "Baseline familiarity"}"
+Student Struggling With: "${notUnderstoodText || "Boundary conditions and core invariants"}"
+
+CRITICAL INSTRUCTIONS:
+1. Generate high-yield, structured summarized learning material related to "${concept}".
+2. Include Overview, Conceptual Gaps, Key Formulas & Invariants, Step-by-Step Study Sequence, and Timed Learning Sessions.
+3. Structure inside semantic HTML tags: <h1>, <h2>, <h3>, <p>, <ul>, <ol>, <li>, <strong>, <em>, <code>, <pre>, <table>, and <div class="doc-callout">.
+
+RETURN FORMAT:
+Return strictly valid JSON with this structure:
+{
+  "topic": "${concept}",
+  "summaryText": "2-3 sentence executive summary of the study plan focus and identified conceptual gaps.",
+  "estimatedMinutes": 35,
+  "htmlContent": "<div class='echo-study-document'><header class='doc-header border-b border-slate-200 pb-4'><h1 class='text-2xl font-bold text-slate-900'>${concept} — Academic Study Plan</h1><p class='doc-meta text-xs text-slate-500 font-mono'>Evidence-Based Targeted Learning Guide • Estimated Time: 35 mins</p></header><section class='doc-section my-4'><h2 class='text-lg font-bold text-slate-900'>1. Current Understanding & Identified Gaps</h2><p class='text-sm text-slate-700 leading-relaxed'>...</p></section><section class='doc-section my-4'><h2 class='text-lg font-bold text-slate-900'>2. Summarized Learning Material & Core Mechanisms</h2><p class='text-sm text-slate-700 leading-relaxed'>...</p><div class='doc-callout bg-sky-50 border-l-4 border-sky-600 p-4 my-3'><strong class='text-sky-900'>Key Invariant:</strong> <span class='text-sky-800'>...</span></div></section><section class='doc-section my-4'><h2 class='text-lg font-bold text-slate-900'>3. Important Terminology & Formulas</h2><ul class='list-disc pl-5 text-sm text-slate-700 space-y-1.5'>...</ul></section><section class='doc-section my-4'><h2 class='text-lg font-bold text-slate-900'>4. Targeted Learning Sequence & Sessions</h2><ol class='list-decimal pl-5 text-sm text-slate-700 space-y-2'>... </ol></section><section class='doc-section my-4'><h2 class='text-lg font-bold text-slate-900'>5. Verification Checkpoints</h2><p class='text-sm text-slate-700 leading-relaxed'>...</p></section></div>"
+}`;
+
+  try {
+    const text = await callGeminiREST(prompt, apiKey, cfg.geminiModel || "gemini-2.5-flash");
+    const parsed = cleanAndParseJSON<any>(text);
+    const summaryText = parsed.summaryText || parsed.summary || `Targeted study plan and summarized material for ${concept}.`;
+    const topicTitle = parsed.topic || parsed.title || concept || "Study Plan";
+    let htmlContent = parsed.htmlContent || parsed.analysis;
+
+    if (!htmlContent) {
+      htmlContent = `<div class="echo-study-document space-y-6"><header class="doc-header border-b border-slate-200 pb-4"><h1 class="text-2xl font-bold text-slate-900">${topicTitle} — Academic Study Plan</h1><p class="text-xs text-slate-500 font-mono">Evidence-Based Learning Guide</p></header><section class="doc-section"><h2 class="text-lg font-bold text-slate-900">1. Executive Summary</h2><p class="text-sm text-slate-700 leading-relaxed">${summaryText}</p></section></div>`;
+    }
+
+    return {
+      topic: topicTitle,
+      summaryText,
+      htmlContent,
+      estimatedMinutes: parsed.estimatedMinutes || 35,
+    };
+  } catch {
+    const fallbackHtml = `<div class="echo-study-document space-y-6"><header class="doc-header border-b border-slate-200 pb-4"><h1 class="text-2xl font-bold text-slate-900">${concept} — Academic Study Plan</h1><p class="text-xs text-slate-500 font-mono">Evidence-Based Learning Guide • Estimated Time: 35 mins</p></header><section class="doc-section"><h2 class="text-lg font-bold text-slate-900">1. Executive Summary</h2><p class="text-sm text-slate-700 leading-relaxed">Study plan and high-yield material for ${concept}. Focus on core invariant mechanisms and boundary constraints.</p></section><section class="doc-section"><h2 class="text-lg font-bold text-slate-900">2. Key Concepts & Mechanisms</h2><div class="doc-callout bg-sky-50 border-l-4 border-sky-600 p-4 my-3"><strong class="text-sky-900">Core Invariant:</strong> <span class="text-sky-800">Ensure array sorting or precondition invariants hold before halving search space.</span></div></section><section class="doc-section"><h2 class="text-lg font-bold text-slate-900">3. Recommended Study Sessions</h2><ol class="list-decimal pl-5 text-sm text-slate-700 space-y-2"><li><strong>Session 01 (15 mins):</strong> Review core invariants and write 2-sentence explanation in your own words.</li><li><strong>Session 02 (20 mins):</strong> Solve 2 boundary variations and verify index logic.</li></ol></section></div>`;
+
+    return {
+      topic: concept || "Binary Search",
+      summaryText: `Evidence-based study plan for ${concept || "Binary Search"}.`,
+      htmlContent: fallbackHtml,
+      estimatedMinutes: 35,
     };
   }
 }
