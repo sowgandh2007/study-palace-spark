@@ -93,24 +93,24 @@ export function NotebookIntro() {
 
     // Page 3 — philosophy loop
     <PageShell key="loop">
-      <div className="space-y-5">
+      <div className="space-y-3">
         <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-sky-700">The ECHO Loop</p>
-        <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+        <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">
           Plan → Learn → Reflect → Verify → Adapt
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {[
-            { icon: Calendar, label: "Plan", text: "Timetable and notes shape tonight's focus." },
-            { icon: BookOpen, label: "Learn", text: "Attend class, engage the mechanism." },
-            { icon: Sparkles, label: "Reflect", text: "Say what you understand, in your words." },
-            { icon: Zap, label: "Verify", text: "Six dimensions probe the concept." },
-            { icon: TrendingUp, label: "Adapt", text: "Stability decides your next action." },
+            { icon: Calendar, label: "Plan", text: "Timetable & notes shape focus." },
+            { icon: BookOpen, label: "Learn", text: "Attend class, engage mechanism." },
+            { icon: Sparkles, label: "Reflect", text: "Say what you understand." },
+            { icon: Zap, label: "Verify", text: "Six dimensions probe concept." },
+            { icon: TrendingUp, label: "Adapt", text: "Stability decides next action." },
           ].map((s) => (
-            <div key={s.label} className="rounded-xl border border-sky-900/10 bg-white/70 px-3 py-2.5">
-              <div className="flex items-center gap-2 text-sky-800 font-bold text-sm">
-                <s.icon className="size-4" /> {s.label}
+            <div key={s.label} className="rounded-xl border border-sky-900/10 bg-white/70 px-3 py-2">
+              <div className="flex items-center gap-2 text-sky-800 font-bold text-xs">
+                <s.icon className="size-3.5" /> {s.label}
               </div>
-              <p className="text-[11px] leading-relaxed text-slate-600 mt-1">{s.text}</p>
+              <p className="text-[10px] leading-relaxed text-slate-600 mt-0.5">{s.text}</p>
             </div>
           ))}
         </div>
@@ -177,7 +177,21 @@ export function NotebookIntro() {
                 {content}
                 <div className="nb-shade" />
               </div>
-              <div className="nb-face nb-face-back nb-page" />
+              <div className="nb-face nb-face-back nb-page nb-left flex flex-col items-center justify-center p-2">
+                {i === 0 ? (
+                  <img
+                    src="/images/notebook_core_idea.png"
+                    alt="The Core Idea"
+                    className="w-full h-full object-contain rounded-xl p-1"
+                  />
+                ) : (
+                  <img
+                    src="/images/notebook_echo_loop.png"
+                    alt="The ECHO Loop"
+                    className="w-full h-full object-contain rounded-xl p-1"
+                  />
+                )}
+              </div>
             </div>
           ))}
 
