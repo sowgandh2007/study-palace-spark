@@ -14,6 +14,7 @@ import {
   BrainCircuit,
   ShieldCheck,
   BookOpen,
+  FileCode,
 } from "lucide-react";
 import { EchoNavbar } from "@/components/EchoNavbar";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ import { extractTextFromPdf, type PdfExtractResult } from "@/lib/echo/pdf";
 import {
   generateComprehensivePdfSummaryHTML,
   downloadHtmlAsPdf,
+  downloadRawHtmlFile,
   type ComprehensivePdfSummaryResult,
 } from "@/lib/echo/pdfSummary";
 import { toast } from "sonner";
@@ -148,6 +150,13 @@ function LearnPage() {
     } finally {
       setDownloadingPdf(false);
     }
+  }
+
+  function handleDownloadHtml() {
+    if (!activeLearnMaterial) return;
+    const sanitizedTitle = activeLearnMaterial.topic.replace(/[^a-z0-9_-]/gi, "_");
+    downloadRawHtmlFile(sanitizedTitle, activeLearnMaterial.htmlContent, activeLearnMaterial.topic);
+    toast.success("Downloaded HTML Study File!");
   }
 
   function handleReflectClick() {
@@ -314,10 +323,21 @@ function LearnPage() {
                   </h2>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Badge variant="outline" className="border-primary/40 text-primary font-mono text-xs">
                     {activeLearnMaterial.sourceType === "pdf" ? `PDF: ${activeLearnMaterial.fileName || "Document"}` : "Topic Query"}
                   </Badge>
+
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleDownloadHtml}
+                    className="bg-primary hover:bg-primary/90 text-white font-bold text-xs min-h-[36px] shadow-glow"
+                  >
+                    <FileCode className="size-3.5 mr-1" />
+                    Download HTML
+                  </Button>
+
                   <Button
                     type="button"
                     size="sm"
