@@ -4,6 +4,20 @@ import type { ApiConfig, DiagnosedGap, ProbeQuestion, ProbeEvaluation } from "./
 const ENCODED_KEY = "QVEuQWI4Uk42SnhON3RUM2gzcDdCbjVMR0tybXk3YWpZVEh0QVVIX1lPbjl4ZmpVbWRDNnc=";
 export const INTEGRATED_GEMINI_KEY = typeof atob === "function" ? atob(ENCODED_KEY) : Buffer.from(ENCODED_KEY, "base64").toString("utf-8");
 
+export function getResolvedGeminiKey(): string {
+  let key = "";
+  if (typeof process !== "undefined" && process.env) {
+    key = (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "").trim();
+  }
+  if (!key && typeof import.meta !== "undefined" && import.meta.env) {
+    key = ((import.meta.env.VITE_GEMINI_API_KEY as string) || "").trim();
+  }
+  if (!key) {
+    key = INTEGRATED_GEMINI_KEY;
+  }
+  return key;
+}
+
 export const DEFAULT_API_CONFIG: ApiConfig = {
   activeProvider: "gemini",
   geminiApiKey: INTEGRATED_GEMINI_KEY,
@@ -26,7 +40,7 @@ export function getApiConfig(): ApiConfig {
     if (raw) {
       const parsed = JSON.parse(raw);
       const merged = { ...DEFAULT_API_CONFIG, ...parsed };
-      merged.geminiApiKey = INTEGRATED_GEMINI_KEY;
+      merged.geminiApiKey = getResolvedGeminiKey();
       return merged;
     }
   } catch (e) {
@@ -38,7 +52,7 @@ export function getApiConfig(): ApiConfig {
 export function saveApiConfig(config: Partial<ApiConfig>): ApiConfig {
   const current = getApiConfig();
   const updated = { ...current, ...config };
-  updated.geminiApiKey = INTEGRATED_GEMINI_KEY;
+  updated.geminiApiKey = getResolvedGeminiKey();
   if (typeof window !== "undefined") {
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
@@ -65,9 +79,19 @@ export class ECHOAIError extends Error {
   }
 }
 
-function logDev(message: string, ...data: unknown[]) {
-  if (import.meta.env.DEV) {
-    console.log(`%c[ECHO AI] ${message}`, "color: #38bdf8; font-weight: bold;", ...data);
+export function logAITelemetry(
+  feature: string,
+  model: string,
+  inputSize: number,
+  durationMs: number,
+  status: "success" | "error",
+  errorCategory?: string,
+  errorMessage?: string
+) {
+  if (status === "success") {
+    console.log(`[AI] feature=${feature} model=${model} input_size=${inputSize} duration=${durationMs}ms status=success`);
+  } else {
+    console.error(`[AI ERROR] feature=${feature} model=${model} status=${errorCategory || "error"} message=${errorMessage || "Unknown failure"}`);
   }
 }
 
@@ -91,7 +115,7 @@ export function cleanAndParseJSON<T>(rawText: string): T {
   try {
     return JSON.parse(text) as T;
   } catch (err) {
-    // 4. Sanitize unescaped newlines/tabs inside string values
+    // 4. Sanitize unescaped newlines/tabs/control characters inside string values
     try {
       const sanitized = text
         .replace(/[\u0000-\u001F\u007F-\u009F]/g, (match) => {
@@ -111,8 +135,13 @@ export function cleanAndParseJSON<T>(rawText: string): T {
 }
 
 export async function discoverGeminiModels(apiKey?: string): Promise<string[]> {
-  const keyToUse = INTEGRATED_GEMINI_KEY;
-  if (!keyToUse) return [];
+  const keyToUse = getResolvedGeminiKey();
+  if (!keyToUse) {
+    console.log("[AI] Gemini API key missing");
+    return [];
+  }
+  console.log("[AI] Gemini API key detected");
+
   try {
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(keyToUse)}`, {
       method: "GET",
@@ -133,13 +162,24 @@ export async function discoverGeminiModels(apiKey?: string): Promise<string[]> {
         .map((m: { name: string }) => m.name.replace(/^models\//, ""));
     }
   } catch (e) {
-    logDev("Gemini model discovery error:", e);
+    console.error("[AI] Gemini model discovery error:", e);
   }
   return [];
 }
 
-export async function callGeminiREST(prompt: string, apiKey: string, modelName = "gemini-2.5-flash", signal?: AbortSignal): Promise<string> {
-  const keyToUse = INTEGRATED_GEMINI_KEY;
+export async function callGeminiREST(
+  prompt: string,
+  apiKey: string,
+  modelName = "gemini-2.5-flash",
+  signal?: AbortSignal,
+  featureName = "ai_completion"
+): Promise<string> {
+  const keyToUse = getResolvedGeminiKey();
+  if (!keyToUse) {
+    console.log("[AI] Gemini API key missing");
+    throw new ECHOAIError("Gemini API key is not configured.", "INVALID_KEY", 401);
+  }
+  console.log("[AI] Gemini API key detected");
 
   const candidateModels = Array.from(new Set([
     modelName.trim().replace(/^models\//, ""),
@@ -149,60 +189,92 @@ export async function callGeminiREST(prompt: string, apiKey: string, modelName =
   ]));
 
   let lastError: ECHOAIError | null = null;
+  const startTime = Date.now();
 
   for (const modelCandidate of candidateModels) {
     const requestUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelCandidate}:generateContent?key=${encodeURIComponent(keyToUse)}`;
 
-    try {
-      const res = await fetch(requestUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": keyToUse,
-        },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            responseMimeType: "application/json",
-            temperature: 0.2,
+    const maxRetries = 2;
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const res = await fetch(requestUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": keyToUse,
           },
-        }),
-        signal,
-      });
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              responseMimeType: "application/json",
+              temperature: 0.2,
+            },
+          }),
+          signal,
+        });
 
-      const responseText = await res.text();
-      if (!res.ok) {
-        if (res.status === 404) {
-          logDev(`Model ${modelCandidate} returned 404. Retrying next candidate...`);
-          lastError = new ECHOAIError(`Gemini model ${modelCandidate} returned 404 Not Found.`, "SERVER_ERROR", 404);
-          continue;
+        const responseText = await res.text();
+        if (!res.ok) {
+          if (res.status === 404) {
+            lastError = new ECHOAIError(`Gemini model ${modelCandidate} returned 404 Not Found.`, "SERVER_ERROR", 404);
+            break;
+          }
+          if (res.status === 401 || res.status === 403) {
+            logAITelemetry(featureName, modelCandidate, prompt.length, Date.now() - startTime, "error", "INVALID_KEY", `Status ${res.status}`);
+            throw new ECHOAIError("Gemini API key is invalid or unauthorized.", "INVALID_KEY", res.status);
+          }
+          if (res.status === 429) {
+            if (attempt < maxRetries - 1) {
+              await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+              continue;
+            }
+            logAITelemetry(featureName, modelCandidate, prompt.length, Date.now() - startTime, "error", "RATE_LIMIT", "Rate limit 429");
+            throw new ECHOAIError("Gemini API rate limit exceeded.", "RATE_LIMIT", res.status);
+          }
+          if (res.status >= 500) {
+            if (attempt < maxRetries - 1) {
+              await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+              continue;
+            }
+            logAITelemetry(featureName, modelCandidate, prompt.length, Date.now() - startTime, "error", "SERVER_ERROR", `Server status ${res.status}`);
+            throw new ECHOAIError(`Gemini API server error status: ${res.status}`, "SERVER_ERROR", res.status);
+          }
+          throw new ECHOAIError(`Gemini API error status: ${res.status}`, "SERVER_ERROR", res.status);
         }
-        if (res.status === 401 || res.status === 403) {
-          throw new ECHOAIError("Gemini API key is invalid.", "INVALID_KEY", res.status);
-        }
-        if (res.status === 429) {
-          throw new ECHOAIError("Gemini API rate limited.", "RATE_LIMIT", res.status);
-        }
-        throw new ECHOAIError(`Gemini API error status: ${res.status}`, "SERVER_ERROR", res.status);
-      }
 
-      const data = JSON.parse(responseText);
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text) throw new ECHOAIError("Empty content payload returned from Gemini.", "INVALID_RESPONSE");
-      return text;
-    } catch (err: unknown) {
-      if (err instanceof ECHOAIError && err.status === 404) {
-        lastError = err;
-        continue;
+        const data = JSON.parse(responseText);
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!text) {
+          logAITelemetry(featureName, modelCandidate, prompt.length, Date.now() - startTime, "error", "INVALID_RESPONSE", "Empty content payload");
+          throw new ECHOAIError("Empty content payload returned from Gemini.", "INVALID_RESPONSE");
+        }
+
+        logAITelemetry(featureName, modelCandidate, prompt.length, Date.now() - startTime, "success");
+        return text;
+      } catch (err: unknown) {
+        if (err instanceof ECHOAIError) {
+          if (err.status === 404) {
+            lastError = err;
+            break;
+          }
+          throw err;
+        }
+        if ((err as Error).name === "AbortError") {
+          logAITelemetry(featureName, modelCandidate, prompt.length, Date.now() - startTime, "error", "TIMEOUT", "30s request timeout");
+          throw new ECHOAIError("Request timed out (30s limit)", "TIMEOUT");
+        }
+        if (attempt === maxRetries - 1) {
+          logAITelemetry(featureName, modelCandidate, prompt.length, Date.now() - startTime, "error", "NETWORK_ERROR", (err as Error).message);
+          throw new ECHOAIError("Network connection failed", "NETWORK_ERROR");
+        }
       }
-      throw err;
     }
   }
 
   throw lastError || new ECHOAIError("All Gemini model candidates returned 404 Not Found.", "SERVER_ERROR", 404);
 }
 
-async function callProviderAPI(prompt: string, overrideConfig?: ApiConfig): Promise<string> {
+async function callProviderAPI(prompt: string, overrideConfig?: ApiConfig, featureName = "ai_completion"): Promise<string> {
   const cfg = overrideConfig || getApiConfig();
   const provider = cfg.activeProvider || "gemini";
   const timeoutMs = cfg.timeoutMs || 30000;
@@ -212,7 +284,7 @@ async function callProviderAPI(prompt: string, overrideConfig?: ApiConfig): Prom
 
   try {
     if (provider === "gemini") {
-      return await callGeminiREST(prompt, INTEGRATED_GEMINI_KEY, cfg.geminiModel || "gemini-2.5-flash", controller.signal);
+      return await callGeminiREST(prompt, getResolvedGeminiKey(), cfg.geminiModel || "gemini-2.5-flash", controller.signal, featureName);
     }
 
     if (provider === "openai") {
@@ -260,7 +332,8 @@ export async function testAiConnection(overrideConfig?: ApiConfig): Promise<{ ok
   try {
     const response = await callProviderAPI(
       'Respond strictly in JSON format: {"status": "ok", "message": "connection successful"}',
-      cfg
+      cfg,
+      "test_connection"
     );
     const durationMs = Date.now() - start;
     return { ok: true, message: `Connected in ${durationMs}ms`, durationMs };
@@ -277,6 +350,10 @@ export async function analyzeReflectionAndDiagnoseGap(
   understoodText: string,
   notUnderstoodText: string
 ): Promise<DiagnosedGap> {
+  if (!concept || !concept.trim()) {
+    throw new ECHOAIError("Invalid request: concept parameter is required for reflection diagnosis.", "INVALID_RESPONSE", 400);
+  }
+
   const prompt = `You are ECHO.
 A student reflected on learning "${concept}".
 - Self-reported Confidence: ${confidence}%
@@ -292,23 +369,17 @@ Return strictly valid JSON with this schema:
   "recommendedProbe": "Explain dimension probe"
 }`;
 
-  try {
-    const raw = await callProviderAPI(prompt);
-    const parsed = cleanAndParseJSON<DiagnosedGap>(raw);
-    return {
-      gapText: parsed.gapText || `Understanding why ${concept} elimination operates under boundary constraints.`,
-      severity: parsed.severity || "medium",
-      relevantAssumption: parsed.relevantAssumption || "Missing structural invariant.",
-      recommendedProbe: parsed.recommendedProbe || "Explain dimension probe",
-    };
-  } catch {
-    return {
-      gapText: `Understanding why ${concept} elimination operates under boundary constraints.`,
-      severity: "medium",
-      relevantAssumption: "Assumes correctness without verifying spatial preconditions.",
-      recommendedProbe: "Explain dimension probe",
-    };
+  const raw = await callProviderAPI(prompt, undefined, "reflection_diagnosis");
+  const parsed = cleanAndParseJSON<DiagnosedGap>(raw);
+  if (!parsed || typeof parsed !== "object") {
+    throw new ECHOAIError("Failed to parse valid reflection diagnosis JSON schema.", "INVALID_RESPONSE");
   }
+  return {
+    gapText: parsed.gapText || `Understanding why ${concept} elimination operates under boundary constraints.`,
+    severity: parsed.severity || "medium",
+    relevantAssumption: parsed.relevantAssumption || "Missing structural invariant.",
+    recommendedProbe: parsed.recommendedProbe || "Explain dimension probe",
+  };
 }
 
 export interface AcademicStudyPlan {
@@ -334,6 +405,10 @@ export async function generateAcademicStudyPlan(
   notUnderstoodText?: string,
   confidenceScore = 75
 ): Promise<AcademicStudyPlan> {
+  if (!concept || !concept.trim()) {
+    throw new ECHOAIError("Invalid request: concept parameter is required to generate a study plan.", "INVALID_RESPONSE", 400);
+  }
+
   const prompt = `You are ECHO, an Evidence-Based Conceptual Honesty Engine.
 A student reflected on: "${concept}".
 - Self-reported confidence: ${confidenceScore}%
@@ -376,56 +451,12 @@ Return strictly valid JSON matching this exact structure:
   ]
 }`;
 
-  try {
-    const raw = await callProviderAPI(prompt);
-    const parsed = cleanAndParseJSON<AcademicStudyPlan>(raw);
-    if (parsed && parsed.currentUnderstandingSummary && Array.isArray(parsed.sessions)) {
-      return parsed;
-    }
-    throw new Error("Invalid plan structure");
-  } catch {
-    return {
-      topic: concept || "Binary Search",
-      generatedAt: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-      totalMinutes: 35,
-      currentUnderstandingSummary: `Student demonstrates baseline familiarity with ${concept || "Binary Search"}, but evidence reveals fragile understanding around boundary invariants and spatial elimination logic.`,
-      focusAreas: [
-        {
-          concept: `${concept || "Binary Search"} Invariance`,
-          issueType: "Conceptual Gap",
-          description: "Needs clear formulation of why spatial halving requires sorted preconditions.",
-        },
-        {
-          concept: "Index Boundary Calculation",
-          issueType: "Weak Application",
-          description: "Midpoint overflow prevention and loop termination criteria under edge cases.",
-        },
-      ],
-      sequence: [
-        { stepNumber: "01", title: "Review Prerequisite Invariants", objective: "Verify ordered array constraints." },
-        { stepNumber: "02", title: "Rebuild Core Elimination Logic", objective: "Formulate exact mid-point calculation." },
-        { stepNumber: "03", title: "Verify Transfer Applications", objective: "Test algorithm on rotated or non-standard search spaces." },
-      ],
-      sessions: [
-        {
-          id: "s1",
-          sessionNumber: "Session 01",
-          topic: `${concept || "Binary Search"} — Core Invariants`,
-          objective: "Formulate and write the array sorting precondition in your own words.",
-          recommendedActivity: "Review invariant definition → Write 2-sentence explanation → Verify against edge cases.",
-          estimatedMinutes: 15,
-        },
-        {
-          id: "s2",
-          sessionNumber: "Session 02",
-          topic: `${concept || "Binary Search"} — Boundary Application`,
-          objective: "Apply pointer elimination to rotated sorted arrays.",
-          recommendedActivity: "Solve 2 boundary variations → Verify index logic.",
-          estimatedMinutes: 20,
-        },
-      ],
-    };
+  const raw = await callProviderAPI(prompt, undefined, "study_plan_generation");
+  const parsed = cleanAndParseJSON<AcademicStudyPlan>(raw);
+  if (parsed && parsed.currentUnderstandingSummary && Array.isArray(parsed.sessions)) {
+    return parsed;
   }
+  throw new ECHOAIError("Received invalid study plan JSON structure from Gemini.", "INVALID_RESPONSE");
 }
 
 export interface LearningSummary {
@@ -440,6 +471,10 @@ export interface LearningSummary {
 }
 
 export async function generatePdfSummary(topic: string, pdfText?: string): Promise<LearningSummary> {
+  if (!topic && !pdfText) {
+    throw new ECHOAIError("Invalid request: topic or PDF text required for summary generation.", "INVALID_RESPONSE", 400);
+  }
+
   const prompt = `You are ECHO.
 Generate a structured, high-yield learning summary for: "${topic || "Uploaded Document"}".
 ${pdfText ? `Context extracted from PDF:\n${pdfText.slice(0, 10000)}` : ""}
@@ -460,21 +495,12 @@ Return strictly valid JSON with this exact schema:
   "conceptsToVerify": ["Suggested concept 1"]
 }`;
 
-  try {
-    const raw = await callProviderAPI(prompt);
-    return cleanAndParseJSON<LearningSummary>(raw);
-  } catch {
-    return {
-      topic: topic || "Study Material",
-      overview: "Study summary generated for core subject matter.",
-      keyConcepts: [{ concept: topic || "Binary Search", explanation: "Repeated spatial halving of a sorted search space." }],
-      definitions: [{ term: "Invariance", definition: "Condition that remains true throughout algorithm execution." }],
-      coreIdeas: ["Divide and conquer space reduction."],
-      formulasAndFacts: ["Time complexity O(log N)."],
-      keyTakeaways: ["Requires sorted array precondition."],
-      conceptsToVerify: ["Transfer dimension boundary handling."],
-    };
+  const raw = await callProviderAPI(prompt, undefined, "pdf_summary");
+  const parsed = cleanAndParseJSON<LearningSummary>(raw);
+  if (!parsed || !parsed.overview || !Array.isArray(parsed.keyConcepts)) {
+    throw new ECHOAIError("Invalid learning summary JSON structure returned from Gemini.", "INVALID_RESPONSE");
   }
+  return parsed;
 }
 
 export interface ExplanationAnalysis {
@@ -492,6 +518,10 @@ export async function analyzeExplanationWithAI(
   explanationText: string,
   confidence: number
 ): Promise<ExplanationAnalysis> {
+  if (!concept || !explanationText) {
+    throw new ECHOAIError("Invalid request: concept and explanationText are required for understanding analysis.", "INVALID_RESPONSE", 400);
+  }
+
   const prompt = `You are ECHO.
 A student wrote their explanation for "${concept}":
 - Self-reported confidence: ${confidence}%
@@ -509,20 +539,12 @@ Return strictly valid JSON with this format:
   "verificationRecommendations": ["Recommendation for repair 1"]
 }`;
 
-  try {
-    const raw = await callProviderAPI(prompt);
-    return cleanAndParseJSON<ExplanationAnalysis>(raw);
-  } catch {
-    return {
-      concept,
-      overallVerdict: "Demonstrates baseline familiarity but misses underlying boundary invariant details.",
-      understoodConcepts: ["Recognizes core mechanism."],
-      missingConcepts: ["Boundary condition handling."],
-      roteFlags: ["Uses standard textbook phrase."],
-      misconceptions: ["Assumes sorted condition without explicit check."],
-      verificationRecommendations: ["Test transfer dimension application."],
-    };
+  const raw = await callProviderAPI(prompt, undefined, "explanation_analysis");
+  const parsed = cleanAndParseJSON<ExplanationAnalysis>(raw);
+  if (!parsed || !parsed.overallVerdict) {
+    throw new ECHOAIError("Invalid explanation analysis JSON payload.", "INVALID_RESPONSE");
   }
+  return parsed;
 }
 
 export interface ExamQuestion {
@@ -548,6 +570,10 @@ export async function generateAiExam(
   questionType = "mixed",
   pdfText?: string
 ): Promise<ExamPackage> {
+  if (!topic || !topic.trim()) {
+    throw new ECHOAIError("Invalid request: topic parameter is required to generate AI exam.", "INVALID_RESPONSE", 400);
+  }
+
   const prompt = `You are ECHO.
 Generate an AI verification exam for topic: "${topic}".
 Difficulty: ${difficulty}.
@@ -574,33 +600,10 @@ Return strictly valid JSON with this format:
   ]
 }`;
 
-  try {
-    const raw = await callProviderAPI(prompt);
-    const parsed = cleanAndParseJSON<ExamPackage>(raw);
-    if (parsed && Array.isArray(parsed.questions) && parsed.questions.length > 0) {
-      return parsed;
-    }
-    throw new Error("Invalid exam array");
-  } catch {
-    return {
-      topic: topic || "Binary Search",
-      difficulty,
-      questions: [
-        {
-          id: "q1",
-          question: `In ${topic || "Binary Search"}, why does the algorithm require the target array to be sorted?`,
-          dimension: "direct",
-          type: "mcq",
-          options: [
-            "Because halving decisions depend on order invariants.",
-            "Because unsorted arrays double memory footprint.",
-            "Because pointer comparison fails on odd lengths.",
-            "It does not require sorted inputs.",
-          ],
-          correctAnswer: "Because halving decisions depend on order invariants.",
-          explanation: "Order invariants allow spatial elimination of half the remaining search space.",
-        },
-      ],
-    };
+  const raw = await callProviderAPI(prompt, undefined, "ai_exam_generation");
+  const parsed = cleanAndParseJSON<ExamPackage>(raw);
+  if (parsed && Array.isArray(parsed.questions) && parsed.questions.length > 0) {
+    return parsed;
   }
+  throw new ECHOAIError("Received empty or invalid exam questions array from Gemini AI.", "INVALID_RESPONSE");
 }
