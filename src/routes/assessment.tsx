@@ -13,7 +13,7 @@ import { EchoNavbar } from "@/components/EchoNavbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { generateAsyncEchoCheck, type DiagnosticMCQ } from "@/lib/echo/localAi";
+import { generateLocalEchoCheck, type DiagnosticMCQ } from "@/lib/echo/localAi";
 import { calculateStabilityScore, calculateConfidenceGap, bandFor } from "@/lib/echo/scoring";
 import type { ProbeEvaluation, StabilityResult } from "@/lib/echo/types";
 import { useEcho } from "@/lib/echo/store";
@@ -66,15 +66,12 @@ function AssessmentPage() {
     }
   }, [searchConcept]);
 
-  async function handleStartCheck(e?: React.FormEvent) {
+  function handleStartCheck(e?: React.FormEvent) {
     if (e) e.preventDefault();
-    const concept = (conceptInput || searchConcept || activeLearnMaterial?.topic || "Concept Verification").trim();
+    const concept = (conceptInput || searchConcept || activeLearnMaterial?.topic || "Binary Search").trim();
     if (!concept) return;
 
-    setStep("loading");
-    const materialText = activeLearnMaterial?.summaryText || activeLearnMaterial?.htmlContent;
-    const checkData = await generateAsyncEchoCheck(concept, confidenceInput, "", notUnderstoodText, materialText);
-    
+    const checkData = generateLocalEchoCheck(concept, confidenceInput, "", notUnderstoodText);
     setQuestions(checkData.questions);
     setGapDiagnosisText(checkData.gapDiagnosis.gapText);
     setIndex(0);
