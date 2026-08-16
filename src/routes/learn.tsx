@@ -193,13 +193,13 @@ function LearnPage() {
         {/* Header */}
         <div>
           <span className="text-xs font-mono font-bold uppercase tracking-wider text-primary">
-            STAGE 02: LEARNING CONTEXT
+            STAGE 2: LEARN
           </span>
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 mt-1">
-            Learning Context & PDF Material Ingestion
+            Learn Smarter with ECHO
           </h1>
           <p className="text-xs sm:text-sm text-slate-700 font-medium mt-1">
-            Upload lecture notes or enter topics to extract structural subconcepts and core domain invariants.
+            Master core mechanisms using topic queries or uploaded lecture PDFs.
           </p>
         </div>
 

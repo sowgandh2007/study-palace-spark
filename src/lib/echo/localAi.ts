@@ -4,7 +4,6 @@ export interface DiagnosticMCQ {
   id: string;
   dimension: ProbeDimension;
   dimensionLabel: string;
-  subconceptName?: string;
   question: string;
   options: {
     text: string;
@@ -28,7 +27,6 @@ const QUESTION_BANKS: Record<string, DiagnosticMCQ[]> = {
       id: "bs-1",
       dimension: "direct",
       dimensionLabel: "Direct Definition",
-      subconceptName: "Binary Search Preconditions",
       question: "What is the time complexity of Binary Search and its mandatory precondition?",
       options: [
         { text: "O(log n) time complexity, and the array MUST be sorted.", score: 100 },
@@ -43,7 +41,6 @@ const QUESTION_BANKS: Record<string, DiagnosticMCQ[]> = {
       id: "bs-2",
       dimension: "explain",
       dimensionLabel: "Under-The-Hood Reasoning",
-      subconceptName: "Binary Search Mechanism",
       question: "Why does Binary Search fail on an unsorted array — what breaks in the logic?",
       options: [
         { text: "Because sorted order guarantees target cannot exist in the discarded half when target < arr[mid].", score: 100 },
@@ -58,7 +55,6 @@ const QUESTION_BANKS: Record<string, DiagnosticMCQ[]> = {
       id: "bs-3",
       dimension: "transfer",
       dimensionLabel: "Unfamiliar Transfer Scenario",
-      subconceptName: "Binary Search Boundary Adaptation",
       question: "How must Binary Search be modified to find the FIRST occurrence of a repeated element in a sorted array?",
       options: [
         { text: "When arr[mid] == target, save mid as candidate result and continue searching in the LEFT half (hi = mid - 1).", score: 100 },
@@ -76,7 +72,6 @@ const QUESTION_BANKS: Record<string, DiagnosticMCQ[]> = {
       id: "sql-1",
       dimension: "direct",
       dimensionLabel: "Direct Definition",
-      subconceptName: "SQL Relational Joins",
       question: "In SQL, what is the key difference between INNER JOIN and LEFT JOIN?",
       options: [
         { text: "INNER JOIN returns matching rows only; LEFT JOIN returns all left table rows plus matching right rows.", score: 100 },
@@ -91,7 +86,6 @@ const QUESTION_BANKS: Record<string, DiagnosticMCQ[]> = {
       id: "sql-2",
       dimension: "explain",
       dimensionLabel: "Under-The-Hood Reasoning",
-      subconceptName: "SQL WHERE Filtering Mechanism",
       question: "Why does filtering a LEFT JOIN's right table in the WHERE clause turn it into an implicit INNER JOIN?",
       options: [
         { text: "Because WHERE conditions evaluate after JOIN, filtering out NULL right-table rows produced by unmatched left rows.", score: 100 },
@@ -106,7 +100,6 @@ const QUESTION_BANKS: Record<string, DiagnosticMCQ[]> = {
       id: "sql-3",
       dimension: "transfer",
       dimensionLabel: "Unfamiliar Transfer Scenario",
-      subconceptName: "SQL Non-Matching Pattern",
       question: "How do you write a query to find all Customers who have NEVER placed an Order using a JOIN?",
       options: [
         { text: "LEFT JOIN Orders ON Customers.id = Orders.customer_id WHERE Orders.id IS NULL.", score: 100 },
@@ -124,7 +117,6 @@ const QUESTION_BANKS: Record<string, DiagnosticMCQ[]> = {
       id: "norm-1",
       dimension: "direct",
       dimensionLabel: "Direct Definition",
-      subconceptName: "3NF Transitive Invariant",
       question: "What specific anomaly does Third Normal Form (3NF) eliminate in relational database design?",
       options: [
         { text: "Transitive dependencies (non-key attribute depending on another non-key attribute).", score: 100 },
@@ -139,7 +131,6 @@ const QUESTION_BANKS: Record<string, DiagnosticMCQ[]> = {
       id: "norm-2",
       dimension: "explain",
       dimensionLabel: "Under-The-Hood Reasoning",
-      subconceptName: "3NF Transitive Anomaly",
       question: "Why does a transitive dependency X → Y → Z cause update anomalies in a table?",
       options: [
         { text: "If Z changes for a given Y, you must update multiple rows; if you delete all X, you lose the Y → Z fact.", score: 100 },
@@ -154,7 +145,6 @@ const QUESTION_BANKS: Record<string, DiagnosticMCQ[]> = {
       id: "norm-3",
       dimension: "transfer",
       dimensionLabel: "Unfamiliar Transfer Scenario",
-      subconceptName: "3NF Table Decomposition",
       question: "Given table Employee(EmpID, ZipCode, City) where ZipCode → City, how do you normalize it to 3NF?",
       options: [
         { text: "Decompose into Employee(EmpID, ZipCode) and ZipCity(ZipCode, City).", score: 100 },
@@ -186,13 +176,12 @@ export function generateLocalEchoCheck(
     if (foundKey) {
       questions = QUESTION_BANKS[foundKey]!;
     } else {
-      // Dynamic Fallback Generator for custom concepts
+      // Universal Fallback Generator for any custom concept!
       questions = [
         {
           id: `${normalizedKey}-1`,
           dimension: "direct",
           dimensionLabel: "Direct Definition",
-          subconceptName: `${conceptName} Preconditions`,
           question: `Which statement accurately describes the core definition and primary objective of ${conceptName}?`,
           options: [
             { text: `${conceptName} provides a structured mechanism to solve target domain problems under defined preconditions.`, score: 100 },
@@ -207,7 +196,6 @@ export function generateLocalEchoCheck(
           id: `${normalizedKey}-2`,
           dimension: "explain",
           dimensionLabel: "Under-The-Hood Reasoning",
-          subconceptName: `${conceptName} Invariant Mechanism`,
           question: `Why does ${conceptName} require strict adherence to its underlying invariant during execution?`,
           options: [
             { text: "Because violating the invariant breaks state guarantees and leads to invalid output or infinite loops.", score: 100 },
@@ -222,7 +210,6 @@ export function generateLocalEchoCheck(
           id: `${normalizedKey}-3`,
           dimension: "transfer",
           dimensionLabel: "Unfamiliar Transfer Scenario",
-          subconceptName: `${conceptName} Boundary Conditions`,
           question: `How does ${conceptName}'s behavior change when applied to a boundary condition or high-load environment?`,
           options: [
             { text: "Boundary conditions expose implicit assumptions, requiring explicit initial state checks or termination guards.", score: 100 },

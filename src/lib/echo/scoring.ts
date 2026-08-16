@@ -1,4 +1,4 @@
-import type { Band, ProbeEvaluation } from "./types";
+import type { Band } from "./types";
 
 export const BANDS: Band[] = [
   {
@@ -32,52 +32,27 @@ export const BANDS: Band[] = [
 ];
 
 /**
- * Robust centralized scoring function for ECHO Understanding Stability.
- * Supports direct numeric args OR an array of ProbeEvaluation objects.
- * Guarantees a safe integer between 0 and 100 (never NaN).
+ * Single centralized scoring function for ECHO Understanding Stability.
+ * Formula: round(direct * 0.2 + explain * 0.4 + transfer * 0.4)
  */
-export function calculateStabilityScore(
-  directOrEvals: number | ProbeEvaluation[],
-  explain?: number,
-  transfer?: number
-): number {
-  if (Array.isArray(directOrEvals)) {
-    if (directOrEvals.length === 0) return 50;
-    let sum = 0;
-    let count = 0;
-    for (const item of directOrEvals) {
-      const s = typeof item?.score === "number" ? item.score : Number(item?.score);
-      if (!isNaN(s)) {
-        sum += s;
-        count++;
-      }
-    }
-    return count > 0 ? Math.round(sum / count) : 50;
-  }
-
-  const d = typeof directOrEvals === "number" && !isNaN(directOrEvals) ? directOrEvals : 50;
-  const e = typeof explain === "number" && !isNaN(explain) ? explain : 50;
-  const t = typeof transfer === "number" && !isNaN(transfer) ? transfer : 50;
-  const raw = d * 0.2 + e * 0.4 + t * 0.4;
-  return isNaN(raw) ? 50 : Math.round(raw);
+export function calculateStabilityScore(direct: number, explain: number, transfer: number): number {
+  const raw = direct * 0.2 + explain * 0.4 + transfer * 0.4;
+  return Math.round(raw);
 }
 
 /**
  * Calculates Confidence Gap = self-reported confidence - evidence stability score
  */
 export function calculateConfidenceGap(confidenceInput: number, stabilityScore: number): number {
-  const safeConf = typeof confidenceInput === "number" && !isNaN(confidenceInput) ? confidenceInput : 75;
-  const safeStab = typeof stabilityScore === "number" && !isNaN(stabilityScore) ? stabilityScore : 50;
-  return safeConf - safeStab;
+  return confidenceInput - stabilityScore;
 }
 
 /**
  * Single centralized band classification function for ECHO.
  */
 export function bandFor(score: number): Band {
-  const safeScore = typeof score === "number" && !isNaN(score) ? score : 50;
-  if (safeScore < 40) return BANDS[0]!;
-  if (safeScore < 60) return BANDS[1]!;
-  if (safeScore < 80) return BANDS[2]!;
+  if (score < 40) return BANDS[0]!;
+  if (score < 60) return BANDS[1]!;
+  if (score < 80) return BANDS[2]!;
   return BANDS[3]!;
 }

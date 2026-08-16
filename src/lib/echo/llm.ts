@@ -183,6 +183,7 @@ export async function discoverGeminiModels(apiKey?: string): Promise<string[]> {
     console.log("[AI] Gemini API key missing");
     return [];
   }
+  console.log("[AI] Gemini API key detected");
 
   try {
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(keyToUse)}`, {
@@ -221,6 +222,7 @@ export async function callGeminiREST(
     console.log("[AI] Gemini API key missing");
     throw new ECHOAIError("Gemini API key is not configured.", "INVALID_KEY", 401);
   }
+  console.log("[AI] Gemini API key detected");
 
   // Verified active 200 OK Gemini models for Google AI Studio API Keys
   const candidateModels = Array.from(new Set([
@@ -273,9 +275,8 @@ export async function callGeminiREST(
               await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
               continue;
             }
-            logAITelemetry(featureName, modelCandidate, prompt.length, Date.now() - startTime, "error", "RATE_LIMIT", "Rate limit 429 — trying next candidate model");
-            lastError = new ECHOAIError("Gemini API rate limit exceeded.", "RATE_LIMIT", 429);
-            break; // Try next model candidate on rate limit!
+            logAITelemetry(featureName, modelCandidate, prompt.length, Date.now() - startTime, "error", "RATE_LIMIT", "Rate limit 429");
+            throw new ECHOAIError("Gemini API rate limit exceeded.", "RATE_LIMIT", res.status);
           }
           if (res.status >= 500) {
             if (attempt < maxRetries - 1) {
@@ -283,8 +284,7 @@ export async function callGeminiREST(
               continue;
             }
             logAITelemetry(featureName, modelCandidate, prompt.length, Date.now() - startTime, "error", "SERVER_ERROR", `Server status ${res.status}`);
-            lastError = new ECHOAIError(`Gemini API server error status: ${res.status}`, "SERVER_ERROR", res.status);
-            break;
+            throw new ECHOAIError(`Gemini API server error status: ${res.status}`, "SERVER_ERROR", res.status);
           }
           throw new ECHOAIError(`Gemini API error status: ${res.status}`, "SERVER_ERROR", res.status);
         }
@@ -300,7 +300,7 @@ export async function callGeminiREST(
         return text;
       } catch (err: unknown) {
         if (err instanceof ECHOAIError) {
-          if (err.status === 404 || err.status === 429 || (err.status && err.status >= 500)) {
+          if (err.status === 404) {
             lastError = err;
             break;
           }
@@ -318,7 +318,7 @@ export async function callGeminiREST(
     }
   }
 
-  throw lastError || new ECHOAIError("All Gemini model candidates failed or returned rate limits.", "SERVER_ERROR", 429);
+  throw lastError || new ECHOAIError("All Gemini model candidates returned 404 Not Found.", "SERVER_ERROR", 404);
 }
 
 async function callProviderAPI(prompt: string, overrideConfig?: ApiConfig, featureName = "ai_completion"): Promise<string> {

@@ -90,8 +90,8 @@ function ReflectionPage() {
                 <BrainCircuit className="size-6" />
               </div>
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-primary">STAGE 03: CONFIDENCE CAPTURE</span>
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Self-Assessed Perceived Understanding</h1>
+                <span className="text-xs font-bold uppercase tracking-wider text-primary">STAGE 3: REFLECT</span>
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Explain in Your Own Words</h1>
               </div>
             </div>
 

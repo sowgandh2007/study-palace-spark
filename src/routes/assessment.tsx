@@ -7,7 +7,6 @@ import {
   Zap,
   TrendingUp,
   BookOpen,
-  Loader2,
 } from "lucide-react";
 import { EchoNavbar } from "@/components/EchoNavbar";
 import { Button } from "@/components/ui/button";
@@ -33,9 +32,9 @@ function AssessmentPage() {
   const isDemo = Boolean(demo);
   const { activeLearnMaterial, setLatestResult } = useEcho();
 
-  const [step, setStep] = useState<"input" | "loading" | "answering" | "results">("input");
+  const [step, setStep] = useState<"input" | "answering" | "results">("input");
 
-  const initialTopic = searchConcept || activeLearnMaterial?.topic || "";
+  const initialTopic = searchConcept || activeLearnMaterial?.topic || "Binary Search";
 
   const [conceptInput, setConceptInput] = useState(initialTopic);
   const [notUnderstoodText, setNotUnderstoodText] = useState(searchGap ?? "");
@@ -68,7 +67,7 @@ function AssessmentPage() {
 
   function handleStartCheck(e?: React.FormEvent) {
     if (e) e.preventDefault();
-    const concept = (conceptInput || searchConcept || activeLearnMaterial?.topic || "Binary Search").trim();
+    const concept = (conceptInput || searchConcept || "Binary Search").trim();
     if (!concept) return;
 
     const checkData = generateLocalEchoCheck(concept, confidenceInput, "", notUnderstoodText);
@@ -96,9 +95,6 @@ function AssessmentPage() {
         reasoning: chosenOpt.misconception
           ? `Misconception detected: ${chosenOpt.misconception}`
           : "Solid understanding demonstrated.",
-        question: currentQ.question,
-        answer: chosenOpt.text,
-        subconceptName: currentQ.subconceptName,
       };
       const updatedEvals = [...evaluations, newEval];
       setEvaluations(updatedEvals);
@@ -109,22 +105,18 @@ function AssessmentPage() {
         const finalStability = calculateStabilityScore(updatedEvals);
         const finalGap = calculateConfidenceGap(confidenceInput, finalStability);
         const bandInfo = bandFor(finalStability);
-        const sortedWeak = [...updatedEvals].sort((a, b) => a.score - b.score);
-        const weakestEval = sortedWeak[0];
 
         const resultObj: StabilityResult = {
-          conceptName: conceptInput.trim() || "Concept Verification",
+          conceptName: conceptInput.trim() || "Binary Search",
           evaluatedAt: new Date().toISOString(),
           confidenceScore: confidenceInput,
-          confidenceInput: confidenceInput,
           stabilityScore: finalStability,
           confidenceGap: finalGap,
           evaluations: updatedEvals,
-          weakSubconcept: weakestEval?.subconceptName || weakestEval?.dimension,
           recommendation:
             finalGap >= 25 && finalStability < 60
               ? `High Overconfidence Gap Detected (+${finalGap}%). Review invariant mechanisms before relying on intuitive leaps.`
-              : `Focus repair efforts on your weakest subconcept/dimension (${weakestEval?.subconceptName || weakestEval?.dimension}).`,
+              : `Focus repair efforts on your weakest dimension (${updatedEvals.sort((a, b) => a.score - b.score)[0]?.dimension}).`,
           isConfidentButFragile: finalGap >= 25 && finalStability < 60,
           bandLabel: bandInfo.label,
         };
@@ -144,9 +136,9 @@ function AssessmentPage() {
       <main className="mx-auto max-w-3xl px-4 sm:px-6 pt-6 sm:pt-10 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-primary">STAGE 04: EVIDENCE COLLECTION</span>
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-primary">STAGE 4: VERIFY</span>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 mt-1">
-              Evidence Collection & Probes
+              Diagnostic Verification Probe
             </h1>
             <p className="text-xs sm:text-sm text-slate-700 font-medium mt-1">
               Test whether your understanding survives direct application, under-the-hood reasoning, and unfamiliar transfer problems.
@@ -170,7 +162,7 @@ function AssessmentPage() {
                 <Input
                   value={conceptInput}
                   onChange={(e) => setConceptInput(e.target.value)}
-                  placeholder="e.g. Binary Search, SQL Normalization 3NF, OOP Polymorphism"
+                  placeholder="e.g. Binary Search, TCP Flow Control"
                   className="mt-1.5 bg-white border-slate-300 text-slate-900 min-h-[46px]"
                 />
               </div>
@@ -195,14 +187,6 @@ function AssessmentPage() {
                 Launch Diagnostic Verification <Zap className="ml-2 size-5 text-warning" />
               </Button>
             </form>
-          </div>
-        )}
-
-        {step === "loading" && (
-          <div className="glass-card-light p-12 text-center space-y-4 rounded-2xl bg-white/95 border border-slate-200 shadow-md">
-            <Loader2 className="size-10 text-primary animate-spin mx-auto" />
-            <h2 className="text-xl font-bold text-slate-900">Synthesizing Diagnostic Probes</h2>
-            <p className="text-xs text-slate-600 font-medium">Extracting core subconcepts and invariants for {conceptInput}...</p>
           </div>
         )}
 
@@ -263,14 +247,9 @@ function AssessmentPage() {
 
         {step === "results" && (
           <div className="glass-card-light p-6 sm:p-8 space-y-6 rounded-2xl bg-white/95 border border-primary/40 shadow-md">
-            <div className="border-b border-slate-200 pb-4 flex items-center justify-between">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-primary">Verification Analysis</span>
-                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mt-0.5">{conceptInput} Result</h2>
-              </div>
-              <Button asChild size="sm" className="bg-primary hover:bg-primary/90 text-white font-bold shadow-glow">
-                <Link to="/repair" search={{ concept: conceptInput }}>Launch Repair Activity <ArrowRight className="ml-1 size-4" /></Link>
-              </Button>
+            <div className="border-b border-slate-200 pb-4">
+              <span className="text-xs font-bold uppercase tracking-wider text-primary">Verification Analysis</span>
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mt-0.5">{conceptInput} Result</h2>
             </div>
 
             <div className="space-y-3">
@@ -290,8 +269,8 @@ function AssessmentPage() {
                 <RotateCcw className="size-4 mr-1.5" /> Test Another Concept
               </Button>
               <Button asChild size="sm" className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white font-bold shadow-glow min-h-[44px]">
-                <Link to="/repair" search={{ concept: conceptInput }}>
-                  Targeted Repair Activity <ArrowRight className="size-4 ml-1.5" />
+                <Link to="/dashboard">
+                  View Stability Index Dashboard <TrendingUp className="size-4 ml-1.5" />
                 </Link>
               </Button>
             </div>

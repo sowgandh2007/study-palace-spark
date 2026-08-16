@@ -70,10 +70,10 @@ export function TimetablePageContent() {
         {/* Header with Small AI Roadmap Generator Button */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <span className="text-xs font-extrabold uppercase tracking-wider text-primary">STAGE 01: ACADEMIC CONTEXT</span>
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 mt-1">Academic Context & Scheduled Topics</h1>
+            <span className="text-xs font-extrabold uppercase tracking-wider text-primary">POST-CLASS STARTING POINT</span>
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 mt-1">Tomorrow's Class Schedule</h1>
             <p className="text-xs sm:text-sm text-slate-700 font-medium mt-1 max-w-xl">
-              Anchor your learning intelligence loop in your academic context — scheduled classes, syllabus topics, and upcoming exams.
+              Enter tomorrow's scheduled classes to enable post-class reflection check-ins and tomorrow-aware study prioritization.
             </p>
           </div>
 

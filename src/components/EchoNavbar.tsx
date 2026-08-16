@@ -4,6 +4,7 @@ import {
   BrainCircuit,
   LayoutDashboard,
   Calendar,
+  ClipboardList,
   Sparkles,
   Settings,
   UserCheck,
@@ -13,8 +14,6 @@ import {
   Zap,
   Home,
   BookOpen,
-  ShieldCheck,
-  Wrench,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeSelect } from "@/lib/theme";
@@ -55,19 +54,18 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
   const navLinks = [
     { label: "HOME", to: "/", icon: Home },
     { label: "DASHBOARD", to: "/dashboard", icon: LayoutDashboard },
-    { label: "LEARNING CONTEXT", to: "/learn", icon: BookOpen },
-    { label: "CONFIDENCE", to: "/reflection", icon: Sparkles },
-    { label: "EVIDENCE COLLECTION", to: "/assessment", icon: Zap },
-    { label: "TARGETED INTERVENTION", to: "/repair", icon: Wrench },
-    { label: "VERIFICATION", to: "/recheck", icon: ShieldCheck },
+    { label: "LEARN", to: "/learn", icon: BookOpen },
+    { label: "REFLECT", to: "/reflection", icon: Sparkles },
+    { label: "STUDY PLAN", to: "/study-plan", icon: ClipboardList },
+    { label: "VERIFY", to: "/assessment", icon: Zap },
   ];
 
   const bottomNavItems = [
     { label: "Home", to: "/", icon: Home },
     { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
     { label: "Learn", to: "/learn", icon: BookOpen },
+    { label: "Study Plan", to: "/study-plan", icon: ClipboardList },
     { label: "Reflect", to: "/reflection", icon: Sparkles },
-    { label: "Evidence", to: "/assessment", icon: Zap },
   ];
 
   const isLight = variant === "light";
@@ -90,7 +88,7 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
           <EchoLogo />
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden xl:flex items-center gap-4 lg:gap-5 text-[10px] lg:text-[11px] font-bold uppercase tracking-wider">
+          <nav className="hidden md:flex items-center gap-5 lg:gap-6 text-[11px] lg:text-xs font-bold uppercase tracking-wider">
             {navLinks.map((link) => {
               const isActive = currentPath === link.to;
               return (
@@ -138,8 +136,8 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
             </Button>
           </div>
 
-          {/* Mobile / Tablet Top Actions */}
-          <div className="flex xl:hidden items-center gap-2">
+          {/* Mobile Top Actions */}
+          <div className="flex md:hidden items-center gap-2">
             <ThemeSelect />
             <button
               type="button"
@@ -160,7 +158,7 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
 
       {/* Mobile Slide-Over Drawer */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 xl:hidden flex flex-col bg-background/95 text-foreground animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 md:hidden flex flex-col bg-background/95 text-foreground animate-in fade-in duration-200">
           <div className="flex items-center justify-between p-4 border-b border-border">
             <EchoLogo />
             <button
@@ -173,20 +171,19 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
 
           <div className="flex-1 overflow-y-auto p-5 space-y-5">
             <div className="space-y-0.5">
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-primary">Guided Learning Journey</span>
-              <h2 className="text-lg font-bold tracking-tight text-foreground">Confidence vs Evidence Engine</h2>
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-primary">All Features Navigation</span>
+              <h2 className="text-lg font-bold tracking-tight text-foreground">ECHO Application</h2>
             </div>
 
             <nav className="space-y-2">
               {[
-                { label: "Home / Overview", to: "/", icon: Home, desc: "Confidence vs Evidence Loop" },
-                { label: "Telemetry Dashboard", to: "/dashboard", icon: LayoutDashboard, desc: "Perceived vs Demonstrated Telemetry" },
-                { label: "Stage 01: Academic Context", to: "/timetable", icon: Calendar, desc: "Schedule & topic context" },
-                { label: "Stage 02: Learning Context", to: "/learn", icon: BookOpen, desc: "AI material & PDF ingestion" },
-                { label: "Stage 03: Confidence Capture", to: "/reflection", icon: Sparkles, desc: "Self-assessed perceived understanding" },
-                { label: "Stage 04: Evidence Collection", to: "/assessment", icon: Zap, desc: "Diagnostic 3-dimension probes" },
-                { label: "Stage 05: Targeted Intervention", to: "/repair", icon: Wrench, desc: "Dynamic weak subconcept repair" },
-                { label: "Stage 06: Verification", to: "/recheck", icon: ShieldCheck, desc: "Post-repair understanding re-check" },
+                { label: "Home / Overview", to: "/", icon: Home, desc: "Evidence-Based Honesty Engine" },
+                { label: "Student Dashboard", to: "/dashboard", icon: LayoutDashboard, desc: "Real-time stability telemetry" },
+                { label: "Stage 2: Learn", to: "/learn", icon: BookOpen, desc: "AI PDF Summary & Topic Learning" },
+                { label: "Stage 3: Reflect", to: "/reflection", icon: Sparkles, desc: "Explain concepts in your own words" },
+                { label: "Evidence Study Plan", to: "/study-plan", icon: ClipboardList, desc: "Targeted learning sequence" },
+                { label: "Stage 4: Verify", to: "/assessment", icon: Zap, desc: "Diagnostic Probe & AI Exam Generator" },
+                { label: "Class Timetable", to: "/timetable", icon: Calendar, desc: "Schedule & class timing" },
                 { label: "AI System Settings", to: "/settings", icon: Settings, desc: "Gemini AI Engine status" },
                 { label: "Sign In / Profile", to: "/login", icon: UserCheck, desc: "Student session login" },
               ].map((item) => {
@@ -223,7 +220,7 @@ export function EchoNavbar({ variant = "dark" }: EchoNavbarProps) {
       )}
 
       {/* Mobile Fixed Bottom Stage Navigation Bar */}
-      <div className="xl:hidden fixed bottom-0 left-0 right-0 z-40 bg-background/95 border-t border-border px-2 py-2 flex items-center justify-around shadow-lg backdrop-blur-lg">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-background/95 border-t border-border px-2 py-2 flex items-center justify-around shadow-lg backdrop-blur-lg">
         {bottomNavItems.map((item) => {
           const isActive = currentPath === item.to;
           const IconComp = item.icon;

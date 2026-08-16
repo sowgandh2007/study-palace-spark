@@ -58,38 +58,6 @@ export type DiagnosedGap = {
   severity: "low" | "medium" | "high";
   relevantAssumption: string;
   recommendedProbe: string;
-  weakSubconcept?: string;
-};
-
-export type Subconcept = {
-  id: string;
-  name: string;
-  description: string;
-  keyInvariant: string;
-};
-
-export type ConceptBreakdown = {
-  concept: string;
-  overview: string;
-  subconcepts: Subconcept[];
-};
-
-export type DynamicProbeOption = {
-  text: string;
-  score: number;
-  misconception?: string;
-  subconceptId?: string;
-};
-
-export type DynamicProbeQuestion = {
-  id: string;
-  dimension: ProbeDimension;
-  dimensionLabel: string;
-  subconceptName: string;
-  question: string;
-  options: DynamicProbeOption[];
-  correctIndex: number;
-  explanation: string;
 };
 
 export type ProbeQuestion = {
@@ -109,92 +77,28 @@ export type ProbeEvaluation = {
   reasoning: string;
   question: string;
   answer: string;
-  subconceptName?: string;
 };
 
 export type StabilityResult = {
   conceptName: string;
-  evaluatedAt: string;
-  confidenceScore: number;
-  confidenceInput?: number;
+  confidenceInput: number;
   stabilityScore: number;
   confidenceGap: number;
   isConfidentButFragile: boolean;
   bandLabel: string;
   evaluations: ProbeEvaluation[];
   recommendation: string;
-  weakSubconcept?: string;
-  weakDimension?: FrameworkDimension;
-};
-
-export type EvidenceDimension = "direct" | "explain" | "variation" | "assumption" | "error" | "transfer";
-
-export type RepairStrategyType =
-  | "Retrieval Practice"
-  | "Explain-In-Your-Own-Words"
-  | "Changed-Condition / What-If"
-  | "Identify Hidden Preconditions"
-  | "Flawed Solution Correction"
-  | "New Context Application";
-
-export type AdaptiveRepairStep = {
-  stepNumber: number;
-  title: string;
-  minutes: number;
-  strategyName: RepairStrategyType;
-  selectedReason: string;
-  instruction: string;
-  requiresStudentInput?: boolean;
-};
-
-export type AdaptiveRepairPlan = {
-  id: string;
-  conceptName: string;
-  weakDimension: FrameworkDimension;
-  weakSubconcept: string;
-  primaryStrategy: RepairStrategyType;
-  totalMinutes: number;
-  steps: AdaptiveRepairStep[];
-};
-
-export type DimensionComparison = {
-  dimension: FrameworkDimension;
-  label: string;
-  beforeScore: number;
-  afterScore: number;
-  scoreGain: number;
-  improved: boolean;
-};
-
-export type DynamicRepairStep = {
-  step: number;
-  title: string;
-  minutes: number;
-  instruction: string;
-  requiresStudentInput?: boolean;
 };
 
 export type RepairActivity = {
   id: string;
   conceptName: string;
-  weakSubconcept?: string;
   gapText: string;
   priority: "High" | "Medium" | "Low";
   totalMinutes: number;
   steps: { title: string; minutes: number; instruction: string }[];
   beforeScore: number;
   afterScore?: number;
-};
-
-export type DynamicRecheckProbe = {
-  id: string;
-  conceptName: string;
-  weakSubconcept: string;
-  dimension: FrameworkDimension;
-  question: string;
-  options: DynamicProbeOption[];
-  correctIndex: number;
-  explanation: string;
 };
 
 export type ApiProviderId = "gemini" | "openai" | "anthropic" | "custom";
