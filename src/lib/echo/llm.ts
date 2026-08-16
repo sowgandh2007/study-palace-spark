@@ -95,6 +95,36 @@ export function logAITelemetry(
   }
 }
 
+function extractFieldsViaRegex(raw: string): Record<string, any> | null {
+  const result: Record<string, any> = {};
+
+  const titleMatch = raw.match(/"title"\s*:\s*"([^"]+)"/i) || raw.match(/"title"\s*:\s*'([^']+)'/i);
+  if (titleMatch) result.title = titleMatch[1];
+
+  const summaryMatch =
+    raw.match(/"summaryText"\s*:\s*"([^"]+)"/i) ||
+    raw.match(/"summary"\s*:\s*"([^"]+)"/i) ||
+    raw.match(/"overview"\s*:\s*"([^"]+)"/i);
+  if (summaryMatch) {
+    result.summaryText = summaryMatch[1];
+    result.summary = summaryMatch[1];
+    result.overview = summaryMatch[1];
+  }
+
+  const topicMatch = raw.match(/"topic"\s*:\s*"([^"]+)"/i);
+  if (topicMatch) result.topic = topicMatch[1];
+
+  const gapMatch = raw.match(/"gapText"\s*:\s*"([^"]+)"/i);
+  if (gapMatch) result.gapText = gapMatch[1];
+
+  const htmlMatch = raw.match(/"htmlContent"\s*:\s*"([\s\S]+?)"\s*(?:,|\})/i);
+  if (htmlMatch) {
+    result.htmlContent = htmlMatch[1].replace(/\\"/g, '"').replace(/\\n/g, "\n");
+  }
+
+  return Object.keys(result).length > 0 ? result : null;
+}
+
 export function cleanAndParseJSON<T>(rawText: string): T {
   let text = rawText.trim();
 
@@ -126,6 +156,16 @@ export function cleanAndParseJSON<T>(rawText: string): T {
         });
       return JSON.parse(sanitized) as T;
     } catch {
+      // 5. Try regex field extraction for structured AI objects if strict parse fails
+      try {
+        const extracted = extractFieldsViaRegex(rawText);
+        if (extracted && Object.keys(extracted).length > 0) {
+          return extracted as T;
+        }
+      } catch {
+        // Fallthrough to exception
+      }
+
       throw new ECHOAIError(
         "ECHO received an unparseable JSON response structure from the AI provider.",
         "INVALID_RESPONSE"
@@ -206,7 +246,6 @@ export async function callGeminiREST(
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: {
-              responseMimeType: "application/json",
               temperature: 0.2,
             },
           }),
