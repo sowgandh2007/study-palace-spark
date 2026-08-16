@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { ArrowRight, CheckCircle2, Clock, Sparkles, BookOpen } from "lucide-react";
+import { ArrowRight, CheckCircle2, Clock, Sparkles, BookOpen, Loader2 } from "lucide-react";
 import { EchoNavbar } from "@/components/EchoNavbar";
-import { ThemeSelect } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useEcho } from "@/lib/echo/store";
+import { generateTargetedRepairActivity } from "@/lib/echo/pipeline";
+import type { DynamicRepairActivity } from "@/lib/echo/types";
 
 export const Route = createFileRoute("/repair")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -13,49 +15,72 @@ export const Route = createFileRoute("/repair")({
   component: RepairPage,
 });
 
-const REPAIR_STEPS = [
-  {
-    step: 1,
-    title: "Review the Elimination Invariant (4 min)",
-    instruction: "Read: Binary Search works because sorted order guarantees every element left of mid is <= mid. When arr[mid] < target, the target CANNOT exist in [0...mid], so discarding the left half preserves correctness.",
-  },
-  {
-    step: 2,
-    title: "Explain in Your Own Words (5 min)",
-    instruction: "Write 2 sentences explaining why eliminating half the search space requires spatial order.",
-  },
-  {
-    step: 3,
-    title: "Apply to Boundary Variations (4 min)",
-    instruction: "If the array contains duplicate values, how does the elimination invariant change when looking for the FIRST occurrence?",
-  },
-  {
-    step: 4,
-    title: "ECHO Post-Repair Verification (2 min)",
-    instruction: "Ready to test your updated understanding and calculate your post-repair score increase.",
-  },
-];
-
 function RepairPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
-  const conceptName = search.concept || "Binary Search";
+  const { latestResult, setActiveRepair } = useEcho();
 
+  const conceptName = search.concept || latestResult?.conceptName || "Concept Verification";
+  const weakSubconcept = latestResult?.weakSubconcept || `${conceptName} Invariants`;
+  const beforeScore = latestResult?.stabilityScore ?? 50;
+
+  const [loading, setLoading] = useState(true);
+  const [repairActivity, setRepairActivity] = useState<DynamicRepairActivity | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [explanationText, setExplanationText] = useState("");
 
+  useEffect(() => {
+    let isMounted = true;
+    async function loadRepair() {
+      setLoading(true);
+      const activity = await generateTargetedRepairActivity(
+        conceptName,
+        weakSubconcept,
+        latestResult?.recommendation
+      );
+      if (isMounted) {
+        setRepairActivity(activity);
+        setActiveRepair(activity);
+        setLoading(false);
+      }
+    }
+    loadRepair();
+    return () => {
+      isMounted = false;
+    };
+  }, [conceptName, weakSubconcept]);
+
   function handleNextStep() {
-    if (currentStep < REPAIR_STEPS.length - 1) {
+    if (!repairActivity) return;
+    if (currentStep < repairActivity.steps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
+      // Pass actual pre-repair score to recheck! Zero fake scores!
       navigate({
         to: "/recheck",
-        search: { concept: conceptName, before: "72", after: "91" },
+        search: {
+          concept: conceptName,
+          weakSubconcept,
+          before: String(beforeScore),
+        },
       });
     }
   }
 
-  const stepItem = REPAIR_STEPS[currentStep]!;
+  if (loading || !repairActivity) {
+    return (
+      <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 pb-28 md:pb-20">
+        <EchoNavbar variant="dark" />
+        <main className="mx-auto max-w-3xl px-4 sm:px-6 pt-16 text-center space-y-4">
+          <Loader2 className="size-10 text-primary animate-spin mx-auto" />
+          <h2 className="text-xl font-bold text-white">Synthesizing Targeted Repair Activity</h2>
+          <p className="text-xs text-slate-400">Targeting weak subconcept: {weakSubconcept}...</p>
+        </main>
+      </div>
+    );
+  }
+
+  const stepItem = repairActivity.steps[currentStep]!;
 
   return (
     <div className="min-h-screen text-foreground selection:bg-primary/30 pb-28 md:pb-20">
@@ -65,19 +90,21 @@ function RepairPage() {
         <div>
           <span className="text-xs font-bold uppercase tracking-wider text-primary">Targeted Gap Repair</span>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mt-1">{conceptName} Repair Activity</h1>
-          <p className="text-xs sm:text-sm text-slate-300 mt-1">15-minute step-by-step exercise targeting your diagnosed conceptual gap.</p>
+          <p className="text-xs sm:text-sm text-slate-300 mt-1">
+            Targeting weak subconcept: <span className="text-primary font-bold">{weakSubconcept}</span>.
+          </p>
         </div>
 
         {/* Progress Bar */}
         <div className="space-y-2">
           <div className="flex justify-between text-xs font-mono text-slate-400">
-            <span>Step {currentStep + 1} of {REPAIR_STEPS.length}</span>
+            <span>Step {currentStep + 1} of {repairActivity.steps.length}</span>
             <span>{stepItem.title}</span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-white/10">
             <div
               className="h-full bg-primary transition-all duration-300 shadow-glow"
-              style={{ width: `${((currentStep + 1) / REPAIR_STEPS.length) * 100}%` }}
+              style={{ width: `${((currentStep + 1) / repairActivity.steps.length) * 100}%` }}
             />
           </div>
         </div>
@@ -90,7 +117,7 @@ function RepairPage() {
 
           <p className="text-sm sm:text-base font-medium leading-relaxed text-slate-200">{stepItem.instruction}</p>
 
-          {currentStep === 1 && (
+          {stepItem.requiresStudentInput && (
             <Textarea
               rows={4}
               placeholder="Write your explanation here..."
@@ -100,25 +127,15 @@ function RepairPage() {
             />
           )}
 
-          {currentStep === 2 && (
-            <Textarea
-              rows={4}
-              placeholder="Explain how boundary pointers shift when duplicates exist..."
-              value={explanationText}
-              onChange={(e) => setExplanationText(e.target.value)}
-              className="bg-black/40 border-white/10 text-xs text-white"
-            />
-          )}
-
           <div className="pt-4 flex justify-end">
             <Button size="lg" onClick={handleNextStep} className="w-full sm:w-auto bg-primary hover:bg-primary/90 font-bold shadow-glow min-h-[48px]">
-              {currentStep < REPAIR_STEPS.length - 1 ? (
+              {currentStep < repairActivity.steps.length - 1 ? (
                 <>
                   Continue to Step {currentStep + 2} <ArrowRight className="ml-1.5 size-4" />
                 </>
               ) : (
                 <>
-                  Complete Repair & Launch Re-Check <Sparkles className="ml-1.5 size-4" />
+                  Complete Repair & Launch Dynamic Re-Check <Sparkles className="ml-1.5 size-4" />
                 </>
               )}
             </Button>
