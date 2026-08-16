@@ -7,12 +7,13 @@ import {
   Zap,
   TrendingUp,
   BookOpen,
+  Loader2,
 } from "lucide-react";
 import { EchoNavbar } from "@/components/EchoNavbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { generateLocalEchoCheck, type DiagnosticMCQ } from "@/lib/echo/localAi";
+import { generateAsyncEchoCheck, type DiagnosticMCQ } from "@/lib/echo/localAi";
 import { calculateStabilityScore, calculateConfidenceGap, bandFor } from "@/lib/echo/scoring";
 import type { ProbeEvaluation, StabilityResult } from "@/lib/echo/types";
 import { useEcho } from "@/lib/echo/store";
@@ -28,25 +29,27 @@ export const Route = createFileRoute("/assessment")({
 });
 
 function AssessmentPage() {
-  const { concept: searchConcept, gap: searchGap, confidence: searchConf, demo } = Route.useSearch();
-  const isDemo = Boolean(demo);
-  const { activeLearnMaterial, setLatestResult } = useEcho();
+  const search = Route.useSearch();
+  const searchConcept = search.concept;
+  const searchGap = search.gap;
+  const searchConf = search.confidence ? parseInt(search.confidence, 10) : 75;
 
-  const [step, setStep] = useState<"input" | "answering" | "results">("input");
+  const { activeLearnMaterial, saveStabilityResult } = useEcho();
 
-  const initialTopic = searchConcept || activeLearnMaterial?.topic || "Binary Search";
-
-  const [conceptInput, setConceptInput] = useState(initialTopic);
-  const [notUnderstoodText, setNotUnderstoodText] = useState(searchGap ?? "");
-  const [confidenceInput, setConfidenceInput] = useState(
-    searchConf ? Number(searchConf) : isDemo ? 90 : 75
+  const [conceptInput, setConceptInput] = useState(
+    searchConcept || activeLearnMaterial?.topic || ""
   );
+  const [confidenceInput, setConfidenceInput] = useState(searchConf);
+  const [notUnderstoodText, setNotUnderstoodText] = useState(searchGap || "");
 
+  const [step, setStep] = useState<"input" | "loading" | "answering" | "results">("input");
   const [questions, setQuestions] = useState<DiagnosticMCQ[]>([]);
+  const [gapDiagnosisText, setGapDiagnosisText] = useState("");
   const [index, setIndex] = useState(0);
+
   const [selectedOptions, setSelectedOptions] = useState<Record<number, number>>({});
   const [evaluations, setEvaluations] = useState<ProbeEvaluation[]>([]);
-  const [gapDiagnosisText, setGapDiagnosisText] = useState("");
+  const [result, setResult] = useState<StabilityResult | null>(null);
 
   const hasAutoStarted = useRef(false);
 
@@ -65,12 +68,15 @@ function AssessmentPage() {
     }
   }, [searchConcept]);
 
-  function handleStartCheck(e?: React.FormEvent) {
+  async function handleStartCheck(e?: React.FormEvent) {
     if (e) e.preventDefault();
-    const concept = (conceptInput || searchConcept || "Binary Search").trim();
+    const concept = (conceptInput || searchConcept || activeLearnMaterial?.topic || "Concept Verification").trim();
     if (!concept) return;
 
-    const checkData = generateLocalEchoCheck(concept, confidenceInput, "", notUnderstoodText);
+    setStep("loading");
+    const materialText = activeLearnMaterial?.summaryText || activeLearnMaterial?.htmlContent;
+    const checkData = await generateAsyncEchoCheck(concept, confidenceInput, "", notUnderstoodText, materialText);
+
     setQuestions(checkData.questions);
     setGapDiagnosisText(checkData.gapDiagnosis.gapText);
     setIndex(0);
@@ -95,6 +101,9 @@ function AssessmentPage() {
         reasoning: chosenOpt.misconception
           ? `Misconception detected: ${chosenOpt.misconception}`
           : "Solid understanding demonstrated.",
+        question: currentQ.question,
+        answer: chosenOpt.text,
+        subconceptName: currentQ.subconceptName,
       };
       const updatedEvals = [...evaluations, newEval];
       setEvaluations(updatedEvals);
@@ -102,26 +111,37 @@ function AssessmentPage() {
       if (index < questions.length - 1) {
         setIndex(index + 1);
       } else {
-        const finalStability = calculateStabilityScore(updatedEvals);
-        const finalGap = calculateConfidenceGap(confidenceInput, finalStability);
-        const bandInfo = bandFor(finalStability);
+        // Complete evaluation
+        const stability = calculateStabilityScore(updatedEvals);
+        const gap = calculateConfidenceGap(confidenceInput, stability);
+        const band = bandFor(stability);
+        const fragile = confidenceInput >= 70 && stability < 60;
 
-        const resultObj: StabilityResult = {
-          conceptName: conceptInput.trim() || "Binary Search",
+        const conceptName = conceptInput || "Concept Verification";
+
+        const rec = fragile
+          ? `High overconfidence gap (${gap} pts). Re-examine structural invariants for ${conceptName}.`
+          : `Stability index is ${stability}%. Practice boundary variations to reinforce conceptual strength.`;
+
+        const sorted = [...updatedEvals].sort((a, b) => (a.score ?? 100) - (b.score ?? 100));
+        const weakSub = sorted[0]?.subconceptName || `${conceptName} Invariants`;
+
+        const stabRes: StabilityResult = {
+          conceptName,
           evaluatedAt: new Date().toISOString(),
           confidenceScore: confidenceInput,
-          stabilityScore: finalStability,
-          confidenceGap: finalGap,
+          confidenceInput,
+          stabilityScore: stability,
+          confidenceGap: gap,
+          isConfidentButFragile: fragile,
+          bandLabel: band.label,
           evaluations: updatedEvals,
-          recommendation:
-            finalGap >= 25 && finalStability < 60
-              ? `High Overconfidence Gap Detected (+${finalGap}%). Review invariant mechanisms before relying on intuitive leaps.`
-              : `Focus repair efforts on your weakest dimension (${updatedEvals.sort((a, b) => a.score - b.score)[0]?.dimension}).`,
-          isConfidentButFragile: finalGap >= 25 && finalStability < 60,
-          bandLabel: bandInfo.label,
+          recommendation: rec,
+          weakSubconcept: weakSub,
         };
 
-        setLatestResult(resultObj);
+        setResult(stabRes);
+        saveStabilityResult(stabRes);
         setStep("results");
       }
     }
@@ -162,7 +182,7 @@ function AssessmentPage() {
                 <Input
                   value={conceptInput}
                   onChange={(e) => setConceptInput(e.target.value)}
-                  placeholder="e.g. Binary Search, TCP Flow Control"
+                  placeholder="e.g. Binary Search, Arrays, SQL Joins, Deadlocks"
                   className="mt-1.5 bg-white border-slate-300 text-slate-900 min-h-[46px]"
                 />
               </div>
@@ -174,19 +194,45 @@ function AssessmentPage() {
                 <Input
                   value={notUnderstoodText}
                   onChange={(e) => setNotUnderstoodText(e.target.value)}
-                  placeholder="e.g. Why halving requires sorted order"
+                  placeholder="e.g. Boundary conditions or invariant logic..."
                   className="mt-1.5 bg-white border-slate-300 text-slate-900 min-h-[46px]"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs font-bold text-slate-700">
+                  <span>Self-Reported Confidence</span>
+                  <span className="font-mono text-primary font-extrabold">{confidenceInput}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="10"
+                  max="100"
+                  value={confidenceInput}
+                  onChange={(e) => setConfidenceInput(parseInt(e.target.value, 10))}
+                  className="w-full accent-primary"
                 />
               </div>
 
               <Button
                 type="submit"
                 size="lg"
+                disabled={!conceptInput.trim()}
                 className="w-full bg-primary hover:bg-primary/90 text-white font-bold shadow-glow text-base min-h-[48px]"
               >
-                Launch Diagnostic Verification <Zap className="ml-2 size-5 text-warning" />
+                Generate Diagnostic Probes <Zap className="ml-2 size-5 text-warning" />
               </Button>
             </form>
+          </div>
+        )}
+
+        {step === "loading" && (
+          <div className="glass-card-light p-12 text-center space-y-4 rounded-2xl bg-white/95 border border-slate-200 shadow-md">
+            <Loader2 className="size-10 text-primary animate-spin mx-auto" />
+            <h2 className="text-xl font-bold text-slate-900">Generating Diagnostic Verification Probes</h2>
+            <p className="text-xs text-slate-600 font-medium">
+              Generating topic-specific Direct, Explain, and Transfer probes for <span className="text-primary font-bold">{conceptInput || "your concept"}</span>...
+            </p>
           </div>
         )}
 
@@ -194,84 +240,112 @@ function AssessmentPage() {
           <div className="glass-card-light p-6 sm:p-8 space-y-6 rounded-2xl bg-white/95 border border-slate-200 shadow-md">
             <div className="flex items-center justify-between border-b border-slate-200 pb-4">
               <div>
-                <span className="text-xs font-mono font-bold text-primary">
-                  Question {index + 1} of {questions.length}
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-primary">
+                  Question {index + 1} of {questions.length} · {currentQ.dimensionLabel}
                 </span>
-                <h2 className="text-sm font-bold text-slate-900 mt-0.5">{conceptInput}</h2>
+                <h2 className="text-lg sm:text-xl font-bold text-slate-900 mt-1">
+                  {currentQ.question}
+                </h2>
               </div>
-              <Badge variant="outline" className="text-xs uppercase font-mono border-primary/40 text-primary">
-                {currentQ.dimension} Dimension
+              <Badge variant="outline" className="border-primary/40 text-primary uppercase font-mono text-xs shrink-0">
+                {currentQ.dimension}
               </Badge>
             </div>
 
-            <div className="space-y-4">
-              <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-relaxed">
-                {currentQ.question}
-              </h3>
-
-              <div className="space-y-3 pt-2">
-                {currentQ.options.map((opt, oIdx) => {
-                  const isSelected = selectedOptions[index] === oIdx;
-                  return (
-                    <button
-                      key={oIdx}
-                      type="button"
-                      onClick={() => handleSelectOption(index, oIdx)}
-                      className={`w-full text-left p-4 rounded-xl border text-xs sm:text-sm transition-all min-h-[48px] flex items-center justify-between ${
-                        isSelected
-                          ? "border-primary bg-primary/10 text-slate-900 font-bold shadow-sm"
-                          : "border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300"
-                      }`}
-                    >
-                      <span>{opt.text}</span>
-                      {isSelected && <CheckCircle2 className="size-4 text-primary shrink-0 ml-2" />}
-                    </button>
-                  );
-                })}
-              </div>
+            <div className="space-y-3">
+              {currentQ.options.map((opt, idx) => {
+                const isSelected = selectedOptions[index] === idx;
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleSelectOption(index, idx)}
+                    className={`w-full text-left p-4 rounded-xl border text-xs sm:text-sm transition-all flex items-center justify-between ${
+                      isSelected
+                        ? "border-primary bg-primary/10 text-slate-900 font-bold shadow-sm"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                    }`}
+                  >
+                    <span>{opt.text}</span>
+                    {isSelected && <CheckCircle2 className="size-4 text-primary shrink-0 ml-2" />}
+                  </button>
+                );
+              })}
             </div>
 
             <div className="pt-4 border-t border-slate-200 flex justify-end">
               <Button
-                type="button"
                 onClick={handleNextQuestion}
                 disabled={selectedOptions[index] === undefined}
-                className="bg-primary hover:bg-primary/90 text-white font-bold shadow-glow min-h-[44px]"
+                className="bg-primary hover:bg-primary/90 text-white font-bold shadow-glow min-h-[48px]"
               >
-                {index === questions.length - 1 ? "Complete Verification" : "Next Question"}
-                <ArrowRight className="size-4 ml-1.5" />
+                {index < questions.length - 1 ? (
+                  <>
+                    Next Probe <ArrowRight className="ml-1.5 size-4" />
+                  </>
+                ) : (
+                  <>
+                    Complete Verification <TrendingUp className="ml-1.5 size-4" />
+                  </>
+                )}
               </Button>
             </div>
           </div>
         )}
 
-        {step === "results" && (
-          <div className="glass-card-light p-6 sm:p-8 space-y-6 rounded-2xl bg-white/95 border border-primary/40 shadow-md">
-            <div className="border-b border-slate-200 pb-4">
-              <span className="text-xs font-bold uppercase tracking-wider text-primary">Verification Analysis</span>
-              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mt-0.5">{conceptInput} Result</h2>
+        {step === "results" && result && (
+          <div className="glass-card-light p-6 sm:p-10 text-center space-y-6 rounded-3xl bg-white border border-slate-200 shadow-lg">
+            <div className="inline-grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 border border-primary/20 text-primary mx-auto shadow-sm">
+              <TrendingUp className="size-7" />
             </div>
 
-            <div className="space-y-3">
-              {evaluations.map((item, i) => (
-                <div key={i} className="rounded-xl p-4 border bg-slate-50 border-slate-200 space-y-1 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold uppercase text-primary font-mono">{item.dimension} Dimension</span>
-                    <span className="font-mono font-bold text-slate-900">{item.score}/100</span>
-                  </div>
-                  <p className="text-slate-700 font-medium">{item.reasoning}</p>
-                </div>
-              ))}
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-widest text-slate-500">
+                Verification Telemetry · {result.conceptName}
+              </span>
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 mt-1">
+                Understanding Stability Telemetry
+              </h1>
             </div>
 
-            <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <Button size="sm" variant="outline" onClick={() => setStep("input")} className="w-full sm:w-auto border-slate-300 bg-white hover:bg-slate-50 text-slate-900 min-h-[44px]">
-                <RotateCcw className="size-4 mr-1.5" /> Test Another Concept
-              </Button>
-              <Button asChild size="sm" className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white font-bold shadow-glow min-h-[44px]">
-                <Link to="/dashboard">
-                  View Stability Index Dashboard <TrendingUp className="size-4 ml-1.5" />
+            {/* Score Grid */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-6 items-center font-mono text-center">
+              <div>
+                <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-500">Self Confidence</span>
+                <p className="text-2xl sm:text-3xl font-bold text-slate-900 mt-1">{result.confidenceScore}%</p>
+              </div>
+              <div className="border-x border-slate-200">
+                <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-primary">Demonstrated</span>
+                <p className="text-2xl sm:text-3xl font-extrabold text-primary mt-1">{result.stabilityScore}%</p>
+              </div>
+              <div>
+                <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-destructive">Fragility Gap</span>
+                <p className="text-2xl sm:text-3xl font-extrabold text-destructive mt-1">
+                  {result.confidenceGap > 0 ? `+${result.confidenceGap}` : "0"} pts
+                </p>
+              </div>
+            </div>
+
+            {/* Recommendations */}
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-xs text-slate-700 text-left space-y-1">
+              <p className="font-bold text-primary">Diagnosis & Guidance:</p>
+              <p className="font-medium leading-relaxed">{result.recommendation}</p>
+            </div>
+
+            {/* Action buttons */}
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-white font-bold shadow-glow w-full sm:w-auto min-h-[48px]">
+                <Link to="/repair" search={{ concept: result.conceptName }}>
+                  Launch Targeted Intervention <ArrowRight className="ml-1.5 size-4" />
                 </Link>
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => setStep("input")}
+                className="border-slate-300 bg-white hover:bg-slate-50 text-slate-900 w-full sm:w-auto min-h-[48px]"
+              >
+                <RotateCcw className="mr-1.5 size-4" /> Test Another Concept
               </Button>
             </div>
           </div>

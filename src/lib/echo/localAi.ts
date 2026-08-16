@@ -1,9 +1,11 @@
+import { callGeminiREST, cleanAndParseJSON, getApiConfig, getResolvedGeminiKey } from "./llm";
 import type { ProbeDimension, DiagnosedGap } from "./types";
 
 export interface DiagnosticMCQ {
   id: string;
   dimension: ProbeDimension;
   dimensionLabel: string;
+  subconceptName?: string;
   question: string;
   options: {
     text: string;
@@ -27,6 +29,7 @@ const QUESTION_BANKS: Record<string, DiagnosticMCQ[]> = {
       id: "bs-1",
       dimension: "direct",
       dimensionLabel: "Direct Definition",
+      subconceptName: "Binary Search Preconditions",
       question: "What is the time complexity of Binary Search and its mandatory precondition?",
       options: [
         { text: "O(log n) time complexity, and the array MUST be sorted.", score: 100 },
@@ -41,6 +44,7 @@ const QUESTION_BANKS: Record<string, DiagnosticMCQ[]> = {
       id: "bs-2",
       dimension: "explain",
       dimensionLabel: "Under-The-Hood Reasoning",
+      subconceptName: "Binary Search Mechanism",
       question: "Why does Binary Search fail on an unsorted array — what breaks in the logic?",
       options: [
         { text: "Because sorted order guarantees target cannot exist in the discarded half when target < arr[mid].", score: 100 },
@@ -55,6 +59,7 @@ const QUESTION_BANKS: Record<string, DiagnosticMCQ[]> = {
       id: "bs-3",
       dimension: "transfer",
       dimensionLabel: "Unfamiliar Transfer Scenario",
+      subconceptName: "Binary Search Boundary Adaptation",
       question: "How must Binary Search be modified to find the FIRST occurrence of a repeated element in a sorted array?",
       options: [
         { text: "When arr[mid] == target, save mid as candidate result and continue searching in the LEFT half (hi = mid - 1).", score: 100 },
@@ -72,6 +77,7 @@ const QUESTION_BANKS: Record<string, DiagnosticMCQ[]> = {
       id: "sql-1",
       dimension: "direct",
       dimensionLabel: "Direct Definition",
+      subconceptName: "SQL Relational Joins",
       question: "In SQL, what is the key difference between INNER JOIN and LEFT JOIN?",
       options: [
         { text: "INNER JOIN returns matching rows only; LEFT JOIN returns all left table rows plus matching right rows.", score: 100 },
@@ -86,6 +92,7 @@ const QUESTION_BANKS: Record<string, DiagnosticMCQ[]> = {
       id: "sql-2",
       dimension: "explain",
       dimensionLabel: "Under-The-Hood Reasoning",
+      subconceptName: "SQL WHERE Filtering Mechanism",
       question: "Why does filtering a LEFT JOIN's right table in the WHERE clause turn it into an implicit INNER JOIN?",
       options: [
         { text: "Because WHERE conditions evaluate after JOIN, filtering out NULL right-table rows produced by unmatched left rows.", score: 100 },
@@ -100,6 +107,7 @@ const QUESTION_BANKS: Record<string, DiagnosticMCQ[]> = {
       id: "sql-3",
       dimension: "transfer",
       dimensionLabel: "Unfamiliar Transfer Scenario",
+      subconceptName: "SQL Non-Matching Pattern",
       question: "How do you write a query to find all Customers who have NEVER placed an Order using a JOIN?",
       options: [
         { text: "LEFT JOIN Orders ON Customers.id = Orders.customer_id WHERE Orders.id IS NULL.", score: 100 },
@@ -117,6 +125,7 @@ const QUESTION_BANKS: Record<string, DiagnosticMCQ[]> = {
       id: "norm-1",
       dimension: "direct",
       dimensionLabel: "Direct Definition",
+      subconceptName: "3NF Transitive Invariant",
       question: "What specific anomaly does Third Normal Form (3NF) eliminate in relational database design?",
       options: [
         { text: "Transitive dependencies (non-key attribute depending on another non-key attribute).", score: 100 },
@@ -131,6 +140,7 @@ const QUESTION_BANKS: Record<string, DiagnosticMCQ[]> = {
       id: "norm-2",
       dimension: "explain",
       dimensionLabel: "Under-The-Hood Reasoning",
+      subconceptName: "3NF Transitive Anomaly",
       question: "Why does a transitive dependency X → Y → Z cause update anomalies in a table?",
       options: [
         { text: "If Z changes for a given Y, you must update multiple rows; if you delete all X, you lose the Y → Z fact.", score: 100 },
@@ -145,6 +155,7 @@ const QUESTION_BANKS: Record<string, DiagnosticMCQ[]> = {
       id: "norm-3",
       dimension: "transfer",
       dimensionLabel: "Unfamiliar Transfer Scenario",
+      subconceptName: "3NF Table Decomposition",
       question: "Given table Employee(EmpID, ZipCode, City) where ZipCode → City, how do you normalize it to 3NF?",
       options: [
         { text: "Decompose into Employee(EmpID, ZipCode) and ZipCity(ZipCode, City).", score: 100 },
@@ -176,49 +187,52 @@ export function generateLocalEchoCheck(
     if (foundKey) {
       questions = QUESTION_BANKS[foundKey]!;
     } else {
-      // Universal Fallback Generator for any custom concept!
+      // Concept-Specific Fallback Generator
       questions = [
         {
           id: `${normalizedKey}-1`,
           dimension: "direct",
           dimensionLabel: "Direct Definition",
-          question: `Which statement accurately describes the core definition and primary objective of ${conceptName}?`,
+          subconceptName: `${conceptName} Fundamental Rules`,
+          question: `What is the core definition and mandatory precondition of ${conceptName}?`,
           options: [
             { text: `${conceptName} provides a structured mechanism to solve target domain problems under defined preconditions.`, score: 100 },
-            { text: `${conceptName} is an obsolete approach replaced by unconstrained heuristics.`, score: 30, misconception: "Dismisses core concept validity." },
-            { text: `${conceptName} operates in constant O(1) space regardless of underlying state.`, score: 40, misconception: "Assumes unrealistic performance characteristics." },
-            { text: `${conceptName} eliminates the need for boundary checks or error handling.`, score: 10, misconception: "Ignores edge case requirements." },
+            { text: `${conceptName} is an unconstrained heuristic that operates without state preconditions.`, score: 30, misconception: "Dismisses mandatory preconditions." },
+            { text: `${conceptName} guarantees O(1) execution space regardless of state.`, score: 40, misconception: "Assumes unrealistic performance characteristics." },
+            { text: `${conceptName} bypasses boundary checks and error state validation.`, score: 10, misconception: "Ignores edge case requirements." },
           ],
           correctIndex: 0,
-          explanation: `${conceptName} relies on specific structural rules and invariants to guarantee correct execution.`,
+          explanation: `${conceptName} relies on specific structural rules and preconditions to guarantee execution correctness.`,
         },
         {
           id: `${normalizedKey}-2`,
           dimension: "explain",
           dimensionLabel: "Under-The-Hood Reasoning",
-          question: `Why does ${conceptName} require strict adherence to its underlying invariant during execution?`,
+          subconceptName: `${conceptName} Mechanism`,
+          question: `Why does ${conceptName} require strict adherence to its underlying state invariant?`,
           options: [
-            { text: "Because violating the invariant breaks state guarantees and leads to invalid output or infinite loops.", score: 100 },
-            { text: "Because the compiler automatically aborts if invariants are not declared in comments.", score: 25, misconception: "Confuses runtime logic with compiler static analysis." },
-            { text: "Because memory allocation doubles whenever invariants are evaluated.", score: 35, misconception: "Confuses algorithmic logic with memory allocation." },
-            { text: "Invariants are purely optional documentation and do not impact execution correctness.", score: 10, misconception: "Fails to recognize critical invariant role." },
+            { text: "Because violating state invariants breaks execution correctness and leads to invalid results or corrupted state.", score: 100 },
+            { text: "Because compilers abort execution if state invariants are not declared in code comments.", score: 25, misconception: "Confuses runtime logic with compiler static analysis." },
+            { text: "Because memory usage doubles whenever state invariants are evaluated.", score: 35, misconception: "Confuses algorithmic logic with memory allocation." },
+            { text: "State invariants are optional documentation that do not impact runtime behavior.", score: 10, misconception: "Fails to recognize critical invariant role." },
           ],
           correctIndex: 0,
-          explanation: "Invariants enforce state correctness across transitions. Without them, reasoning collapses.",
+          explanation: "Invariants enforce state correctness across transitions. Without them, execution logic collapses.",
         },
         {
           id: `${normalizedKey}-3`,
           dimension: "transfer",
           dimensionLabel: "Unfamiliar Transfer Scenario",
-          question: `How does ${conceptName}'s behavior change when applied to a boundary condition or high-load environment?`,
+          subconceptName: `${conceptName} Boundary Adaptations`,
+          question: `How does ${conceptName} handle boundary conditions or unfamiliar workload variations?`,
           options: [
             { text: "Boundary conditions expose implicit assumptions, requiring explicit initial state checks or termination guards.", score: 100 },
-            { text: "It automatically scales without modifying boundary handling.", score: 40, misconception: "Assumes boundary robustness without explicit design." },
-            { text: "It fails silently without throwing exceptions.", score: 20, misconception: "Confuses error handling with algorithm logic." },
-            { text: "Boundary conditions bypass algorithmic logic completely.", score: 10, misconception: "Misunderstands boundary execution paths." },
+            { text: "It scales automatically without needing explicit boundary guards.", score: 40, misconception: "Assumes boundary robustness without explicit design." },
+            { text: "It fails silently without triggering error handlers.", score: 20, misconception: "Confuses error handling with algorithm logic." },
+            { text: "Boundary conditions bypass algorithmic invariant checks completely.", score: 10, misconception: "Misunderstands boundary execution paths." },
           ],
           correctIndex: 0,
-          explanation: "Boundary conditions test whether algorithmic assumptions hold when invariants are stretched.",
+          explanation: "Boundary conditions test whether state assumptions hold when invariants are evaluated under extreme values.",
         },
       ];
     }
@@ -239,4 +253,101 @@ export function generateLocalEchoCheck(
     gapDiagnosis,
     questions,
   };
+}
+
+export async function generateAsyncEchoCheck(
+  conceptName: string,
+  confidence: number,
+  understoodText: string,
+  notUnderstoodText: string,
+  materialContext?: string
+): Promise<EchoCheckResult> {
+  const concept = conceptName.trim() || "Study Concept";
+  const cfg = getApiConfig();
+  const apiKey = getResolvedGeminiKey();
+
+  if (!apiKey) {
+    return generateLocalEchoCheck(concept, confidence, understoodText, notUnderstoodText);
+  }
+
+  const prompt = `You are ECHO, an Evidence-Based Conceptual Honesty Engine.
+Generate 3 authentic, domain-specific diagnostic MCQ probes tailored specifically to the subject: "${concept}".
+
+${materialContext ? `SOURCE CONTENT:\n${materialContext.slice(0, 10000)}` : `Topic: "${concept}"`}
+
+IMPORTANT INSTRUCTIONS:
+Generate 3 diagnostic questions specifically about "${concept}":
+- Question 1 (Direct Definition): Direct definition, core invariants, or mandatory preconditions of ${concept}.
+- Question 2 (Under-The-Hood Reasoning): Why and how ${concept} works under the hood.
+- Question 3 (Unfamiliar Transfer Scenario): Edge case, boundary condition, or real-world application of ${concept}.
+
+Each question must have 4 distinct options: 1 correct option (score: 100) and 3 distractors (scores between 0 and 40) with misconception flags.
+
+RETURN STRICTLY VALID JSON ONLY IN THIS EXACT FORMAT:
+{
+  "concept": "${concept}",
+  "confidence": ${confidence},
+  "gapDiagnosis": {
+    "gapText": "Identified struggle in boundary conditions for ${concept}."
+  },
+  "questions": [
+    {
+      "id": "q-1",
+      "dimension": "direct",
+      "dimensionLabel": "Direct Definition",
+      "subconceptName": "${concept} Preconditions",
+      "question": "What is the primary precondition or defining property of ${concept}?",
+      "options": [
+        { "text": "Correct answer specific to ${concept}", "score": 100 },
+        { "text": "First distractor", "score": 35, "misconception": "Confuses basic precondition." },
+        { "text": "Second distractor", "score": 20, "misconception": "Superficial assumption." },
+        { "text": "Third distractor", "score": 0, "misconception": "Completely flawed logic." }
+      ],
+      "correctIndex": 0,
+      "explanation": "Explanation of correct answer for ${concept}."
+    },
+    {
+      "id": "q-2",
+      "dimension": "explain",
+      "dimensionLabel": "Under-The-Hood Reasoning",
+      "subconceptName": "${concept} Mechanism",
+      "question": "Why does ${concept} operate in this manner under the hood?",
+      "options": [
+        { "text": "Correct mechanism explanation for ${concept}", "score": 100 },
+        { "text": "First distractor", "score": 35, "misconception": "Confuses mechanism detail." },
+        { "text": "Second distractor", "score": 15, "misconception": "Fails to trace state transitions." },
+        { "text": "Third distractor", "score": 0, "misconception": "Irrelevant concept." }
+      ],
+      "correctIndex": 0,
+      "explanation": "Explanation of mechanism for ${concept}."
+    },
+    {
+      "id": "q-3",
+      "dimension": "transfer",
+      "dimensionLabel": "Unfamiliar Transfer Scenario",
+      "subconceptName": "${concept} Boundary Adaptation",
+      "question": "How does ${concept} behave when applied to an edge case scenario?",
+      "options": [
+        { "text": "Correct solution under edge conditions for ${concept}", "score": 100 },
+        { "text": "First distractor", "score": 45, "misconception": "Fails on boundary condition." },
+        { "text": "Second distractor", "score": 25, "misconception": "Confuses edge case behavior." },
+        { "text": "Third distractor", "score": 10, "misconception": "Disregards preconditions." }
+      ],
+      "correctIndex": 0,
+      "explanation": "Explanation of boundary handling for ${concept}."
+    }
+  ]
+}`;
+
+  try {
+    const raw = await callGeminiREST(prompt, apiKey, cfg.geminiModel || "gemini-3.5-flash", undefined, "generate_async_echo_check");
+    const parsed = cleanAndParseJSON<EchoCheckResult>(raw);
+    if (parsed && Array.isArray(parsed.questions) && parsed.questions.length === 3) {
+      return parsed;
+    }
+  } catch (err) {
+    console.error("[ECHO LocalAI] Async echo check generation error:", err);
+  }
+
+  return generateLocalEchoCheck(concept, confidence, understoodText, notUnderstoodText);
 }

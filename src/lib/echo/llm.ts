@@ -276,7 +276,9 @@ export async function callGeminiREST(
               continue;
             }
             logAITelemetry(featureName, modelCandidate, prompt.length, Date.now() - startTime, "error", "RATE_LIMIT", "Rate limit 429");
-            throw new ECHOAIError("Gemini API rate limit exceeded.", "RATE_LIMIT", res.status);
+            lastError = new ECHOAIError("Gemini API rate limit exceeded.", "RATE_LIMIT", res.status);
+            console.warn(`[AI ERROR] feature=${featureName} model=${modelCandidate} status=RATE_LIMIT message=Rate limit 429 — trying next candidate model`);
+            break;
           }
           if (res.status >= 500) {
             if (attempt < maxRetries - 1) {
