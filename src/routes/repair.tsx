@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { ArrowRight, CheckCircle2, Clock, Sparkles, BookOpen, Loader2 } from "lucide-react";
+import { ArrowRight, Clock, Sparkles, Loader2, Info, Target, Wrench } from "lucide-react";
 import { EchoNavbar } from "@/components/EchoNavbar";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useEcho } from "@/lib/echo/store";
-import { generateTargetedRepairActivity } from "@/lib/echo/pipeline";
-import type { DynamicRepairActivity } from "@/lib/echo/types";
+import { diagnoseWeaknessProfile, generateAdaptiveRepairPlan } from "@/lib/echo/adaptiveEngine";
+import type { AdaptiveRepairPlan } from "@/lib/echo/types";
 
 export const Route = createFileRoute("/repair")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -21,90 +22,118 @@ function RepairPage() {
   const { latestResult, setActiveRepair } = useEcho();
 
   const conceptName = search.concept || latestResult?.conceptName || "Concept Verification";
-  const weakSubconcept = latestResult?.weakSubconcept || `${conceptName} Invariants`;
-  const beforeScore = latestResult?.stabilityScore ?? 50;
 
   const [loading, setLoading] = useState(true);
-  const [repairActivity, setRepairActivity] = useState<DynamicRepairActivity | null>(null);
+  const [repairPlan, setRepairPlan] = useState<AdaptiveRepairPlan | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [explanationText, setExplanationText] = useState("");
 
   useEffect(() => {
     let isMounted = true;
-    async function loadRepair() {
+    async function loadAdaptivePlan() {
       setLoading(true);
-      const activity = await generateTargetedRepairActivity(
+      const evals = latestResult?.evaluations || [];
+      const diagnosis = diagnoseWeaknessProfile(evals);
+
+      const plan = await generateAdaptiveRepairPlan(
         conceptName,
-        weakSubconcept,
-        latestResult?.recommendation
+        diagnosis.weakDimension,
+        diagnosis.weakSubconcept,
+        diagnosis.lowestScore
       );
+
       if (isMounted) {
-        setRepairActivity(activity);
-        setActiveRepair(activity);
+        setRepairPlan(plan);
+        setActiveRepair({
+          id: plan.id,
+          conceptName: plan.conceptName,
+          weakSubconcept: plan.weakSubconcept,
+          gapText: plan.steps[0]?.selectedReason || `Targeting weak dimension: ${plan.weakDimension}`,
+          priority: "High",
+          totalMinutes: plan.totalMinutes,
+          steps: plan.steps.map((s) => ({ title: s.title, minutes: s.minutes, instruction: s.instruction })),
+          beforeScore: diagnosis.lowestScore,
+        });
         setLoading(false);
       }
     }
-    loadRepair();
+    loadAdaptivePlan();
     return () => {
       isMounted = false;
     };
-  }, [conceptName, weakSubconcept]);
+  }, [conceptName, latestResult]);
 
   function handleNextStep() {
-    if (!repairActivity) return;
-    if (currentStep < repairActivity.steps.length - 1) {
+    if (!repairPlan) return;
+    if (currentStep < repairPlan.steps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Pass actual pre-repair score to recheck! Zero fake scores!
       navigate({
         to: "/recheck",
         search: {
           concept: conceptName,
-          weakSubconcept,
-          before: String(beforeScore),
+          weakDimension: repairPlan.weakDimension,
+          weakSubconcept: repairPlan.weakSubconcept,
         },
       });
     }
   }
 
-  if (loading || !repairActivity) {
+  if (loading || !repairPlan) {
     return (
       <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 pb-28 md:pb-20">
         <EchoNavbar variant="dark" />
         <main className="mx-auto max-w-3xl px-4 sm:px-6 pt-16 text-center space-y-4">
           <Loader2 className="size-10 text-primary animate-spin mx-auto" />
-          <h2 className="text-xl font-bold text-white">Synthesizing Targeted Repair Activity</h2>
-          <p className="text-xs text-slate-400">Targeting weak subconcept: {weakSubconcept}...</p>
+          <h2 className="text-xl font-bold text-white">Synthesizing Adaptive Repair Plan</h2>
+          <p className="text-xs text-slate-400">Diagnosing evidence weaknesses for {conceptName}...</p>
         </main>
       </div>
     );
   }
 
-  const stepItem = repairActivity.steps[currentStep]!;
+  const stepItem = repairPlan.steps[currentStep]!;
 
   return (
     <div className="min-h-screen text-foreground selection:bg-primary/30 pb-28 md:pb-20">
       <EchoNavbar variant="dark" />
 
       <main className="mx-auto max-w-3xl px-4 sm:px-6 pt-6 sm:pt-10 space-y-6">
-        <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-primary">STAGE 05: TARGETED INTERVENTION</span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mt-1">{conceptName} Targeted Intervention</h1>
-          <p className="text-xs sm:text-sm text-slate-300 mt-1">
-            Targeting weak subconcept: <span className="text-primary font-bold">{weakSubconcept}</span>.
+        {/* Stage Header */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-primary">STAGE 05: TARGETED INTERVENTION</span>
+            <Badge variant="outline" className="border-primary/40 text-primary font-mono text-xs">
+              <Wrench className="size-3 mr-1" /> {repairPlan.primaryStrategy}
+            </Badge>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">{conceptName} Targeted Intervention</h1>
+          <p className="text-xs sm:text-sm text-slate-300">
+            Targeting weak dimension: <span className="text-primary font-bold uppercase">{repairPlan.weakDimension}</span> ({repairPlan.weakSubconcept}).
+          </p>
+        </div>
+
+        {/* PROMPT #4 REQUIREMENT: SHOW WHY EACH ACTIVITY WAS SELECTED */}
+        <div className="rounded-2xl border border-primary/30 bg-primary/10 p-4 text-xs space-y-1.5">
+          <div className="flex items-center gap-2 font-bold text-primary">
+            <Info className="size-4 shrink-0" />
+            <span>Why this intervention strategy was selected:</span>
+          </div>
+          <p className="text-slate-200 font-medium pl-6 leading-relaxed">
+            {stepItem.selectedReason}
           </p>
         </div>
 
         {/* Progress Bar */}
         <div className="space-y-2">
           <div className="flex justify-between text-xs font-mono text-slate-400">
-            <span>Step {currentStep + 1} of {repairActivity.steps.length}</span>
+            <span>Step {currentStep + 1} of {repairPlan.steps.length}</span>
             <span>{stepItem.title}</span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-white/10">
             <div
               className="h-full bg-primary transition-all duration-300 shadow-glow"
-              style={{ width: `${((currentStep + 1) / repairActivity.steps.length) * 100}%` }}
+              style={{ width: `${((currentStep + 1) / repairPlan.steps.length) * 100}%` }}
             />
           </div>
         </div>
@@ -120,7 +149,7 @@ function RepairPage() {
           {stepItem.requiresStudentInput && (
             <Textarea
               rows={4}
-              placeholder="Write your explanation here..."
+              placeholder="Formulate your response based on the structural invariant..."
               value={explanationText}
               onChange={(e) => setExplanationText(e.target.value)}
               className="bg-black/40 border-white/10 text-xs text-white"
@@ -129,13 +158,13 @@ function RepairPage() {
 
           <div className="pt-4 flex justify-end">
             <Button size="lg" onClick={handleNextStep} className="w-full sm:w-auto bg-primary hover:bg-primary/90 font-bold shadow-glow min-h-[48px]">
-              {currentStep < repairActivity.steps.length - 1 ? (
+              {currentStep < repairPlan.steps.length - 1 ? (
                 <>
                   Continue to Step {currentStep + 2} <ArrowRight className="ml-1.5 size-4" />
                 </>
               ) : (
                 <>
-                  Complete Repair & Launch Dynamic Re-Check <Sparkles className="ml-1.5 size-4" />
+                  Complete Intervention & Verify <Sparkles className="ml-1.5 size-4" />
                 </>
               )}
             </Button>

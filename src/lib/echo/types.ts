@@ -124,6 +124,46 @@ export type StabilityResult = {
   evaluations: ProbeEvaluation[];
   recommendation: string;
   weakSubconcept?: string;
+  weakDimension?: FrameworkDimension;
+};
+
+export type EvidenceDimension = "direct" | "explain" | "variation" | "assumption" | "error" | "transfer";
+
+export type RepairStrategyType =
+  | "Retrieval Practice"
+  | "Explain-In-Your-Own-Words"
+  | "Changed-Condition / What-If"
+  | "Identify Hidden Preconditions"
+  | "Flawed Solution Correction"
+  | "New Context Application";
+
+export type AdaptiveRepairStep = {
+  stepNumber: number;
+  title: string;
+  minutes: number;
+  strategyName: RepairStrategyType;
+  selectedReason: string;
+  instruction: string;
+  requiresStudentInput?: boolean;
+};
+
+export type AdaptiveRepairPlan = {
+  id: string;
+  conceptName: string;
+  weakDimension: FrameworkDimension;
+  weakSubconcept: string;
+  primaryStrategy: RepairStrategyType;
+  totalMinutes: number;
+  steps: AdaptiveRepairStep[];
+};
+
+export type DimensionComparison = {
+  dimension: FrameworkDimension;
+  label: string;
+  beforeScore: number;
+  afterScore: number;
+  scoreGain: number;
+  improved: boolean;
 };
 
 export type DynamicRepairStep = {
@@ -150,6 +190,7 @@ export type DynamicRecheckProbe = {
   id: string;
   conceptName: string;
   weakSubconcept: string;
+  dimension: FrameworkDimension;
   question: string;
   options: DynamicProbeOption[];
   correctIndex: number;

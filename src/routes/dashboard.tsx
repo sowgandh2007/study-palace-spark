@@ -32,16 +32,28 @@ function DashboardPage() {
 
   const latestReflection = reflections[0];
   const activeTopic =
-    query.trim() ||
+    (query.trim() ||
     latestResult?.conceptName ||
     activeLearnMaterial?.topic ||
     latestReflection?.conceptName ||
-    "Binary Search";
+    "Binary Search").trim();
 
   const confidenceScore =
-    latestResult?.confidenceInput ?? latestResult?.confidenceScore ?? latestReflection?.confidence ?? 75;
-  const stabilityScore = latestResult?.stabilityScore ?? 50;
-  const confidenceGap = latestResult?.confidenceGap ?? Math.max(0, confidenceScore - stabilityScore);
+    typeof latestResult?.confidenceInput === "number" && !isNaN(latestResult.confidenceInput)
+      ? latestResult.confidenceInput
+      : typeof latestResult?.confidenceScore === "number" && !isNaN(latestResult.confidenceScore)
+      ? latestResult.confidenceScore
+      : typeof latestReflection?.confidence === "number" && !isNaN(latestReflection.confidence)
+      ? latestReflection.confidence
+      : 75;
+
+  const rawStab = latestResult?.stabilityScore;
+  const stabilityScore =
+    typeof rawStab === "number" && !isNaN(rawStab)
+      ? rawStab
+      : 50;
+
+  const confidenceGap = Math.max(0, confidenceScore - stabilityScore);
   const weakSubconcept = latestResult?.weakSubconcept || `${activeTopic} Baseline Invariants`;
 
   function handleSearchSubmit(e: React.FormEvent) {
