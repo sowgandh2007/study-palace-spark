@@ -74,7 +74,7 @@ function RecheckPage() {
         ) : !evaluated && probe ? (
           <div className="glass-card p-6 sm:p-8 space-y-6">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-primary">STAGE 5: RECHECK</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-primary">STAGE 06: VERIFICATION</span>
               <h1 className="text-2xl font-extrabold text-white mt-1">Post-Repair Verification Probe</h1>
               <p className="text-xs text-slate-300 mt-1">
                 Test your repaired understanding of <span className="text-primary font-bold">{weakSubconcept}</span>.

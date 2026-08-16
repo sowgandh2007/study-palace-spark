@@ -88,8 +88,8 @@ function RepairPage() {
 
       <main className="mx-auto max-w-3xl px-4 sm:px-6 pt-6 sm:pt-10 space-y-6">
         <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-primary">Targeted Gap Repair</span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mt-1">{conceptName} Repair Activity</h1>
+          <span className="text-xs font-bold uppercase tracking-wider text-primary">STAGE 05: TARGETED INTERVENTION</span>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mt-1">{conceptName} Targeted Intervention</h1>
           <p className="text-xs sm:text-sm text-slate-300 mt-1">
             Targeting weak subconcept: <span className="text-primary font-bold">{weakSubconcept}</span>.
           </p>

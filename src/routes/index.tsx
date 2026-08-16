@@ -5,6 +5,8 @@ import {
   Zap,
   BookOpen,
   TrendingUp,
+  Wrench,
+  ShieldCheck,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FRAMEWORK_DIMENSIONS } from "@/lib/echo/types";
@@ -21,49 +23,49 @@ export const Route = createFileRoute("/")({
 function LandingPage() {
   const stackItems: ScrollStackItem[] = [
     {
-      id: "plan",
+      id: "academic-context",
       stageNumber: "01",
-      stageTitle: "Plan",
+      stageTitle: "Academic Context",
       icon: Calendar,
       to: "/timetable",
       description:
-        "ECHO reads your timetable and notes to build a focused plan around tomorrow's scheduled concepts — so study time is spent where evidence says it matters.",
+        "ECHO anchors study focus around your academic context — reading your class schedule and upcoming exams to prioritize concepts that matter today.",
     },
     {
-      id: "learn",
+      id: "learning-context",
       stageNumber: "02",
-      stageTitle: "Learn",
+      stageTitle: "Learning Context",
       icon: BookOpen,
       to: "/learn",
       description:
-        "You attend class and engage with the underlying concept. ECHO tracks the concept itself — the mechanism and its constraints — not a memorised answer.",
+        "Ingest PDFs, lecture slides, and notes. ECHO extracts structural concepts and domain invariants from your learning materials instead of static static text.",
     },
     {
-      id: "reflect",
+      id: "confidence-capture",
       stageNumber: "03",
-      stageTitle: "Reflect",
+      stageTitle: "Confidence Capture",
       icon: Sparkles,
       to: "/reflection",
       description:
-        "You self-report confidence and write what you understand in your own words. ECHO compares what you feel against demonstrated evidence.",
+        "Self-report your perceived understanding and write explanations in your own words. ECHO captures what you feel before collecting objective evidence.",
     },
     {
-      id: "verify",
+      id: "evidence-collection",
       stageNumber: "04",
-      stageTitle: "Verify",
+      stageTitle: "Evidence Collection",
       icon: Zap,
       to: "/assessment",
       description:
-        "ECHO tests your understanding across direct, explain, and transfer dimensions through targeted AI exams and diagnostic probes.",
+        "ECHO tests your understanding across direct, explain, and transfer dimensions using dynamic AI diagnostic probes to collect demonstrated evidence.",
     },
     {
-      id: "adapt",
+      id: "conceptual-diagnosis",
       stageNumber: "05",
-      stageTitle: "Adapt",
+      stageTitle: "Conceptual Diagnosis",
       icon: TrendingUp,
       to: "/dashboard",
       description:
-        "ECHO uses your stability trajectory to prioritize evening repair slots and recommend your next best learning action.",
+        "ECHO compares self-reported confidence against demonstrated evidence to compute your overconfidence gap and pinpoint fragile understanding.",
     },
   ];
 
@@ -78,10 +80,10 @@ function LandingPage() {
       <section className="py-16 px-4 sm:px-6">
         <div className="mx-auto max-w-4xl space-y-10">
           <div className="text-center space-y-2">
-            <span className="text-xs font-bold uppercase tracking-widest text-sky-800 font-mono">Continuous Learning Loop</span>
-            <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900">The Five ECHO Stages</h2>
+            <span className="text-xs font-bold uppercase tracking-widest text-sky-800 font-mono">Confidence vs Evidence Journey</span>
+            <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900">The Guided ECHO Intelligence Loop</h2>
             <p className="text-xs sm:text-sm text-slate-600 max-w-xl mx-auto">
-              Scroll to stack cards. Click any card or OPEN MENU to jump directly to its stage tool.
+              Scroll to stack cards. Click any card to jump directly into that stage of the intelligence loop.
             </p>
           </div>
 

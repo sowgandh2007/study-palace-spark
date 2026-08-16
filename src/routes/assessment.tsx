@@ -147,9 +147,9 @@ function AssessmentPage() {
       <main className="mx-auto max-w-3xl px-4 sm:px-6 pt-6 sm:pt-10 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-primary">STAGE 4: VERIFY</span>
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-primary">STAGE 04: EVIDENCE COLLECTION</span>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 mt-1">
-              Diagnostic Verification Probe
+              Evidence Collection & Probes
             </h1>
             <p className="text-xs sm:text-sm text-slate-700 font-medium mt-1">
               Test whether your understanding survives direct application, under-the-hood reasoning, and unfamiliar transfer problems.
