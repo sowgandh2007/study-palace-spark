@@ -68,7 +68,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      { name: "viewport", content: "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" },
       { name: "theme-color", content: "#0a0a0f" },
       { title: "ECHO — Evidence-based Conceptual Honesty Engine" },
       { name: "description", content: "ECHO verifies whether student understanding is real, not just correct — plan, learn, reflect, verify, adapt your study plan every day." },
