@@ -134,10 +134,10 @@ export function BrainIntro() {
         {/* Pixelated Sky & Water Horizon Background */}
         <div className="absolute inset-0 z-0 bg-[#87c5f8]">
           {/* Blocky Pixel Clouds */}
-          <div className="absolute top-12 left-10">
+          <div className="absolute top-12 left-10 hidden sm:block">
             <div className="w-24 h-6 bg-white border-2 border-[#12335c] shadow-[4px_4px_0_rgba(18,51,92,0.2)]" />
           </div>
-          <div className="absolute top-24 right-16">
+          <div className="absolute top-24 right-16 hidden sm:block">
             <div className="w-36 h-8 bg-white border-2 border-[#12335c] shadow-[4px_4px_0_rgba(18,51,92,0.2)]" />
           </div>
           <div className="absolute top-48 left-1/4">
@@ -221,10 +221,10 @@ export function BrainIntro() {
               </div>
             </div>
           ) : (
-            /* State 4: Uniform 3-Column Layout with 6 Non-Overlapping Cards + Center Pixel Brain */
-            <div className="relative w-full h-full max-w-6xl mx-auto flex items-center justify-between gap-3 sm:gap-6 md:gap-10 pointer-events-auto animate-in fade-in zoom-in-95 duration-700">
+            /* State 4: Uniform Layout with Cards + Center Pixel Brain */
+            <div className="relative w-full h-full max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-center md:justify-between gap-2 sm:gap-6 md:gap-10 pointer-events-auto animate-in fade-in zoom-in-95 duration-700 overflow-y-auto px-2 pt-20 pb-10">
               {/* Background Connection Rays */}
-              <svg className="absolute inset-0 w-full h-full opacity-40 pointer-events-none" viewBox="0 0 400 300">
+              <svg className="absolute inset-0 w-full h-full opacity-40 pointer-events-none hidden md:block" viewBox="0 0 400 300">
                 <line x1="200" y1="150" x2="60" y2="50" stroke="#0284c7" strokeWidth="2" strokeDasharray="4 4" />
                 <line x1="200" y1="150" x2="340" y2="50" stroke="#0284c7" strokeWidth="2" strokeDasharray="4 4" />
                 <line x1="200" y1="150" x2="60" y2="150" stroke="#0284c7" strokeWidth="2" strokeDasharray="4 4" />
@@ -234,7 +234,7 @@ export function BrainIntro() {
               </svg>
 
               {/* LEFT COLUMN: Cards 1, 3, 5 */}
-              <div className="flex-1 flex flex-col justify-center gap-3 sm:gap-4 max-w-[280px] sm:max-w-[320px] z-20">
+              <div className="w-full md:flex-1 flex flex-col justify-center gap-2 sm:gap-4 md:max-w-[320px] z-20">
                 {LEFT_PRINCIPLES.map((principle) => {
                   const Icon = principle.icon;
                   return (
@@ -273,7 +273,7 @@ export function BrainIntro() {
               </div>
 
               {/* RIGHT COLUMN: Cards 2, 4, 6 */}
-              <div className="flex-1 flex flex-col justify-center gap-3 sm:gap-4 max-w-[280px] sm:max-w-[320px] z-20">
+              <div className="w-full md:flex-1 flex flex-col justify-center gap-2 sm:gap-4 md:max-w-[320px] z-20 pb-16 md:pb-0">
                 {RIGHT_PRINCIPLES.map((principle) => {
                   const Icon = principle.icon;
                   return (
