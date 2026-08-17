@@ -14,6 +14,9 @@ export interface DiagnosticMCQ {
   }[];
   correctIndex: number;
   explanation: string;
+  sourceConcept?: string;
+  sourceReference?: string;
+  questionType?: string;
 }
 
 export interface EchoCheckResult {
@@ -255,6 +258,48 @@ export function generateLocalEchoCheck(
   };
 }
 
+async function validateEchoQuestions(
+  questions: DiagnosticMCQ[],
+  materialContext: string | undefined,
+  concept: string,
+  apiKey: string,
+  model: string
+): Promise<boolean> {
+  if (!materialContext) return true; // Can't validate without context
+
+  const prompt = `You are a Validation Engine for ECHO.
+Analyze these 3 generated reflection questions based on the source material for "${concept}".
+
+SOURCE MATERIAL:
+${materialContext.slice(0, 5000)}
+
+QUESTIONS:
+1. ${questions[0]?.question}
+2. ${questions[1]?.question}
+3. ${questions[2]?.question}
+
+RULES for Rejection:
+- Reject if ANY question is generic (e.g., "What did you learn?", "How do you feel?", "Was this interesting?").
+- Reject if ANY question introduces concepts completely absent from the source material.
+- Accept ONLY if ALL 3 questions test actual understanding, reasoning, or application of the specific source material.
+
+Respond ONLY with a valid JSON object:
+{
+  "isValid": boolean,
+  "reason": "short explanation"
+}`;
+
+  try {
+    const raw = await callGeminiREST(prompt, apiKey, model, undefined, "validate_echo_questions");
+    const parsed = cleanAndParseJSON<{ isValid: boolean; reason: string }>(raw);
+    console.log("[ECHO Validation]", parsed);
+    return parsed?.isValid ?? true;
+  } catch (err) {
+    console.error("[ECHO Validation Error]", err);
+    return true; // Fallback to true if validation fails to avoid breaking flow
+  }
+}
+
 export async function generateAsyncEchoCheck(
   conceptName: string,
   confidence: number,
@@ -265,21 +310,27 @@ export async function generateAsyncEchoCheck(
   const concept = conceptName.trim() || "Study Concept";
   const cfg = getApiConfig();
   const apiKey = getResolvedGeminiKey();
+  const model = cfg.geminiModel || "gemini-3.5-flash";
 
   if (!apiKey) {
     return generateLocalEchoCheck(concept, confidence, understoodText, notUnderstoodText);
   }
 
-  const prompt = `You are ECHO, an Evidence-Based Conceptual Honesty Engine.
+  const basePrompt = `You are ECHO, an Evidence-Based Conceptual Honesty Engine.
 Generate 3 authentic, domain-specific diagnostic MCQ probes tailored specifically to the subject: "${concept}".
 
-${materialContext ? `SOURCE CONTENT:\n${materialContext.slice(0, 10000)}` : `Topic: "${concept}"`}
+${materialContext ? `CRITICAL INSTRUCTION: You MUST ground every question strictly in the following SOURCE CONTENT. Do not introduce concepts absent from the material. Do not generate generic reflection questions (e.g. "What did you learn?").
 
-IMPORTANT INSTRUCTIONS:
-Generate 3 diagnostic questions specifically about "${concept}":
-- Question 1 (Direct Definition): Direct definition, core invariants, or mandatory preconditions of ${concept}.
-- Question 2 (Under-The-Hood Reasoning): Why and how ${concept} works under the hood.
-- Question 3 (Unfamiliar Transfer Scenario): Edge case, boundary condition, or real-world application of ${concept}.
+SOURCE CONTENT:
+${materialContext.slice(0, 10000)}` : `Topic: "${concept}"`}
+
+Generate a mixture of concept-grounded reflection questions.
+Choose 3 distinct types from this list based on the content:
+- Concept Explanation (e.g., Explain the main idea)
+- Reasoning (e.g., Why does X work?)
+- Application (e.g., Given X, what happens if Y?)
+- Misconception Detection (e.g., What goes wrong if X is removed?)
+- Transfer (e.g., How would X adapt to Z?)
 
 Each question must have 4 distinct options: 1 correct option (score: 100) and 3 distractors (scores between 0 and 40) with misconception flags.
 
@@ -293,60 +344,45 @@ RETURN STRICTLY VALID JSON ONLY IN THIS EXACT FORMAT:
   "questions": [
     {
       "id": "q-1",
-      "dimension": "direct",
-      "dimensionLabel": "Direct Definition",
-      "subconceptName": "${concept} Preconditions",
-      "question": "What is the primary precondition or defining property of ${concept}?",
-      "options": [
-        { "text": "Correct answer specific to ${concept}", "score": 100 },
-        { "text": "First distractor", "score": 35, "misconception": "Confuses basic precondition." },
-        { "text": "Second distractor", "score": 20, "misconception": "Superficial assumption." },
-        { "text": "Third distractor", "score": 0, "misconception": "Completely flawed logic." }
-      ],
-      "correctIndex": 0,
-      "explanation": "Explanation of correct answer for ${concept}."
-    },
-    {
-      "id": "q-2",
       "dimension": "explain",
       "dimensionLabel": "Under-The-Hood Reasoning",
-      "subconceptName": "${concept} Mechanism",
-      "question": "Why does ${concept} operate in this manner under the hood?",
+      "subconceptName": "Specific subconcept from material",
+      "question": "A concept-grounded question...",
       "options": [
-        { "text": "Correct mechanism explanation for ${concept}", "score": 100 },
-        { "text": "First distractor", "score": 35, "misconception": "Confuses mechanism detail." },
-        { "text": "Second distractor", "score": 15, "misconception": "Fails to trace state transitions." },
-        { "text": "Third distractor", "score": 0, "misconception": "Irrelevant concept." }
+        { "text": "Correct answer", "score": 100 },
+        { "text": "Distractor", "score": 35, "misconception": "..." },
+        { "text": "Distractor", "score": 20, "misconception": "..." },
+        { "text": "Distractor", "score": 0, "misconception": "..." }
       ],
       "correctIndex": 0,
-      "explanation": "Explanation of mechanism for ${concept}."
-    },
-    {
-      "id": "q-3",
-      "dimension": "transfer",
-      "dimensionLabel": "Unfamiliar Transfer Scenario",
-      "subconceptName": "${concept} Boundary Adaptation",
-      "question": "How does ${concept} behave when applied to an edge case scenario?",
-      "options": [
-        { "text": "Correct solution under edge conditions for ${concept}", "score": 100 },
-        { "text": "First distractor", "score": 45, "misconception": "Fails on boundary condition." },
-        { "text": "Second distractor", "score": 25, "misconception": "Confuses edge case behavior." },
-        { "text": "Third distractor", "score": 10, "misconception": "Disregards preconditions." }
-      ],
-      "correctIndex": 0,
-      "explanation": "Explanation of boundary handling for ${concept}."
+      "explanation": "Why this is correct.",
+      "sourceConcept": "The exact concept tested",
+      "sourceReference": "A short reference to where this is in the material",
+      "questionType": "Reasoning"
     }
-  ]
+  ] // Must have exactly 3 questions
 }`;
 
-  try {
-    const raw = await callGeminiREST(prompt, apiKey, cfg.geminiModel || "gemini-3.5-flash", undefined, "generate_async_echo_check");
-    const parsed = cleanAndParseJSON<EchoCheckResult>(raw);
-    if (parsed && Array.isArray(parsed.questions) && parsed.questions.length === 3) {
-      return parsed;
+  let retries = 2;
+  while (retries >= 0) {
+    try {
+      const raw = await callGeminiREST(basePrompt, apiKey, model, undefined, "generate_async_echo_check");
+      const parsed = cleanAndParseJSON<EchoCheckResult>(raw);
+      
+      if (parsed && Array.isArray(parsed.questions) && parsed.questions.length === 3) {
+        // Validation Layer
+        const isValid = await validateEchoQuestions(parsed.questions, materialContext, concept, apiKey, model);
+        
+        if (isValid) {
+          return parsed;
+        } else {
+          console.log(`[ECHO] Questions failed validation. Retries left: ${retries}`);
+        }
+      }
+    } catch (err) {
+      console.error("[ECHO LocalAI] Async echo check generation error:", err);
     }
-  } catch (err) {
-    console.error("[ECHO LocalAI] Async echo check generation error:", err);
+    retries--;
   }
 
   return generateLocalEchoCheck(concept, confidence, understoodText, notUnderstoodText);

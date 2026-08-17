@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { Search, Sparkles, BookOpen, BrainCircuit } from "lucide-react";
+import { Search, Sparkles, BookOpen, BrainCircuit, Trophy, Flame, Star } from "lucide-react";
 import { EchoNavbar } from "@/components/EchoNavbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useEcho } from "@/lib/echo/store";
+import { StudyWorld } from "@/components/study-world/StudyWorld";
 
 export const Route = createFileRoute("/dashboard")({
   component: DashboardPage,
@@ -12,8 +13,14 @@ export const Route = createFileRoute("/dashboard")({
 
 function DashboardPage() {
   const navigate = useNavigate();
-  const { latestResult } = useEcho();
+  const { latestResult, userProfile, isLoggedIn, isLoadingData, refreshProfile } = useEcho();
   const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      refreshProfile();
+    }
+  }, [isLoggedIn, refreshProfile]);
 
   function handleSearchSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -32,87 +39,128 @@ function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-royal-ice-page selection:bg-primary/30 flex flex-col justify-between pb-12">
-      {/* Subtle Global Header */}
-      <EchoNavbar variant="light" />
+    <StudyWorld pageContext="dashboard">
+      <div className="min-h-screen flex flex-col justify-between pb-12 relative z-10">
+        {/* Subtle Global Header */}
+        <EchoNavbar variant="dark" />
 
-      {/* Main Google-Homepage-Style Center Content */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 max-w-2xl mx-auto w-full text-center py-12 sm:py-20 space-y-8">
+      {/* Main Center Content */}
+      <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 max-w-2xl mx-auto w-full text-center py-12 sm:py-20 space-y-8 relative z-10">
         {/* ECHO Branding & Central Question */}
         <div className="space-y-3 animate-in fade-in duration-300">
-          <span className="text-xs font-mono font-bold tracking-widest text-primary uppercase bg-white/80 border border-primary/20 px-3 py-1 rounded-full shadow-sm">
-            ECHO
+          <span className="text-xs font-retro font-bold tracking-widest text-primary uppercase bg-white border-2 border-border px-3 py-1 shadow-[2px_2px_0_rgba(45,27,78,1)] inline-block mb-2">
+            SYS: ECHO_QUEST
           </span>
-          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
-            What do you want to understand?
+          <h1 className="text-3xl sm:text-5xl tracking-tight text-foreground leading-tight font-pixel uppercase drop-shadow-[4px_4px_0_rgba(45,27,78,0.15)]">
+            Initialize Quest
           </h1>
         </div>
 
         {/* Central Search Input Form */}
         <form onSubmit={handleSearchSubmit} className="w-full space-y-4">
           <div className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-border/50 group-focus-within:text-primary transition-colors" />
             <Input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search a topic or ask ECHO..."
-              className="w-full bg-white/95 border border-slate-300 hover:border-slate-400 focus:border-primary text-slate-900 placeholder:text-slate-400 text-sm sm:text-base rounded-2xl pl-12 pr-4 min-h-[52px] shadow-sm transition-all"
+              placeholder="Enter subject vector..."
+              className="w-full retro-input pl-12 pr-4 min-h-[60px]"
             />
           </div>
 
           {/* Primary Action Buttons */}
-          <div className="flex items-center justify-center gap-3 pt-2">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
             <Button
               type="button"
               onClick={handleLearnClick}
-              className="bg-primary hover:bg-primary/90 text-white font-bold text-sm px-6 py-2.5 rounded-xl shadow-glow min-h-[44px] transition-all"
+              className="retro-btn-primary min-h-[50px] w-full sm:w-auto px-8"
             >
-              <BookOpen className="size-4 mr-2" /> Learn
+              <BookOpen className="size-5 mr-2" /> Start Quest
             </Button>
 
             <Button
               type="button"
               onClick={handleReflectClick}
               variant="outline"
-              className="bg-white/90 hover:bg-white text-slate-900 border-slate-300 font-bold text-sm px-6 py-2.5 rounded-xl min-h-[44px] shadow-sm transition-all"
+              className="retro-btn-outline min-h-[50px] w-full sm:w-auto px-8"
             >
-              <BrainCircuit className="size-4 mr-2 text-primary" /> Reflect
+              <BrainCircuit className="size-5 mr-2" /> Reflect
             </Button>
           </div>
         </form>
 
-        {/* Small Understanding Indicator */}
-        <div className="pt-8 border-t border-slate-200/60 w-full max-w-sm mx-auto">
-          {latestResult ? (
-            <div className="space-y-1">
-              <div className="text-2xl font-extrabold font-mono text-slate-900">
-                {latestResult.stabilityScore} <span className="text-xs text-slate-500 font-normal">/ 100</span>
+        {/* Player Stats Panel */}
+        <div className="pt-4 w-full max-w-md mx-auto">
+          {/* Profile Stats Row (only when logged in with profile) */}
+          {isLoggedIn && userProfile && (
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="retro-pixel-card bg-muted/30 p-3 text-center">
+                <Trophy className="size-4 mx-auto mb-1 text-brand-2" />
+                <div className="text-lg font-pixel text-foreground">{userProfile.level}</div>
+                <div className="text-[10px] font-retro text-muted-foreground uppercase">Level</div>
               </div>
-              <p className="text-xs font-bold text-primary tracking-wide">
-                {latestResult.bandLabel}
-              </p>
-              <p className="text-[11px] text-slate-600 truncate max-w-xs mx-auto pt-0.5">
-                {latestResult.conceptName}
-              </p>
+              <div className="retro-pixel-card bg-muted/30 p-3 text-center">
+                <Star className="size-4 mx-auto mb-1 text-primary" />
+                <div className="text-lg font-pixel text-foreground">{userProfile.xp}</div>
+                <div className="text-[10px] font-retro text-muted-foreground uppercase">XP</div>
+              </div>
+              <div className="retro-pixel-card bg-muted/30 p-3 text-center">
+                <Flame className="size-4 mx-auto mb-1 text-brand" />
+                <div className="text-lg font-pixel text-foreground">{userProfile.streak}</div>
+                <div className="text-[10px] font-retro text-muted-foreground uppercase">Streak</div>
+              </div>
             </div>
-          ) : (
-            <div className="space-y-1">
-              <span className="text-xs font-mono text-slate-500 font-medium">
-                Understanding not measured yet
-              </span>
-              <p className="text-[11px] text-slate-500">
-                Complete a reflection check to measure stability
-              </p>
+          )}
+
+          {/* Understanding Indicator */}
+          <div className="retro-pixel-card bg-muted/30 pb-4">
+            {latestResult ? (
+              <div className="space-y-2">
+                <div className="text-3xl font-pixel text-foreground">
+                  {latestResult.stabilityScore} <span className="text-sm text-muted-foreground font-retro">XP</span>
+                </div>
+                <div className="w-full bg-white border-2 border-border h-4 relative">
+                   <div className="absolute top-0 left-0 h-full bg-primary" style={{ width: `${Math.min(100, Math.max(0, latestResult.stabilityScore))}%` }}></div>
+                </div>
+                <p className="text-sm font-retro text-primary font-bold uppercase mt-2">
+                  RANK: {latestResult.bandLabel}
+                </p>
+                <p className="text-xs text-foreground font-sans truncate max-w-xs mx-auto">
+                  {latestResult.conceptName}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2 py-4">
+                <span className="text-sm font-retro text-muted-foreground font-bold">
+                  PLAYER UNRANKED
+                </span>
+                <p className="text-xs text-muted-foreground font-sans">
+                  Complete a reflection check to gain XP
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Login prompt for guests */}
+          {!isLoggedIn && (
+            <div className="mt-4 text-center">
+              <Link
+                to="/auth"
+                className="text-xs font-retro text-primary font-bold uppercase hover:underline"
+              >
+                ► Sign in to save progress
+              </Link>
             </div>
           )}
         </div>
       </main>
 
       {/* Subtle Footer */}
-      <footer className="text-center text-[11px] text-slate-500 font-mono">
-        Evidence-Based Conceptual Honesty Engine
+      <footer className="text-center text-[10px] text-muted-foreground font-retro uppercase tracking-widest relative z-10 pb-4">
+        Evidence-Based Conceptual Honesty Engine v2.0 // Interactive Study World
       </footer>
     </div>
+    </StudyWorld>
   );
 }

@@ -143,11 +143,11 @@ function ReflectionPage() {
                 What parts did you feel you understood today?
               </label>
               <Textarea
-                rows={3}
+                rows={4}
                 value={understoodText}
                 onChange={(e) => setUnderstoodText(e.target.value)}
                 placeholder="Explain the underlying mechanism in your own words..."
-                className="mt-1.5 bg-white border-slate-300 text-slate-900 text-xs sm:text-sm p-3"
+                className="mt-1.5 bg-white border-slate-300 text-slate-900 text-xs sm:text-sm p-3 min-h-[100px]"
               />
             </div>
 
@@ -156,11 +156,11 @@ function ReflectionPage() {
                 What felt confusing or hard to explain?
               </label>
               <Textarea
-                rows={3}
+                rows={4}
                 value={notUnderstoodText}
                 onChange={(e) => setNotUnderstoodText(e.target.value)}
                 placeholder="Where does your explanation break down?"
-                className="mt-1.5 bg-white border-slate-300 text-slate-900 text-xs sm:text-sm p-3"
+                className="mt-1.5 bg-white border-slate-300 text-slate-900 text-xs sm:text-sm p-3 min-h-[100px]"
               />
             </div>
 

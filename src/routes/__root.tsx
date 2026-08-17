@@ -120,7 +120,7 @@ function RootComponent() {
       <ThemeProvider>
         <EchoProvider>
           <Outlet />
-          <Toaster theme="dark" position="top-center" richColors />
+          <Toaster theme="light" position="top-center" richColors />
         </EchoProvider>
       </ThemeProvider>
     </QueryClientProvider>

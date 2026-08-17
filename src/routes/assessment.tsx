@@ -156,12 +156,12 @@ function AssessmentPage() {
       <main className="mx-auto max-w-3xl px-4 sm:px-6 pt-6 sm:pt-10 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-primary">STAGE 4: VERIFY</span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 mt-1">
-              Diagnostic Verification Probe
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-primary">CURRENT CONCEPT</span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 mt-1 uppercase border-b-2 border-primary/20 pb-1 mb-2 inline-block">
+              {conceptInput || searchConcept || "Diagnostic Verification"}
             </h1>
             <p className="text-xs sm:text-sm text-slate-700 font-medium mt-1">
-              Test whether your understanding survives direct application, under-the-hood reasoning, and unfamiliar transfer problems.
+              Test whether your understanding survives grounded reasoning and unfamiliar transfer problems.
             </p>
           </div>
 
@@ -240,9 +240,16 @@ function AssessmentPage() {
           <div className="glass-card-light p-6 sm:p-8 space-y-6 rounded-2xl bg-white/95 border border-slate-200 shadow-md">
             <div className="flex items-center justify-between border-b border-slate-200 pb-4">
               <div>
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-primary">
-                  Question {index + 1} of {questions.length} · {currentQ.dimensionLabel}
-                </span>
+                <div className="flex flex-col mb-2">
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500">
+                    Question {index + 1} / {questions.length} · {currentQ.questionType || currentQ.dimensionLabel}
+                  </span>
+                  {(currentQ.sourceConcept || currentQ.subconceptName) && (
+                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-primary mt-1">
+                      FOCUS: {currentQ.sourceConcept || currentQ.subconceptName}
+                    </span>
+                  )}
+                </div>
                 <h2 className="text-lg sm:text-xl font-bold text-slate-900 mt-1">
                   {currentQ.question}
                 </h2>

@@ -132,50 +132,54 @@ export function BrainIntro() {
     <div ref={containerRef} className="relative w-full" style={{ height: "340vh" }}>
       <div className="sticky top-0 h-screen w-full overflow-hidden flex flex-col justify-between selection:bg-none font-sans bg-slate-900">
         {/* Pixelated Sky & Water Horizon Background */}
-        <div className="absolute inset-0 z-0 bg-gradient-to-b from-[#87c5f8] via-[#a8d6fa] to-[#6da5e3]">
-          {/* Subtle Pixel Cloud Patterns */}
-          <div className="absolute top-12 left-10 opacity-40">
-            <div className="w-24 h-6 bg-white/80 rounded-full blur-[1px]" />
+        <div className="absolute inset-0 z-0 bg-[#87c5f8]">
+          {/* Blocky Pixel Clouds */}
+          <div className="absolute top-12 left-10">
+            <div className="w-24 h-6 bg-white border-2 border-[#12335c] shadow-[4px_4px_0_rgba(18,51,92,0.2)]" />
           </div>
-          <div className="absolute top-24 right-16 opacity-50">
-            <div className="w-36 h-8 bg-white/80 rounded-full blur-[1px]" />
+          <div className="absolute top-24 right-16">
+            <div className="w-36 h-8 bg-white border-2 border-[#12335c] shadow-[4px_4px_0_rgba(18,51,92,0.2)]" />
+          </div>
+          <div className="absolute top-48 left-1/4">
+             <div className="w-16 h-4 bg-white border-2 border-[#12335c] shadow-[4px_4px_0_rgba(18,51,92,0.2)]" />
           </div>
 
-          {/* Ocean Water Horizon */}
-          <div className="absolute bottom-0 left-0 right-0 h-2/5 bg-gradient-to-b from-[#2e62a1] via-[#1b4880] to-[#12335c] border-t-2 border-sky-300/40">
-            {/* Water Light Shimmer Line */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-full bg-gradient-to-r from-transparent via-sky-200/20 to-transparent blur-md" />
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 w-72 h-1 bg-sky-200/40 blur-[1px]" />
-            <div className="absolute top-12 left-1/2 -translate-x-1/2 w-96 h-1 bg-sky-200/30 blur-[1px]" />
+          {/* Blocky Ocean Water Horizon */}
+          <div className="absolute bottom-0 left-0 right-0 h-2/5 bg-[#2e62a1] border-t-4 border-[#1b4880]">
+            {/* Water Light Shimmer Line (Hard Pixel Lines) */}
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 w-72 h-2 bg-[#6da5e3]" />
+            <div className="absolute top-8 left-1/2 -translate-x-1/2 w-48 h-2 bg-[#6da5e3]" />
+            <div className="absolute top-16 left-1/4 w-32 h-2 bg-[#6da5e3]" />
+            <div className="absolute top-24 right-1/4 w-24 h-2 bg-[#6da5e3]" />
           </div>
         </div>
 
         {/* Header Title Section (Fade out as we reach final state) */}
         <div
-          className="relative z-20 pt-14 sm:pt-16 px-4 text-center space-y-2 transition-all duration-500"
+          className="relative z-20 pt-14 sm:pt-16 px-4 text-center space-y-4 transition-all duration-500"
           style={{
             opacity: isFinalStage ? 0 : Math.max(0, 1 - progress * 1.4),
             transform: `translateY(${progress * -30}px)`,
           }}
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/80 border border-sky-300/60 shadow-sm backdrop-blur-sm">
-            <div className="size-5 rounded-full bg-sky-600 grid place-items-center text-white font-black text-[10px]">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-white border-2 border-border shadow-[2px_2px_0_rgba(45,27,78,1)]">
+            <div className="size-5 bg-primary grid place-items-center text-white font-pixel text-[10px] border border-border">
               C
             </div>
-            <span className="text-xs font-mono font-bold uppercase tracking-widest text-slate-800">ECHO</span>
+            <span className="text-xs font-retro font-bold uppercase tracking-widest text-primary">ECHO_SYSTEM</span>
           </div>
 
           <div className="space-y-1 max-w-md mx-auto">
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 drop-shadow-sm font-mono">
+            <h1 className="text-4xl sm:text-6xl font-pixel text-foreground drop-shadow-[4px_4px_0_rgba(45,27,78,0.2)]">
               ECHO
             </h1>
-            <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-800 font-mono">
+            <p className="text-sm sm:text-base font-bold uppercase tracking-wider text-foreground font-retro mt-2">
               Evidence-Based Conceptual Honesty Engine
             </p>
           </div>
 
-          <div className="pt-0.5">
-            <p className="text-xs sm:text-sm text-slate-800 font-medium italic font-serif max-w-sm mx-auto bg-white/60 backdrop-blur-sm px-4 py-1 rounded-full border border-white/60 shadow-sm">
+          <div className="pt-2">
+            <p className="text-xs sm:text-sm text-foreground font-sans font-bold max-w-sm mx-auto bg-white border-2 border-border px-4 py-2 shadow-[2px_2px_0_rgba(45,27,78,1)]">
               “The answer is correct. But is the understanding real?”
             </p>
           </div>
@@ -230,28 +234,28 @@ export function BrainIntro() {
               </svg>
 
               {/* LEFT COLUMN: Cards 1, 3, 5 */}
-              <div className="flex-1 flex flex-col justify-center gap-2.5 sm:gap-4 max-w-[280px] sm:max-w-[320px] z-20">
+              <div className="flex-1 flex flex-col justify-center gap-3 sm:gap-4 max-w-[280px] sm:max-w-[320px] z-20">
                 {LEFT_PRINCIPLES.map((principle) => {
                   const Icon = principle.icon;
                   return (
                     <div
                       key={principle.num}
-                      className="p-3 sm:p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xl backdrop-blur-md transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl"
+                      className="retro-pixel-card p-3 sm:p-4 group"
                     >
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="grid size-7 sm:size-8 place-items-center rounded-xl bg-sky-100 text-sky-800 shrink-0">
-                          <Icon className="size-3.5 sm:size-4 text-sky-700" />
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="grid size-7 sm:size-8 place-items-center border-2 border-border bg-primary text-white shrink-0 shadow-[2px_2px_0_rgba(45,27,78,1)]">
+                          <Icon className="size-3.5 sm:size-4" />
                         </div>
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="grid size-4 place-items-center rounded-full bg-sky-600 text-white font-bold text-[10px] font-mono shrink-0">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="grid size-5 place-items-center bg-brand text-white font-pixel text-[10px] border-2 border-border shrink-0 shadow-[1px_1px_0_rgba(45,27,78,1)]">
                             {principle.num}
                           </span>
-                          <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 leading-tight truncate">
+                          <h4 className="text-xs sm:text-sm font-bold text-foreground font-retro leading-tight truncate uppercase">
                             {principle.title}
                           </h4>
                         </div>
                       </div>
-                      <p className="text-[10px] sm:text-xs text-slate-600 leading-relaxed font-medium">
+                      <p className="text-[10px] sm:text-xs text-muted-foreground leading-relaxed font-sans font-bold">
                         {principle.desc}
                       </p>
                     </div>
@@ -261,35 +265,36 @@ export function BrainIntro() {
 
               {/* CENTER COLUMN: Pixel Brain */}
               <div className="relative z-30 flex flex-col items-center justify-center shrink-0">
-                <div className="absolute size-36 sm:size-52 rounded-full bg-sky-300/40 blur-2xl animate-pulse" />
-                <div className="relative p-2.5 sm:p-3.5 rounded-3xl bg-white/40 border border-white/60 backdrop-blur-md shadow-2xl">
-                  <PixelBrainSVG className="w-20 h-20 sm:w-32 sm:h-32 drop-shadow-2xl" />
+                {/* Blocky Aura */}
+                <div className="absolute size-40 sm:size-56 bg-brand/30 border-[4px] border-brand animate-pulse [image-rendering:pixelated]" />
+                <div className="relative p-2.5 sm:p-3.5 retro-pixel-card bg-white shadow-[8px_8px_0_rgba(45,27,78,1)]">
+                  <PixelBrainSVG className="w-20 h-20 sm:w-32 sm:h-32 [image-rendering:pixelated]" />
                 </div>
               </div>
 
               {/* RIGHT COLUMN: Cards 2, 4, 6 */}
-              <div className="flex-1 flex flex-col justify-center gap-2.5 sm:gap-4 max-w-[280px] sm:max-w-[320px] z-20">
+              <div className="flex-1 flex flex-col justify-center gap-3 sm:gap-4 max-w-[280px] sm:max-w-[320px] z-20">
                 {RIGHT_PRINCIPLES.map((principle) => {
                   const Icon = principle.icon;
                   return (
                     <div
                       key={principle.num}
-                      className="p-3 sm:p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xl backdrop-blur-md transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl"
+                      className="retro-pixel-card p-3 sm:p-4 group"
                     >
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="grid size-7 sm:size-8 place-items-center rounded-xl bg-sky-100 text-sky-800 shrink-0">
-                          <Icon className="size-3.5 sm:size-4 text-sky-700" />
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="grid size-7 sm:size-8 place-items-center border-2 border-border bg-primary text-white shrink-0 shadow-[2px_2px_0_rgba(45,27,78,1)]">
+                          <Icon className="size-3.5 sm:size-4" />
                         </div>
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="grid size-4 place-items-center rounded-full bg-sky-600 text-white font-bold text-[10px] font-mono shrink-0">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="grid size-5 place-items-center bg-brand text-white font-pixel text-[10px] border-2 border-border shrink-0 shadow-[1px_1px_0_rgba(45,27,78,1)]">
                             {principle.num}
                           </span>
-                          <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 leading-tight truncate">
+                          <h4 className="text-xs sm:text-sm font-bold text-foreground font-retro leading-tight truncate uppercase">
                             {principle.title}
                           </h4>
                         </div>
                       </div>
-                      <p className="text-[10px] sm:text-xs text-slate-600 leading-relaxed font-medium">
+                      <p className="text-[10px] sm:text-xs text-muted-foreground leading-relaxed font-sans font-bold">
                         {principle.desc}
                       </p>
                     </div>
@@ -305,9 +310,9 @@ export function BrainIntro() {
           className="relative z-20 pb-6 text-center transition-opacity duration-300"
           style={{ opacity: isFinalStage ? 0.4 : 1 }}
         >
-          <div className="inline-flex flex-col items-center gap-1 text-[11px] font-mono font-bold uppercase tracking-widest text-slate-800 bg-white/60 backdrop-blur-sm px-4 py-1 rounded-full border border-white/60 shadow-sm">
-            <ChevronDown className="size-4 animate-bounce text-sky-800" />
-            <span>{isFinalStage ? "Explore Below" : "Scroll Down"}</span>
+          <div className="inline-flex flex-col items-center gap-1 text-[11px] font-retro font-bold uppercase tracking-widest text-primary bg-white border-2 border-border shadow-[2px_2px_0_rgba(45,27,78,1)] px-4 py-2">
+            <ChevronDown className="size-5 animate-bounce-subtle text-brand" />
+            <span>{isFinalStage ? "Proceed" : "Scroll Down"}</span>
           </div>
         </div>
       </div>

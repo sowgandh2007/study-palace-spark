@@ -28,7 +28,7 @@ export function ScrollStack({ items }: ScrollStackProps) {
           <Link
             key={item.id}
             to={item.to}
-            className="scroll-stack-card block rounded-3xl border border-blue-500/30 p-7 sm:p-9 shadow-2xl backdrop-blur-2xl bg-gradient-to-br from-[#050d24] via-[#081538] to-[#0b1c48] hover:border-blue-400/60 hover:shadow-blue-500/20 group text-left no-underline transition-all"
+            className="scroll-stack-card block retro-pixel-card bg-white p-7 sm:p-9 group text-left no-underline transition-all hover:bg-muted/30"
             style={
               {
                 "--stack-top": topOffset,
@@ -38,28 +38,28 @@ export function ScrollStack({ items }: ScrollStackProps) {
           >
             {/* Top Bar: 01 Number (left) & Circular Icon (right) */}
             <div className="flex items-center justify-between">
-              <span className="font-mono font-bold text-blue-400 text-sm sm:text-base tracking-wider">
-                {item.stageNumber}
+              <span className="font-retro font-bold text-primary text-sm sm:text-base tracking-wider uppercase">
+                Level {item.stageNumber}
               </span>
-              <div className="rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 p-3 sm:p-3.5 flex items-center justify-center shrink-0 group-hover:bg-blue-500/20 group-hover:scale-105 transition-all">
+              <div className="border-2 border-border bg-white text-foreground p-3 sm:p-3.5 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-all shadow-[2px_2px_0_rgba(45,27,78,1)]">
                 <IconComponent className="size-5 sm:size-6" />
               </div>
             </div>
 
-            {/* Title & Description matching Figma screenshot */}
+            {/* Title & Description */}
             <div className="mt-2 space-y-3">
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight group-hover:text-blue-200 transition-colors">
+              <h2 className="text-3xl sm:text-4xl font-pixel text-foreground tracking-tight leading-tight group-hover:text-primary transition-colors">
                 {item.stageTitle}
               </h2>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl font-medium">
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-2xl font-sans font-semibold">
                 {item.description}
               </p>
             </div>
 
-            {/* OPEN MENU link matching Figma screenshot */}
+            {/* OPEN MENU link */}
             <div className="pt-5 flex items-center">
-              <span className="text-xs font-mono font-bold tracking-widest text-primary flex items-center gap-1.5 uppercase group-hover:underline">
-                OPEN MENU <ChevronRight className="size-4 group-hover:translate-x-1 transition-transform" />
+              <span className="text-xs font-retro font-bold tracking-widest text-brand flex items-center gap-1.5 uppercase">
+                <span className="opacity-0 group-hover:opacity-100 animate-blink">►</span> OPEN MENU 
               </span>
             </div>
           </Link>
