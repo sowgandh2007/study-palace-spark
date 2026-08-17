@@ -123,3 +123,34 @@ export type Band = {
   tone: "destructive" | "warning" | "primary" | "success";
   verdict: string;
 };
+
+export type StudyPlanPriority = "HIGH" | "MEDIUM" | "LOW";
+export type StudyPlanDifficulty = "HARD" | "MEDIUM" | "EASY";
+export type StudyTaskType = "LEARN" | "PRACTICE" | "REVIEW" | "ASSESS" | "REFLECT";
+
+export interface StudyTask {
+  id: string;
+  topic: string;
+  priority: StudyPlanPriority;
+  difficulty: StudyPlanDifficulty;
+  type: StudyTaskType;
+  durationMinutes: number;
+  completed: boolean;
+  moved?: boolean;
+}
+
+export interface StudyDay {
+  dayIndex: number;
+  date: string;
+  focus: string;
+  tasks: StudyTask[];
+}
+
+export interface StudyPlanData {
+  title: string;
+  topic: string;
+  startDate: string;
+  endDate: string;
+  totalStudyMinutes: number;
+  days: StudyDay[];
+}

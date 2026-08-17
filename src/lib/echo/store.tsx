@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
-import type { ApiConfig, LearnMaterial, Reflection, RepairActivity, StabilityResult, TimetableEntry } from "./types";
+import type { ApiConfig, LearnMaterial, Reflection, RepairActivity, StabilityResult, TimetableEntry, StudyPlanData } from "./types";
 import { getApiConfig, saveApiConfig } from "./llm";
 import {
   fetchTimetableEntries,
@@ -26,6 +26,7 @@ type EchoStoreState = {
   reflections: Reflection[];
   activeLearnMaterial: LearnMaterial | null;
   savedLearnMaterials: LearnMaterial[];
+  activeStudyPlan: StudyPlanData | null;
   latestResult: StabilityResult | null;
   activeRepair: RepairActivity | null;
   recheckHistory: { concept: string; beforeScore: number; afterScore: number; date: string }[];
@@ -42,6 +43,9 @@ type EchoStoreCtx = EchoStoreState & {
   deleteReflection: (id: string) => void;
   saveLearnMaterial: (mat: Omit<LearnMaterial, "id" | "createdAt">) => LearnMaterial;
   setActiveLearnMaterial: (mat: LearnMaterial | null) => void;
+  setActiveStudyPlan: (plan: StudyPlanData | null) => void;
+  completeStudyTask: (taskId: string) => void;
+  moveStudyTaskToTomorrow: (taskId: string) => void;
   setLatestResult: (result: StabilityResult) => void;
   saveStabilityResult: (result: StabilityResult) => void;
   setActiveRepair: (repair: RepairActivity | null) => void;
@@ -59,6 +63,7 @@ export function EchoProvider({ children }: { children: ReactNode }) {
   const [reflections, setReflections] = useState<Reflection[]>([]);
   const [activeLearnMaterial, setActiveLearnMaterial] = useState<LearnMaterial | null>(null);
   const [savedLearnMaterials, setSavedLearnMaterials] = useState<LearnMaterial[]>([]);
+  const [activeStudyPlan, setActiveStudyPlanState] = useState<StudyPlanData | null>(null);
   const [latestResult, setLatestResultState] = useState<StabilityResult | null>(null);
   const [activeRepair, setActiveRepair] = useState<RepairActivity | null>(null);
   const [recheckHistory, setRecheckHistory] = useState<
@@ -123,6 +128,7 @@ export function EchoProvider({ children }: { children: ReactNode }) {
             if (Array.isArray(parsed.reflections)) setReflections(parsed.reflections);
             if (parsed.activeLearnMaterial) setActiveLearnMaterial(parsed.activeLearnMaterial);
             if (Array.isArray(parsed.savedLearnMaterials)) setSavedLearnMaterials(parsed.savedLearnMaterials);
+            if (parsed.activeStudyPlan) setActiveStudyPlanState(parsed.activeStudyPlan);
             if (parsed.latestResult) setLatestResultState(parsed.latestResult);
             if (parsed.activeRepair) setActiveRepair(parsed.activeRepair);
             if (Array.isArray(parsed.recheckHistory)) setRecheckHistory(parsed.recheckHistory);
@@ -147,6 +153,7 @@ export function EchoProvider({ children }: { children: ReactNode }) {
             reflections,
             activeLearnMaterial,
             savedLearnMaterials,
+            activeStudyPlan,
             latestResult,
             activeRepair,
             recheckHistory,
@@ -156,7 +163,7 @@ export function EchoProvider({ children }: { children: ReactNode }) {
     } catch {
       /* ignore storage write errors */
     }
-  }, [timetable, reflections, activeLearnMaterial, savedLearnMaterials, latestResult, activeRepair, recheckHistory]);
+  }, [timetable, reflections, activeLearnMaterial, savedLearnMaterials, activeStudyPlan, latestResult, activeRepair, recheckHistory]);
 
   // ─── Timetable ───
   function addTimetableEntry(entry: Omit<TimetableEntry, "id">) {
@@ -238,6 +245,64 @@ export function EchoProvider({ children }: { children: ReactNode }) {
     return newMat;
   }
 
+  // ─── Study Plan ───
+  function setActiveStudyPlan(plan: StudyPlanData | null) {
+    setActiveStudyPlanState(plan);
+  }
+
+  function completeStudyTask(taskId: string) {
+    setActiveStudyPlanState((prev) => {
+      if (!prev) return prev;
+      const newPlan = { ...prev };
+      newPlan.days = newPlan.days.map(day => ({
+        ...day,
+        tasks: day.tasks.map(task => 
+          task.id === taskId ? { ...task, completed: !task.completed } : task
+        )
+      }));
+      return newPlan;
+    });
+  }
+
+  function moveStudyTaskToTomorrow(taskId: string) {
+    setActiveStudyPlanState((prev) => {
+      if (!prev) return prev;
+      const newPlan = { ...prev };
+      let foundTask: any = null;
+      let fromDayIndex = -1;
+
+      // Find and remove task
+      newPlan.days = newPlan.days.map((day, idx) => {
+        const tIdx = day.tasks.findIndex(t => t.id === taskId);
+        if (tIdx > -1) {
+          foundTask = { ...day.tasks[tIdx], moved: true };
+          fromDayIndex = idx;
+          const newTasks = [...day.tasks];
+          newTasks.splice(tIdx, 1);
+          return { ...day, tasks: newTasks };
+        }
+        return day;
+      });
+
+      if (foundTask && fromDayIndex > -1) {
+        // Add to next day (or create new day if it was the last day)
+        const nextDayIndex = fromDayIndex + 1;
+        if (nextDayIndex < newPlan.days.length) {
+          newPlan.days[nextDayIndex].tasks.push(foundTask);
+        } else {
+          newPlan.days.push({
+            dayIndex: newPlan.days.length + 1,
+            date: `Day ${newPlan.days.length + 1}`,
+            focus: "Catch-up / Spilled Tasks",
+            tasks: [foundTask]
+          });
+        }
+      }
+
+      return newPlan;
+    });
+  }
+
   // ─── Stability Results ───
   function setLatestResult(result: StabilityResult) {
     setLatestResultState(result);
@@ -295,6 +360,7 @@ export function EchoProvider({ children }: { children: ReactNode }) {
         reflections,
         activeLearnMaterial,
         savedLearnMaterials,
+        activeStudyPlan,
         latestResult,
         activeRepair,
         recheckHistory,
@@ -308,6 +374,9 @@ export function EchoProvider({ children }: { children: ReactNode }) {
         deleteReflection,
         saveLearnMaterial,
         setActiveLearnMaterial,
+        setActiveStudyPlan,
+        completeStudyTask,
+        moveStudyTaskToTomorrow,
         setLatestResult,
         saveStabilityResult,
         setActiveRepair: setActiveRepairAndPersist,
